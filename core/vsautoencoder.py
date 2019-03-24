@@ -11,6 +11,7 @@ Autoencoder for visual and semantic features of images
 '''
 
 import os
+from random import randint
 from keras.models import Model
 from keras.layers import Input, Dense
 from matplotlib import pyplot as plt
@@ -79,6 +80,8 @@ class VSAutoencoder:
         '''
         try:
             plt.figure()
+            plt.rcParams.update({'font.size': 10})
+            
             plt.plot(history['loss'])
             plt.plot(history['val_loss'])
             plt.title('Autoencoder Loss')
@@ -87,11 +90,60 @@ class VSAutoencoder:
             plt.ylabel('Loss (MSE)')
             plt.legend(['train', 'test'], loc='upper right')
             
-            if not os.path.isdir(results_path):
-                os.mkdir(results_path)
+            root_path = os.sep.join(results_path.split(os.sep)[:-1])
+            if not os.path.isdir(root_path):
+                os.mkdir(root_path)
             
-            plt.savefig(os.path.join(results_path, 'ae_loss.png'))
+            plt.savefig(results_path)
         except OSError:
-            print('>> ERROR: Loss image could not be saved under %s' % os.path.join(results_path, 
-                                                                                    'ae_loss.png'))
+            print('>> ERROR: Loss image could not be saved under %s' % results_path)
+    
+    def plot_error(self, x_test, results_path):
+        '''
+        Plots input example vs encoded example vs decoded example of 5 random examples
+        in test set
         
+        @param x_test: test set
+        @param results_path: string with path to save results under
+        '''
+        ex_idx = set()
+        while len(ex_idx) < 5:
+            ex_idx.add(randint(0, x_test.shape[0] - 1))
+            
+        encoded_fts = self.encoder.predict(x_test)
+        decoded_fts = self.decoder.predict(encoded_fts)
+        error = x_test - decoded_fts
+    
+        try:
+            plt.figure()
+            plt.rcParams.update({'font.size': 8})
+            plt.subplots_adjust(wspace=0.3, hspace=0.9)
+            
+            for i, idx in enumerate(ex_idx):
+                ax = plt.subplot(5, 4, 4 * i + 1)
+                plt.plot(x_test[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('Ex %d - Input' % idx)
+                ax.axes.get_xaxis().set_visible(False)
+                
+                ax = plt.subplot(5, 4, 4 * i + 2)
+                plt.plot(encoded_fts[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('Ex %d - Encoding' % idx)
+                ax.axes.get_xaxis().set_visible(False)
+                
+                ax = plt.subplot(5, 4, 4 * i + 3)
+                plt.plot(decoded_fts[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('Ex %d - Output' % idx)
+                ax.axes.get_xaxis().set_visible(False)
+                
+                ax = plt.subplot(5, 4, 4 * i + 4)
+                plt.plot(error[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('Error')
+                ax.axes.get_xaxis().set_visible(False)
+            
+            root_path = os.sep.join(results_path.split(os.sep)[:-1])
+            if not os.path.isdir(root_path):
+                os.mkdir(root_path)
+            
+            plt.savefig(results_path)
+        except OSError:
+            print('>> ERROR: Error image could not be saved under %s' % results_path)

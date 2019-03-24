@@ -41,7 +41,7 @@ class VSAutoencoderTests(unittest.TestCase):
         
         X = parser.concatenate_features(vis_fts, sem_fts)
         Y = parser.get_labels()
-        x_train, _, _, _ = train_test_split(X, Y, stratify=Y, test_size=0.2)
+        x_train, cls.x_test, _, _ = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
         cls.enc_dim = 32
         cls.io_dim = x_train.shape[1]
@@ -85,6 +85,18 @@ class VSAutoencoderTests(unittest.TestCase):
         if os.path.isfile(file_name):
             os.remove(file_name)
            
-        self.ae.plot_loss(self.history.history, res_path)
+        self.ae.plot_loss(self.history.history, os.path.join(res_path, 'ae_loss.png'))
         self.assertTrue(os.path.isfile(file_name))
         
+    def test_plot_error(self):
+        '''
+        Tests if error is plot to ae_error.png
+        '''
+        res_path = os.path.join(self.fls_path, 'results')
+        file_name = os.path.join(res_path, 'ae_error.png')
+           
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+           
+        self.ae.plot_error(self.x_test, os.path.join(res_path, 'ae_error.png'))
+        self.assertTrue(os.path.isfile(file_name))
