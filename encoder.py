@@ -36,12 +36,18 @@ def main():
     
     Y = parser.get_labels()
     X = parser.concatenate_features(vis_fts, sem_fts)
-    x_train, x_test, _, _ = train_test_split(X, Y, stratify=Y, test_size=0.2)
+    x_train, x_test, _, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
     ae = VSAutoencoder()
     history = ae.run_autoencoder(x_train, enc_dim=32, nepochs=150)
+    
+    encoded_fts = ae.encoder.predict(x_test)
+    decoded_fts = ae.decoder.predict(encoded_fts)
+    
     ae.plot_loss(history.history, os.path.join(res_path, 'ae_loss.png'))
-    ae.plot_error(x_test, os.path.join(res_path, 'ae_error.png'))
+    ae.plot_encoding(x_test, encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
+    ae.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, 
+                                 os.path.join(res_path, 'ae_distribution.png'))
 
 if __name__ == '__main__':
     

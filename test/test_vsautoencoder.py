@@ -41,7 +41,7 @@ class VSAutoencoderTests(unittest.TestCase):
         
         X = parser.concatenate_features(vis_fts, sem_fts)
         Y = parser.get_labels()
-        x_train, cls.x_test, _, _ = train_test_split(X, Y, stratify=Y, test_size=0.2)
+        x_train, cls.x_test, _, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
         cls.enc_dim = 32
         cls.io_dim = x_train.shape[1]
@@ -88,15 +88,35 @@ class VSAutoencoderTests(unittest.TestCase):
         self.ae.plot_loss(self.history.history, os.path.join(res_path, 'ae_loss.png'))
         self.assertTrue(os.path.isfile(file_name))
         
-    def test_plot_error(self):
+    def test_plot_encoding(self):
         '''
-        Tests if error is plot to ae_error.png
+        Tests if encoding results is plot to ae_encoding.png
         '''
         res_path = os.path.join(self.fls_path, 'results')
-        file_name = os.path.join(res_path, 'ae_error.png')
+        file_name = os.path.join(res_path, 'ae_encoding.png')
            
         if os.path.isfile(file_name):
             os.remove(file_name)
+        
+        encoded_fts = self.ae.encoder.predict(self.x_test)
+        decoded_fts = self.ae.decoder.predict(encoded_fts)
            
-        self.ae.plot_error(self.x_test, os.path.join(res_path, 'ae_error.png'))
+        self.ae.plot_encoding(self.x_test, encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
+        self.assertTrue(os.path.isfile(file_name))
+        
+    def test_plot_spatial_distribution(self):
+        '''
+        Tests if LDA, TSNE and PCA results are plot to ae_distribution.png
+        '''
+        res_path = os.path.join(self.fls_path, 'results')
+        file_name = os.path.join(res_path, 'ae_distribution.png')
+           
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+            
+        encoded_fts = self.ae.encoder.predict(self.x_test)
+        decoded_fts = self.ae.decoder.predict(encoded_fts)
+           
+        self.ae.plot_spatial_distribution(self.x_test, encoded_fts, decoded_fts, 
+                                          self.y_test, os.path.join(res_path, 'ae_distribution.png'))
         self.assertTrue(os.path.isfile(file_name))

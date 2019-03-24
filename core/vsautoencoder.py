@@ -15,6 +15,9 @@ from random import randint
 from keras.models import Model
 from keras.layers import Input, Dense
 from matplotlib import pyplot as plt
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+from sklearn.decomposition import LatentDirichletAllocation
 
 
 class VSAutoencoder:
@@ -98,41 +101,41 @@ class VSAutoencoder:
         except OSError:
             print('>> ERROR: Loss image could not be saved under %s' % results_path)
     
-    def plot_error(self, x_test, results_path):
+    def plot_encoding(self, input_set, encoding, output_set, results_path):
         '''
         Plots input example vs encoded example vs decoded example of 5 random examples
         in test set
         
-        @param x_test: test set
+        @param input_set: autoencoder input
+        @param encoding: autoencoder encoded features
+        @param output_set: autoencoder output
         @param results_path: string with path to save results under
         '''
         ex_idx = set()
         while len(ex_idx) < 5:
-            ex_idx.add(randint(0, x_test.shape[0] - 1))
-            
-        encoded_fts = self.encoder.predict(x_test)
-        decoded_fts = self.decoder.predict(encoded_fts)
-        error = x_test - decoded_fts
+            ex_idx.add(randint(0, input_set.shape[0] - 1))
+        
+        error = output_set - input_set
     
         try:
             plt.figure()
-            plt.rcParams.update({'font.size': 8})
-            plt.subplots_adjust(wspace=0.3, hspace=0.9)
+            plt.rcParams.update({'font.size': 6})
+            plt.subplots_adjust(wspace=0.4, hspace=0.9)
             
             for i, idx in enumerate(ex_idx):
                 ax = plt.subplot(5, 4, 4 * i + 1)
-                plt.plot(x_test[idx, :], linestyle='None', marker='o', markersize=1)
-                ax.set_title('Ex %d - Input' % idx)
+                plt.plot(input_set[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('%d - Input' % idx)
                 ax.axes.get_xaxis().set_visible(False)
                 
                 ax = plt.subplot(5, 4, 4 * i + 2)
-                plt.plot(encoded_fts[idx, :], linestyle='None', marker='o', markersize=1)
-                ax.set_title('Ex %d - Encoding' % idx)
+                plt.plot(encoding[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('%d - Encoding' % idx)
                 ax.axes.get_xaxis().set_visible(False)
                 
                 ax = plt.subplot(5, 4, 4 * i + 3)
-                plt.plot(decoded_fts[idx, :], linestyle='None', marker='o', markersize=1)
-                ax.set_title('Ex %d - Output' % idx)
+                plt.plot(output_set[idx, :], linestyle='None', marker='o', markersize=1)
+                ax.set_title('%d - Output' % idx)
                 ax.axes.get_xaxis().set_visible(False)
                 
                 ax = plt.subplot(5, 4, 4 * i + 4)
@@ -147,3 +150,86 @@ class VSAutoencoder:
             plt.savefig(results_path)
         except OSError:
             print('>> ERROR: Error image could not be saved under %s' % results_path)
+            
+    def plot_spatial_distribution(self, input_set, encoding, output_set, labels, results_path):
+        '''
+        Plots the spatial distribution of input, encoding and output using PCA, TSNE and LDA
+        
+        @param input_set: autoencoder input
+        @param encoding: autoencoder encoded features
+        @param output_set: autoencoder output
+        @param labels: data set labels
+        @param results_path: string with path to save results under
+        ''' 
+        plt.figure()
+        plt.rcParams.update({'font.size': 8})
+             
+        try:    
+            plt.subplots_adjust(wspace=0.5, hspace=0.5)
+            pca = PCA(n_components=2)
+             
+            ax = plt.subplot(331)
+            ax.set_title('PCA - Input')
+            input_fts = pca.fit_transform(input_set)
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels)
+            
+            ax = plt.subplot(332)
+            ax.set_title('PCA - Encoding')
+            encoding_fts = pca.fit_transform(encoding)
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels)
+             
+            ax = plt.subplot(333)
+            ax.set_title('PCA - Output')
+            output_fts = pca.fit_transform(output_set)
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels)
+        except ValueError:
+            print('>> ERROR: PCA could not be computed')
+            
+        try:
+            tsne = TSNE(n_components=2)
+             
+            ax = plt.subplot(334)
+            ax.set_title('TSNE - Input')
+            input_fts = tsne.fit_transform(input_set)
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels)
+
+            ax = plt.subplot(335)
+            ax.set_title('TSNE - Encoding')
+            encoding_fts = tsne.fit_transform(encoding)
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels)
+                         
+            ax = plt.subplot(336)
+            ax.set_title('TSNE - Output')
+            output_fts = tsne.fit_transform(output_set)
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels)  
+        except ValueError:
+            print('>> ERROR: TSNE could not be computed')
+            
+        try:
+            lda = LatentDirichletAllocation(n_components=2)
+            
+            ax = plt.subplot(337)
+            ax.set_title('LDA - Input')
+            input_fts = lda.fit_transform(input_set)
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels)
+            
+            ax = plt.subplot(338)
+            ax.set_title('LDA - Encoding')
+            encoding_fts = lda.fit_transform(encoding)
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels)
+            
+            ax = plt.subplot(339)
+            ax.set_title('LDA - Output')
+            output_fts = lda.fit_transform(output_set)
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels)
+        except ValueError:
+            print('>> ERROR: LDA could not be computed')
+        
+        try:
+            root_path = os.sep.join(results_path.split(os.sep)[:-1])
+            if not os.path.isdir(root_path):
+                os.mkdir(root_path)
+
+            plt.savefig(results_path)
+        except OSError:
+            print('>> ERROR: Scatter plots could not be saved under %s' % results_path)
