@@ -46,6 +46,7 @@ def main():
     
     ae.plot_loss(history.history, os.path.join(res_path, 'ae_loss.png'))
     ae.plot_encoding(x_test, encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
+    ae.plot_pca_vs_encoding(x_test, encoded_fts, os.path.join(res_path, 'ae_components.png'))
     ae.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, 
                                  os.path.join(res_path, 'ae_distribution.png'))
 

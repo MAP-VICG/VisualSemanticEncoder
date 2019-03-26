@@ -120,3 +120,18 @@ class VSAutoencoderTests(unittest.TestCase):
         self.ae.plot_spatial_distribution(self.x_test, encoded_fts, decoded_fts, 
                                           self.y_test, os.path.join(res_path, 'ae_distribution.png'))
         self.assertTrue(os.path.isfile(file_name))
+        
+    def test_plot_pca_vs_encoding(self):
+        '''
+        Tests if PCA components and encoding components are plot to ae_components.png
+        '''
+        res_path = os.path.join(self.fls_path, 'results')
+        file_name = os.path.join(res_path, 'ae_components.png')
+           
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+            
+        encoded_fts = self.ae.encoder.predict(self.x_test)
+           
+        self.ae.plot_pca_vs_encoding(self.x_test, encoded_fts, os.path.join(res_path, 'ae_components.png'))
+        self.assertTrue(os.path.isfile(file_name))
