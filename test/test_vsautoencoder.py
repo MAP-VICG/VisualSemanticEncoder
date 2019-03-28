@@ -27,9 +27,10 @@ class VSAutoencoderTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        cls.fls_path = os.path.join(os.getcwd(), '_mockfiles/awa2')
-        fts_path = os.path.join(cls.fls_path, 'features/ResNet101')
-        ann_path = os.path.join(cls.fls_path, 'base')
+        fls_path = os.path.join(os.getcwd(), '_mockfiles/awa2')
+        fts_path = os.path.join(fls_path, 'features/ResNet101')
+        cls.res_path = os.path.join(fls_path, 'results')
+        ann_path = os.path.join(fls_path, 'base')
     
         parser = FeaturesParser(fts_path)
         vis_fts = parser.get_visual_features()
@@ -41,14 +42,15 @@ class VSAutoencoderTests(unittest.TestCase):
         
         X = parser.concatenate_features(vis_fts, sem_fts)
         Y = parser.get_labels()
-        x_train, cls.x_test, _, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
+        x_train, cls.x_test, y_train, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
         cls.enc_dim = 32
         cls.io_dim = x_train.shape[1]
         cls.nexamples = x_train.shape[0]
         
-        cls.ae = VSAutoencoder()
-        cls.history = cls.ae.run_autoencoder(x_train, cls.enc_dim, 15)
+        cls.ae = VSAutoencoder(x_train, y_train, cv=2, njobs=2)
+        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 15, 
+                                             os.path.join(cls.res_path, 'ae_svm_classification.txt'))
         
     def test_build_autoencoder(self):
         '''
@@ -79,21 +81,19 @@ class VSAutoencoderTests(unittest.TestCase):
         '''
         Tests if loss and validation loss are plot and saved to ae_loss.png
         '''
-        res_path = os.path.join(self.fls_path, 'results')
-        file_name = os.path.join(res_path, 'ae_loss.png')
+        file_name = os.path.join(self.res_path, 'ae_loss.png')
            
         if os.path.isfile(file_name):
             os.remove(file_name)
            
-        self.ae.plot_loss(self.history.history, os.path.join(res_path, 'ae_loss.png'))
+        self.ae.plot_loss(self.history.history, os.path.join(self.res_path, 'ae_loss.png'))
         self.assertTrue(os.path.isfile(file_name))
         
     def test_plot_encoding(self):
         '''
         Tests if encoding results is plot to ae_encoding.png
         '''
-        res_path = os.path.join(self.fls_path, 'results')
-        file_name = os.path.join(res_path, 'ae_encoding.png')
+        file_name = os.path.join(self.res_path, 'ae_encoding.png')
            
         if os.path.isfile(file_name):
             os.remove(file_name)
@@ -101,15 +101,15 @@ class VSAutoencoderTests(unittest.TestCase):
         encoded_fts = self.ae.encoder.predict(self.x_test)
         decoded_fts = self.ae.decoder.predict(encoded_fts)
            
-        self.ae.plot_encoding(self.x_test, encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
+        self.ae.plot_encoding(self.x_test, encoded_fts, decoded_fts, 
+                              os.path.join(self.res_path, 'ae_encoding.png'))
         self.assertTrue(os.path.isfile(file_name))
         
     def test_plot_spatial_distribution(self):
         '''
         Tests if LDA, TSNE and PCA results are plot to ae_distribution.png
         '''
-        res_path = os.path.join(self.fls_path, 'results')
-        file_name = os.path.join(res_path, 'ae_distribution.png')
+        file_name = os.path.join(self.res_path, 'ae_distribution.png')
            
         if os.path.isfile(file_name):
             os.remove(file_name)
@@ -118,20 +118,19 @@ class VSAutoencoderTests(unittest.TestCase):
         decoded_fts = self.ae.decoder.predict(encoded_fts)
            
         self.ae.plot_spatial_distribution(self.x_test, encoded_fts, decoded_fts, 
-                                          self.y_test, os.path.join(res_path, 'ae_distribution.png'))
+                                          self.y_test, os.path.join(self.res_path, 'ae_distribution.png'))
         self.assertTrue(os.path.isfile(file_name))
         
     def test_plot_pca_vs_encoding(self):
         '''
         Tests if PCA components and encoding components are plot to ae_components.png
         '''
-        res_path = os.path.join(self.fls_path, 'results')
-        file_name = os.path.join(res_path, 'ae_components.png')
+        file_name = os.path.join(self.res_path, 'ae_components.png')
            
         if os.path.isfile(file_name):
             os.remove(file_name)
             
         encoded_fts = self.ae.encoder.predict(self.x_test)
            
-        self.ae.plot_pca_vs_encoding(self.x_test, encoded_fts, os.path.join(res_path, 'ae_components.png'))
+        self.ae.plot_pca_vs_encoding(self.x_test, encoded_fts, os.path.join(self.res_path, 'ae_components.png'))
         self.assertTrue(os.path.isfile(file_name))

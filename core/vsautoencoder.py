@@ -11,35 +11,65 @@ Autoencoder for visual and semantic features of images
 '''
 
 import os
+import numpy as np
 from random import randint
 from keras.models import Model
 from keras.layers import Input, Dense
+from keras.callbacks import LambdaCallback
+
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 
+from core.vsclassifier import SVMClassifier
+from darkflow.net.flow import predict
+
 
 class VSAutoencoder:
     
-    def __init__(self):
+    def __init__(self, x_train, y_train, cv, njobs):
         '''
-        Initialize all models
+        Initialize all models and runs grid search on SVM
         '''
+        self.svm = None
         self.encoder = None
         self.decoder = None
         self.autoencoder = None
+        self.svm_history = []
     
-    def run_autoencoder(self, x_train, enc_dim, nepochs):
+        self.x_train = x_train
+        self.y_train = y_train
+         
+        self.svm = SVMClassifier()
+        self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
+        
+    def run_autoencoder(self, enc_dim, nepochs, results_path):
         '''
         Builds and trains autoencoder model
         
-        @param io_dim: autoencoder input/output size
         @param enc_dim: encoding size
         @param nepochs: number of epochs
+        @param results_path: string with path to svm save results under
         @return object with training details and history
         '''
-        input_fts = Input(shape=(x_train.shape[1],))
+        
+        def svm_callback(epoch, logs):
+            '''
+            Runs SVM and saves prediction results
+            
+            @param epoch: default callback parameter. Epoch index
+            @param logs:default callback parameter. Loss result
+            '''
+            self.svm.model.best_estimator_.fit(self.x_train, self.y_train)
+            pred_dict, prediction = self.svm.predict(self.x_train, self.y_train)
+            self.svm_history.append(pred_dict)
+            
+            if epoch == nepochs - 1:
+                self.svm.save_results(prediction, results_path, 
+                                      {'epoch': epoch + 1, 'AE Loss': logs})
+    
+        input_fts = Input(shape=(self.x_train.shape[1],))
         
         encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
@@ -50,18 +80,21 @@ class VSAutoencoder:
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
         decoded = Dense(1426, activation='relu')(decoded)
-        decoded = Dense(x_train.shape[1], activation='relu')(decoded)
+        decoded = Dense(self.x_train.shape[1], activation='relu')(decoded)
 
         self.autoencoder = Model(inputs=input_fts, outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
         
-        history =  self.autoencoder.fit(x_train, 
-                                        x_train,
+        svm = LambdaCallback(on_epoch_end=svm_callback)
+        
+        history =  self.autoencoder.fit(self.x_train, 
+                                        self.x_train,
                                         epochs=nepochs,
                                         batch_size=256,
                                         shuffle=True,
                                         verbose=1,
-                                        validation_split=0.2)
+                                        validation_split=0.2,
+                                        callbacks=[svm])
         
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)

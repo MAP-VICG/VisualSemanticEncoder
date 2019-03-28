@@ -38,6 +38,7 @@ def run_encoder(X, Y, res_path):
     @param X: data set
     @param Y: labels set
     @param res_path: results path to save results under
+    @return: dictionary with svm results
     '''
     x_train, x_test, _, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
@@ -53,7 +54,19 @@ def run_encoder(X, Y, res_path):
     ae.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, 
                                  os.path.join(res_path, 'ae_distribution.png'))
     clear_memmory()
+    
+    return ae.svm_history
 
+def plot_classification_results(results_dict):
+    '''
+    Plots classification results for each model type
+    
+    @param results_dict: dictionary with classification results
+    '''
+    for key in results_dict.keys():
+        pass
+
+ 
 def main():
     fls_path = os.path.join(os.getcwd(), '_files/awa2')
     fts_path = os.path.join(fls_path, 'features/ResNet101')
@@ -68,11 +81,15 @@ def main():
     sem_fts = normalize(parser.get_semantic_features(ann_path, 
                                                      PredicateType.CONTINUOUS) + 1, 
                                                      order=1, axis=1)
-    
+    class_dict = dict()
     Y = parser.get_labels()
-    run_encoder(vis_fts, Y, os.path.join(res_path, 'vis'))
-    run_encoder(sem_fts, Y, os.path.join(res_path, 'sem'))
-    run_encoder(parser.concatenate_features(vis_fts, sem_fts), Y, os.path.join(res_path, 'con'))
+    
+    class_dict['vis'] = run_encoder(vis_fts, Y, os.path.join(res_path, 'vis'))
+    class_dict['sem'] =run_encoder(sem_fts, Y, os.path.join(res_path, 'sem'))
+    class_dict['con'] =run_encoder(parser.concatenate_features(vis_fts, sem_fts), Y, 
+                                   os.path.join(res_path, 'con'))
+    
+    plot_classification_results(class_dict)
 
 if __name__ == '__main__':
     config = tf.ConfigProto(log_device_placement=True)
