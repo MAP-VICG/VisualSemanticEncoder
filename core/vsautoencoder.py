@@ -23,7 +23,6 @@ from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 
 from core.vsclassifier import SVMClassifier
-from darkflow.net.flow import predict
 
 
 class VSAutoencoder:
