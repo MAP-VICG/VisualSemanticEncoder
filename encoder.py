@@ -26,7 +26,7 @@ from core.vsclassifier import SVMClassifier
 
 
 ENC_DIM = 32
-EPOCHS = 15 # TODO
+EPOCHS = 150
 
 def clear_memmory():
     '''
@@ -48,7 +48,7 @@ def run_encoder(X, Y, res_path):
     '''
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
-    ae = VSAutoencoder(x_train, x_test, y_train, y_test, 2, 2) #TODO
+    ae = VSAutoencoder(x_train, x_test, y_train, y_test, 5, -1)
     history = ae.run_autoencoder(enc_dim=ENC_DIM, nepochs=EPOCHS, 
                                  results_path=os.path.join(res_path, 'svm_ae_class.txt'))
     
@@ -75,7 +75,7 @@ def run_svm(X, Y, res_path):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
     svm = SVMClassifier()
-    svm.run_classifier(x_train, y_train, 2, 2) # TODO
+    svm.run_classifier(x_train, y_train, 5, -1)
     
     svm.model.best_estimator_.fit(x_train, y_train)
     pred_dict, prediction = svm.predict(x_test, y_test)
@@ -122,7 +122,7 @@ def plot_classification_results(results_dict, ae_results_dict, results_path):
 
  
 def main():
-    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2') # TODO
+    fls_path = os.path.join(os.getcwd(), '_files/awa2')
     fts_path = os.path.join(fls_path, 'features/ResNet101')
     res_path = os.path.join(fls_path, 'results')
     ann_path = os.path.join(fls_path, 'base')
