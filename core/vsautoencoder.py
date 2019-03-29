@@ -27,9 +27,16 @@ from core.vsclassifier import SVMClassifier
 
 class VSAutoencoder:
     
-    def __init__(self, x_train, y_train, cv, njobs):
+    def __init__(self, x_train, x_test, y_train, y_test, cv, njobs):
         '''
         Initialize all models and runs grid search on SVM
+        
+        @param x_train: 2D numpy array with training set
+        @param x_test: 2D numpy array with test set
+        @param y_train: 1D numpy array with training labels
+        @param y_test: 1D numpy array with test labels
+        @param cv: grid search number of folds in cross validation
+        @param njobs: grid search number of jobs to run in parallel
         '''
         self.svm = None
         self.encoder = None
@@ -39,6 +46,8 @@ class VSAutoencoder:
     
         self.x_train = x_train
         self.y_train = y_train
+        self.x_test = x_test
+        self.y_test = y_test
          
         self.svm = SVMClassifier()
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
@@ -60,8 +69,8 @@ class VSAutoencoder:
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
-            self.svm.model.best_estimator_.fit(self.x_train, self.y_train)
-            pred_dict, prediction = self.svm.predict(self.x_train, self.y_train)
+            self.svm.model.best_estimator_.fit(self.encoder.predict(self.x_train), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict(self.x_test), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
@@ -84,17 +93,6 @@ class VSAutoencoder:
         self.autoencoder = Model(inputs=input_fts, outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
         
-        svm = LambdaCallback(on_epoch_end=svm_callback)
-        
-        history =  self.autoencoder.fit(self.x_train, 
-                                        self.x_train,
-                                        epochs=nepochs,
-                                        batch_size=256,
-                                        shuffle=True,
-                                        verbose=1,
-                                        validation_split=0.2,
-                                        callbacks=[svm])
-        
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)
         decoder_layer = self.autoencoder.layers[-3](decoder_layer)
@@ -104,6 +102,16 @@ class VSAutoencoder:
         self.encoder = Model(input_fts, encoded)
         self.decoder = Model(encoded_input, decoder_layer)
         
+        svm = LambdaCallback(on_epoch_end=svm_callback)
+        
+        history = self.autoencoder.fit(self.x_train, 
+                                       self.x_train,
+                                       epochs=nepochs,
+                                       batch_size=256,
+                                       shuffle=True,
+                                       verbose=1,
+                                       validation_split=0.2,
+                                       callbacks=[svm])
         return history
     
     def plot_loss(self, history, results_path):
@@ -203,17 +211,17 @@ class VSAutoencoder:
             ax = plt.subplot(331)
             ax.set_title('PCA - Input')
             input_fts = pca.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
             
             ax = plt.subplot(332)
             ax.set_title('PCA - Encoding')
             encoding_fts = pca.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
              
             ax = plt.subplot(333)
             ax.set_title('PCA - Output')
             output_fts = pca.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
         except ValueError:
             print('>> ERROR: PCA could not be computed')
             
@@ -223,17 +231,17 @@ class VSAutoencoder:
             ax = plt.subplot(334)
             ax.set_title('TSNE - Input')
             input_fts = tsne.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
 
             ax = plt.subplot(335)
             ax.set_title('TSNE - Encoding')
             encoding_fts = tsne.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
                          
             ax = plt.subplot(336)
             ax.set_title('TSNE - Output')
             output_fts = tsne.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv')  
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))  
         except ValueError:
             print('>> ERROR: TSNE could not be computed')
             
@@ -243,17 +251,17 @@ class VSAutoencoder:
             ax = plt.subplot(337)
             ax.set_title('LDA - Input')
             input_fts = lda.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
             
             ax = plt.subplot(338)
             ax.set_title('LDA - Encoding')
             encoding_fts = lda.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
             
             ax = plt.subplot(339)
             ax.set_title('LDA - Output')
             output_fts = lda.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv')
+            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
         except ValueError:
             print('>> ERROR: LDA could not be computed')
         

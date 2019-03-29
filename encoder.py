@@ -22,6 +22,11 @@ from keras.backend.tensorflow_backend import set_session
 from core.featuresparser import FeaturesParser
 from core.annotationsparser import PredicateType
 from core.vsautoencoder import VSAutoencoder
+from core.vsclassifier import SVMClassifier
+
+
+ENC_DIM = 32
+EPOCHS = 15 # TODO
 
 def clear_memmory():
     '''
@@ -43,9 +48,9 @@ def run_encoder(X, Y, res_path):
     '''
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
-    ae = VSAutoencoder(x_train, y_train, 5, -1)
-    history = ae.run_autoencoder(enc_dim=32, nepochs=150, 
-                                 results_path=os.path.join(res_path, 'svm_prediction.txt'))
+    ae = VSAutoencoder(x_train, x_test, y_train, y_test, 2, 2) #TODO
+    history = ae.run_autoencoder(enc_dim=ENC_DIM, nepochs=EPOCHS, 
+                                 results_path=os.path.join(res_path, 'svm_ae_class.txt'))
     
     encoded_fts = ae.encoder.predict(x_test)
     decoded_fts = ae.decoder.predict(encoded_fts)
@@ -59,26 +64,53 @@ def run_encoder(X, Y, res_path):
     
     return ae.svm_history
 
-def plot_classification_results(results_dict, results_path):
+def run_svm(X, Y, res_path):
+    '''
+    Runs SVM and saves results
+    
+    @param X: 2D numpy array with data set
+    @param Y: 1D numpy array with labels
+    @param res_path: string with path to save results under 
+    '''
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
+    
+    svm = SVMClassifier()
+    svm.run_classifier(x_train, y_train, 2, 2) # TODO
+    
+    svm.model.best_estimator_.fit(x_train, y_train)
+    pred_dict, prediction = svm.predict(x_test, y_test)
+    svm.save_results(prediction, os.path.join(res_path, 'svm_class.txt'))
+    
+    return pred_dict
+    
+
+def plot_classification_results(results_dict, ae_results_dict, results_path):
     '''
     Plots classification results for each model type
     
     @param results_dict: dictionary with classification results
+    @param ae_results_dict: dictionary with classification results for autoencoder
     @param results_path: string with full path to save results under
     '''
     try:
         plt.figure()
-        plt.rcParams.update({'font.size': 6})
-        plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        plt.rcParams.update({'font.size': 8})
                 
         for key in results_dict.keys():
-            learning_curve = [value['weighted avg']['recall'] for value in results_dict[key]]
+            prediction = [results_dict[key]['weighted avg']['recall'] for _ in range(EPOCHS)]
+            plt.plot(prediction, linestyle='dashed')
+        
+        for key in ae_results_dict.keys():
+            learning_curve = [value['weighted avg']['recall'] for value in ae_results_dict[key]]
             plt.plot(learning_curve)
             
         plt.xlabel('Epochs')
         plt.ylabel('Weighted Avg - Recall')
         plt.title('SVM Prediction')
-        plt.legend(['ae_' + k for k in results_dict.keys()], loc='upper right')
+        
+        lg = list(results_dict.keys())
+        lg.extend(ae_results_dict.keys())
+        plt.legend(lg, loc='upper right')
         
         root_path = os.sep.join(results_path.split(os.sep)[:-1])
         if not os.path.isdir(root_path):
@@ -90,7 +122,7 @@ def plot_classification_results(results_dict, results_path):
 
  
 def main():
-    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2')
+    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2') # TODO
     fts_path = os.path.join(fls_path, 'features/ResNet101')
     res_path = os.path.join(fls_path, 'results')
     ann_path = os.path.join(fls_path, 'base')
@@ -103,15 +135,21 @@ def main():
     sem_fts = normalize(parser.get_semantic_features(ann_path, 
                                                      PredicateType.CONTINUOUS) + 1, 
                                                      order=1, axis=1)
+    con_fts = parser.concatenate_features(vis_fts, sem_fts)
+    
     class_dict = dict()
+    ae_class_dict = dict()
     Y = parser.get_labels()
     
-    class_dict['vis'] = run_encoder(vis_fts, Y, os.path.join(res_path, 'vis'))
-    class_dict['sem'] =run_encoder(sem_fts, Y, os.path.join(res_path, 'sem'))
-    class_dict['con'] =run_encoder(parser.concatenate_features(vis_fts, sem_fts), Y, 
-                                   os.path.join(res_path, 'con'))
+    class_dict['vis'] = run_svm(vis_fts, Y, os.path.join(res_path, 'vis'))
+    class_dict['sem'] = run_svm(sem_fts, Y, os.path.join(res_path, 'sem'))
+    class_dict['con'] = run_svm(con_fts, Y, os.path.join(res_path, 'con'))
     
-    plot_classification_results(class_dict, os.path.join(res_path, 'svm_prediction.png'))
+    ae_class_dict['ae_vis'] = run_encoder(vis_fts, Y, os.path.join(res_path, 'vis'))
+    ae_class_dict['ae_sem'] = run_encoder(sem_fts, Y, os.path.join(res_path, 'sem'))
+    ae_class_dict['ae_con'] = run_encoder(con_fts, Y, os.path.join(res_path, 'con'))
+    
+    plot_classification_results(class_dict, ae_class_dict, os.path.join(res_path, 'svm_prediction.png'))
 
 if __name__ == '__main__':
     config = tf.ConfigProto(log_device_placement=True)

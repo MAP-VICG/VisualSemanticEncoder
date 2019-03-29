@@ -83,8 +83,9 @@ class SVMClassifier:
                 f.write(prediction)
                 f.write('\nbest parameters: %s' % str(self.model.best_params_))
                 
-                for key in appendix.keys():
-                    f.write('\n%s: %s' % (key, str(appendix[key])))
+                if appendix:
+                    for key in appendix.keys():
+                        f.write('\n%s: %s' % (key, str(appendix[key])))
                     
         except (IsADirectoryError, OSError):
             print('>> ERROR: could not save prediction results under %s' % results_path)

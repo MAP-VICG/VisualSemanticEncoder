@@ -48,7 +48,7 @@ class VSAutoencoderTests(unittest.TestCase):
         cls.io_dim = x_train.shape[1]
         cls.nexamples = x_train.shape[0]
         
-        cls.ae = VSAutoencoder(x_train, y_train, cv=2, njobs=2)
+        cls.ae = VSAutoencoder(x_train, cls.x_test, y_train, cls.y_test, cv=2, njobs=2)
         cls.history = cls.ae.run_autoencoder(cls.enc_dim, 15, 
                                              os.path.join(cls.res_path, 'ae_svm_classification.txt'))
         
