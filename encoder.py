@@ -25,7 +25,7 @@ from core.vsautoencoder import VSAutoencoder
 from core.vsclassifier import SVMClassifier
 
 
-ENC_DIM = 32
+ENC_DIM = 128
 EPOCHS = 150
 
 def clear_memmory():
@@ -49,7 +49,7 @@ def run_encoder(X, Y, res_path):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
     
     ae = VSAutoencoder(x_train, x_test, y_train, y_test, 5, -1)
-    history = ae.run_autoencoder(enc_dim=ENC_DIM, nepochs=EPOCHS, 
+    history = ae.run_autoencoder(enc_dim=min(ENC_DIM, X.shape[1]), nepochs=EPOCHS, 
                                  results_path=os.path.join(res_path, 'svm_ae_class.txt'))
     
     encoded_fts = ae.encoder.predict(x_test)

@@ -14,7 +14,7 @@ import os
 import numpy as np
 from random import randint
 from keras.models import Model
-from keras.layers import Input, Dense
+from keras.layers import Input, Dense, BatchNormalization
 from keras.callbacks import LambdaCallback
 
 from matplotlib import pyplot as plt
@@ -83,7 +83,9 @@ class VSAutoencoder:
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
+        encoded = BatchNormalization(axis=1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
+        encoded = BatchNormalization(axis=1, momentum=0.99, epsilon=0.001)(encoded)
         
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
@@ -103,7 +105,7 @@ class VSAutoencoder:
         self.decoder = Model(encoded_input, decoder_layer)
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
-        
+        self.x_train += np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)
         history = self.autoencoder.fit(self.x_train, 
                                        self.x_train,
                                        epochs=nepochs,
@@ -208,17 +210,17 @@ class VSAutoencoder:
             plt.subplots_adjust(wspace=0.5, hspace=0.5)
             pca = PCA(n_components=2)
              
-            ax = plt.subplot(331)
+            ax = plt.subplot(231)
             ax.set_title('PCA - Input')
             input_fts = pca.fit_transform(input_set)
             plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
             
-            ax = plt.subplot(332)
+            ax = plt.subplot(232)
             ax.set_title('PCA - Encoding')
             encoding_fts = pca.fit_transform(encoding)
             plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
              
-            ax = plt.subplot(333)
+            ax = plt.subplot(233)
             ax.set_title('PCA - Output')
             output_fts = pca.fit_transform(output_set)
             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
@@ -228,42 +230,42 @@ class VSAutoencoder:
         try:
             tsne = TSNE(n_components=2)
              
-            ax = plt.subplot(334)
+            ax = plt.subplot(234)
             ax.set_title('TSNE - Input')
             input_fts = tsne.fit_transform(input_set)
             plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
 
-            ax = plt.subplot(335)
+            ax = plt.subplot(235)
             ax.set_title('TSNE - Encoding')
             encoding_fts = tsne.fit_transform(encoding)
             plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
                          
-            ax = plt.subplot(336)
+            ax = plt.subplot(236)
             ax.set_title('TSNE - Output')
             output_fts = tsne.fit_transform(output_set)
             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))  
         except ValueError:
             print('>> ERROR: TSNE could not be computed')
             
-        try:
-            lda = LatentDirichletAllocation(n_components=2)
-            
-            ax = plt.subplot(337)
-            ax.set_title('LDA - Input')
-            input_fts = lda.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-            
-            ax = plt.subplot(338)
-            ax.set_title('LDA - Encoding')
-            encoding_fts = lda.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-            
-            ax = plt.subplot(339)
-            ax.set_title('LDA - Output')
-            output_fts = lda.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-        except ValueError:
-            print('>> ERROR: LDA could not be computed')
+#         try:
+#             lda = LatentDirichletAllocation(n_components=2)
+#             
+#             ax = plt.subplot(337)
+#             ax.set_title('LDA - Input')
+#             input_fts = lda.fit_transform(input_set)
+#             plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+#             
+#             ax = plt.subplot(338)
+#             ax.set_title('LDA - Encoding')
+#             encoding_fts = lda.fit_transform(encoding)
+#             plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+#             
+#             ax = plt.subplot(339)
+#             ax.set_title('LDA - Output')
+#             output_fts = lda.fit_transform(output_set)
+#             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+#         except ValueError:
+#             print('>> ERROR: LDA could not be computed')
         
         try:
             root_path = os.sep.join(results_path.split(os.sep)[:-1])
