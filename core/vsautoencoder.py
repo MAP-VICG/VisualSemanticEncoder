@@ -12,6 +12,7 @@ Autoencoder for visual and semantic features of images
 
 import os
 import numpy as np
+import keras.backend as K
 from random import randint
 from keras.models import Model
 from keras.layers import Input, Dense, BatchNormalization
@@ -20,7 +21,7 @@ from keras.callbacks import LambdaCallback
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-from sklearn.decomposition import LatentDirichletAllocation
+# from sklearn.decomposition import LatentDirichletAllocation
 
 from core.vsclassifier import SVMClassifier
 
@@ -61,6 +62,8 @@ class VSAutoencoder:
         @param results_path: string with path to svm save results under
         @return object with training details and history
         '''
+        V = 0.7
+        S = 0.3
         
         def svm_callback(epoch, logs):
             '''
@@ -77,15 +80,28 @@ class VSAutoencoder:
                 self.svm.save_results(prediction, results_path, 
                                       {'epoch': epoch + 1, 'AE Loss': logs})
     
+        def loss_split_mse(y_true, y_pred):
+            '''
+            Customer loss function where the MSE is computed separately over the visual features and
+            semantic features. S and V are the weights of each type of feature
+            '''
+            V_mask = np.ones((2133)) * V
+            V_mask[2048:2113] = 0
+            S_mask = np.ones((2133)) * S
+            S_mask[0:2048] = 0
+            
+            return K.mean(K.square((y_pred - y_true) * V_mask) , axis=-1) \
+                + K.mean(K.square((y_pred - y_true) * S_mask) , axis=-1)
+
         input_fts = Input(shape=(self.x_train.shape[1],))
         
         encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
-        encoded = BatchNormalization(axis=1, momentum=0.99, epsilon=0.001)(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
-        encoded = BatchNormalization(axis=1, momentum=0.99, epsilon=0.001)(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
@@ -93,8 +109,11 @@ class VSAutoencoder:
         decoded = Dense(self.x_train.shape[1], activation='relu')(decoded)
 
         self.autoencoder = Model(inputs=input_fts, outputs=decoded)
-        self.autoencoder.compile(optimizer='adam', loss='mse')
-        
+        if self.x_train.shape[1] == 2133:
+            self.autoencoder.compile(optimizer='adam', loss=loss_split_mse)
+        else:
+            self.autoencoder.compile(optimizer='adam', loss='mse')
+            
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)
         decoder_layer = self.autoencoder.layers[-3](decoder_layer)
