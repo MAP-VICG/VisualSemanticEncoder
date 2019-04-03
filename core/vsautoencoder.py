@@ -124,8 +124,8 @@ class VSAutoencoder:
         self.decoder = Model(encoded_input, decoder_layer)
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
-        self.x_train += np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)
-        history = self.autoencoder.fit(self.x_train, 
+        
+        history = self.autoencoder.fit(self.x_train + np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape), 
                                        self.x_train,
                                        epochs=nepochs,
                                        batch_size=256,

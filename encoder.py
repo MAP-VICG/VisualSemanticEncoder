@@ -96,9 +96,10 @@ def plot_classification_results(results_dict, ae_results_dict, results_path):
         plt.figure()
         plt.rcParams.update({'font.size': 8})
                 
-        for key in results_dict.keys():
+        styles = ['dashed', 'dotted', 'dashdot']
+        for i, key in enumerate(results_dict.keys()):
             prediction = [results_dict[key]['weighted avg']['recall'] for _ in range(EPOCHS)]
-            plt.plot(prediction, linestyle='dashed')
+            plt.plot(prediction, linestyle=styles[i])
         
         for key in ae_results_dict.keys():
             learning_curve = [value['weighted avg']['recall'] for value in ae_results_dict[key]]
