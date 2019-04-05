@@ -36,20 +36,20 @@ def clear_memmory():
     K.clear_session()
     gc.collect()
 
-def run_encoder(X, Y, res_path):
+def run_encoder(x_train, x_test, y_train, y_test, res_path):
     '''
     Runs autoencoder and plots results. It automatically splits the data set into 
     training and test sets
     
-    @param X: data set
-    @param Y: labels set
-    @param res_path: results path to save results under
+    @param x_train: 2D numpy array with training data set
+    @param x_test: 2D numpy array with test data set
+    @param y_train: 1D numpy array with training labels
+    @param y_test: 1D numpy array with test labels
+    @param res_path: string with path to save results under 
     @return: dictionary with svm results
     '''
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
-    
     ae = VSAutoencoder(x_train, x_test, y_train, y_test, 5, -1)
-    history = ae.run_autoencoder(enc_dim=min(ENC_DIM, X.shape[1]), nepochs=EPOCHS, 
+    history = ae.run_autoencoder(enc_dim=min(ENC_DIM, x_train.shape[1]), nepochs=EPOCHS, 
                                  results_path=os.path.join(res_path, 'svm_ae_class.txt'))
     
     encoded_fts = ae.encoder.predict(x_test)
@@ -64,16 +64,16 @@ def run_encoder(X, Y, res_path):
     
     return ae.svm_history
 
-def run_svm(X, Y, res_path):
+def run_svm(x_train, x_test, y_train, y_test, res_path):
     '''
     Runs SVM and saves results
     
-    @param X: 2D numpy array with data set
-    @param Y: 1D numpy array with labels
+    @param x_train: 2D numpy array with training data set
+    @param x_test: 2D numpy array with test data set
+    @param y_train: 1D numpy array with training labels
+    @param y_test: 1D numpy array with test labels
     @param res_path: string with path to save results under 
     '''
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
-    
     svm = SVMClassifier()
     svm.run_classifier(x_train, y_train, 5, -1)
     
@@ -140,15 +140,25 @@ def main():
     
     class_dict = dict()
     ae_class_dict = dict()
-    Y = parser.get_labels()
+    labels = parser.get_labels()
     
-    class_dict['vis'] = run_svm(vis_fts, Y, os.path.join(res_path, 'vis'))
-    class_dict['sem'] = run_svm(sem_fts, Y, os.path.join(res_path, 'sem'))
-    class_dict['con'] = run_svm(con_fts, Y, os.path.join(res_path, 'con'))
+    x_train, x_test, y_train, y_test = train_test_split(vis_fts, labels, stratify=labels, 
+                                                        shuffle=True, random_state=42, test_size=0.2)
     
-    ae_class_dict['ae_vis'] = run_encoder(vis_fts, Y, os.path.join(res_path, 'vis'))
-    ae_class_dict['ae_sem'] = run_encoder(sem_fts, Y, os.path.join(res_path, 'sem'))
-    ae_class_dict['ae_con'] = run_encoder(con_fts, Y, os.path.join(res_path, 'con'))
+    class_dict['vis'] = run_svm(x_train, x_test, y_train, y_test, os.path.join(res_path, 'vis'))
+    ae_class_dict['ae_vis'] = run_encoder(x_train, x_test, y_train, y_test, os.path.join(res_path, 'vis'))
+    
+    x_train, x_test, y_train, y_test = train_test_split(sem_fts, labels, stratify=labels, 
+                                                        shuffle=True, random_state=42, test_size=0.2)
+    
+    class_dict['sem'] = run_svm(x_train, x_test, y_train, y_test, os.path.join(res_path, 'sem'))
+    ae_class_dict['ae_sem'] = run_encoder(x_train, x_test, y_train, y_test, os.path.join(res_path, 'sem'))
+    
+    x_train, x_test, y_train, y_test = train_test_split(con_fts, labels, stratify=labels, 
+                                                        shuffle=True, random_state=42, test_size=0.2)
+    
+    class_dict['con'] = run_svm(x_train, x_test, y_train, y_test, os.path.join(res_path, 'con'))
+    ae_class_dict['ae_con'] = run_encoder(x_train, x_test, y_train, y_test, os.path.join(res_path, 'con'))
     
     plot_classification_results(class_dict, ae_class_dict, os.path.join(res_path, 'svm_prediction.png'))
 
