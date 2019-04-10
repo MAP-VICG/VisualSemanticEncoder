@@ -15,7 +15,7 @@ import numpy as np
 import keras.backend as K
 from random import randint
 from keras.models import Model
-from keras.layers import Input, Dense, BatchNormalization
+from keras.layers import Input, Dense, BatchNormalization, Concatenate
 from keras.callbacks import LambdaCallback
 
 from matplotlib import pyplot as plt
@@ -45,10 +45,15 @@ class VSAutoencoder:
         self.autoencoder = None
         self.svm_history = []
     
-        self.x_train = x_train
+        self.x_train = x_train[:,:2048]
         self.y_train = y_train
-        self.x_test = x_test
+        self.x_test = x_test[:,:2048]
         self.y_test = y_test
+        
+        self.x_train_sem = x_train[:,2048:]
+        self.y_train_sem = y_train
+        self.x_test_sem = x_test[:,2048:]
+        self.y_test_sem = y_test
          
         self.svm = SVMClassifier()
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
@@ -72,8 +77,8 @@ class VSAutoencoder:
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
-            self.svm.model.best_estimator_.fit(self.encoder.predict(self.x_train), self.y_train)
-            pred_dict, prediction = self.svm.predict(self.encoder.predict(self.x_test), self.y_test)
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train, self.x_train_sem]), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test, self.x_test_sem]), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
@@ -94,10 +99,12 @@ class VSAutoencoder:
                 + K.mean(K.square((y_pred - y_true) * S_mask) , axis=-1)
 
         input_fts = Input(shape=(self.x_train.shape[1],))
+        input_sem_fts = Input(shape=(self.x_train_sem.shape[1],))
         
         encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
+        encoded = Concatenate()([encoded, input_sem_fts])
         
         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
@@ -108,11 +115,11 @@ class VSAutoencoder:
         decoded = Dense(1426, activation='relu')(decoded)
         decoded = Dense(self.x_train.shape[1], activation='relu')(decoded)
 
-        self.autoencoder = Model(inputs=input_fts, outputs=decoded)
-        if self.x_train.shape[1] == 2133:
-            self.autoencoder.compile(optimizer='adam', loss=loss_split_mse)
-        else:
-            self.autoencoder.compile(optimizer='adam', loss='mse')
+        self.autoencoder = Model(inputs=[input_fts, input_sem_fts], outputs=decoded)
+#         if self.x_train.shape[1] == 2133:
+#             self.autoencoder.compile(optimizer='adam', loss=loss_split_mse)
+#         else:
+        self.autoencoder.compile(optimizer='adam', loss='mse')
             
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)
@@ -120,15 +127,16 @@ class VSAutoencoder:
         decoder_layer = self.autoencoder.layers[-2](decoder_layer)
         decoder_layer = self.autoencoder.layers[-1](decoder_layer)
         
-        self.encoder = Model(input_fts, encoded)
+        self.encoder = Model(inputs=[input_fts,input_sem_fts], outputs=encoded)
         self.decoder = Model(encoded_input, decoder_layer)
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
-        history = self.autoencoder.fit(self.x_train + (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape))/100, 
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape))/10
+        history = self.autoencoder.fit([self.x_train + noise, self.x_train_sem], 
                                        self.x_train,
                                        epochs=nepochs,
-                                       batch_size=256,
+                                       batch_size=128,
                                        shuffle=True,
                                        verbose=1,
                                        validation_split=0.2,

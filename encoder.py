@@ -52,13 +52,13 @@ def run_encoder(x_train, x_test, y_train, y_test, res_path):
     history = ae.run_autoencoder(enc_dim=min(ENC_DIM, x_train.shape[1]), nepochs=EPOCHS, 
                                  results_path=os.path.join(res_path, 'svm_ae_class.txt'))
     
-    encoded_fts = ae.encoder.predict(x_test)
+    encoded_fts = ae.encoder.predict([x_test[:,:2048], x_test[:,2048:]])
     decoded_fts = ae.decoder.predict(encoded_fts)
     
     ae.plot_loss(history.history, os.path.join(res_path, 'ae_loss.png'))
-    ae.plot_encoding(x_test, encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
-    ae.plot_pca_vs_encoding(x_test, encoded_fts, os.path.join(res_path, 'ae_components.png'))
-    ae.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, 
+    ae.plot_encoding(x_test[:,:2048], encoded_fts, decoded_fts, os.path.join(res_path, 'ae_encoding.png'))
+    ae.plot_pca_vs_encoding(x_test[:,:2048], encoded_fts, os.path.join(res_path, 'ae_components.png'))
+    ae.plot_spatial_distribution(x_test[:,:2048], encoded_fts, decoded_fts, y_test, 
                                  os.path.join(res_path, 'ae_distribution.png'))
     clear_memmory()
     
@@ -150,7 +150,7 @@ def main():
     
     x_train, x_test, y_train, y_test = train_test_split(sem_fts, labels, stratify=labels, 
                                                         shuffle=True, random_state=42, test_size=0.2)
-    
+     
     class_dict['sem'] = run_svm(x_train, x_test, y_train, y_test, os.path.join(res_path, 'sem'))
     ae_class_dict['ae_sem'] = run_encoder(x_train, x_test, y_train, y_test, os.path.join(res_path, 'sem'))
     
