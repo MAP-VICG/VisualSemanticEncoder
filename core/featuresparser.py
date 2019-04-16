@@ -97,7 +97,8 @@ class FeaturesParser():
             return normalize(features, order=2, axis=norm_axis)
         return features
     
-    def concatenate_features(self, vis_fts, sem_fts):
+    @staticmethod
+    def concatenate_features(vis_fts, sem_fts):
         '''
         Concatenates semantic and visual features along x axis
         

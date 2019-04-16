@@ -12,30 +12,25 @@ Autoencoder for visual and semantic features of images
 
 import os
 import numpy as np
-import keras.backend as K
 from random import randint
 from keras.models import Model
-from keras.layers import Input, Dense, BatchNormalization, Concatenate
 from keras.callbacks import LambdaCallback
+from keras.layers import Input, Dense, BatchNormalization
 
-from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-# from sklearn.decomposition import LatentDirichletAllocation
+from matplotlib import pyplot as plt
 
 from core.vsclassifier import SVMClassifier
 
 
 class VSAutoencoder:
     
-    def __init__(self, x_train, x_test, y_train, y_test, cv, njobs):
+    def __init__(self, cv=5, njobs=1, **kwargs):
         '''
         Initialize all models and runs grid search on SVM
         
-        @param x_train: 2D numpy array with training set
-        @param x_test: 2D numpy array with test set
-        @param y_train: 1D numpy array with training labels
-        @param y_test: 1D numpy array with test labels
+        @param kwargs: dictionary with training and testing data
         @param cv: grid search number of folds in cross validation
         @param njobs: grid search number of jobs to run in parallel
         '''
@@ -45,16 +40,11 @@ class VSAutoencoder:
         self.autoencoder = None
         self.svm_history = []
     
-        self.x_train = x_train[:,:2048]
-        self.y_train = y_train
-        self.x_test = x_test[:,:2048]
-        self.y_test = y_test
-        
-        self.x_train_sem = x_train[:,2048:]
-        self.y_train_sem = y_train
-        self.x_test_sem = x_test[:,2048:]
-        self.y_test_sem = y_test
-         
+        self.x_train = kwargs.get('x_train')
+        self.y_train = kwargs.get('y_train')
+        self.x_test = kwargs.get('x_test')
+        self.y_test = kwargs.get('y_test')
+
         self.svm = SVMClassifier()
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
         
@@ -67,9 +57,6 @@ class VSAutoencoder:
         @param results_path: string with path to svm save results under
         @return object with training details and history
         '''
-        V = 0.7
-        S = 0.3
-        
         def svm_callback(epoch, logs):
             '''
             Runs SVM and saves prediction results
@@ -77,34 +64,18 @@ class VSAutoencoder:
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
-            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train, self.x_train_sem]), self.y_train)
-            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test, self.x_test_sem]), self.y_test)
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test]), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
-                self.svm.save_results(prediction, results_path, 
-                                      {'epoch': epoch + 1, 'AE Loss': logs})
-    
-        def loss_split_mse(y_true, y_pred):
-            '''
-            Customer loss function where the MSE is computed separately over the visual features and
-            semantic features. S and V are the weights of each type of feature
-            '''
-            V_mask = np.ones((2133)) * V
-            V_mask[2048:2113] = 0
-            S_mask = np.ones((2133)) * S
-            S_mask[0:2048] = 0
-            
-            return K.mean(K.square((y_pred - y_true) * V_mask) , axis=-1) \
-                + K.mean(K.square((y_pred - y_true) * S_mask) , axis=-1)
+                self.svm.save_results(prediction, results_path, {'epoch': epoch + 1, 'AE Loss': logs})
 
         input_fts = Input(shape=(self.x_train.shape[1],))
-        input_sem_fts = Input(shape=(self.x_train_sem.shape[1],))
         
         encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
-        encoded = Concatenate()([encoded, input_sem_fts])
         
         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
@@ -115,10 +86,8 @@ class VSAutoencoder:
         decoded = Dense(1426, activation='relu')(decoded)
         decoded = Dense(self.x_train.shape[1], activation='relu')(decoded)
 
-        self.autoencoder = Model(inputs=[input_fts, input_sem_fts], outputs=decoded)
-#         if self.x_train.shape[1] == 2133:
-#             self.autoencoder.compile(optimizer='adam', loss=loss_split_mse)
-#         else:
+        
+        self.autoencoder = Model(inputs=[input_fts], outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
             
         encoded_input = Input(shape=(enc_dim,))
@@ -126,14 +95,14 @@ class VSAutoencoder:
         decoder_layer = self.autoencoder.layers[-3](decoder_layer)
         decoder_layer = self.autoencoder.layers[-2](decoder_layer)
         decoder_layer = self.autoencoder.layers[-1](decoder_layer)
-        
-        self.encoder = Model(inputs=[input_fts,input_sem_fts], outputs=encoded)
+
+        self.encoder = Model(inputs=[input_fts], outputs=encoded)
         self.decoder = Model(encoded_input, decoder_layer)
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
-        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape))/10
-        history = self.autoencoder.fit([self.x_train + noise, self.x_train_sem], 
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) / 10
+        history = self.autoencoder.fit([self.x_train + noise], 
                                        self.x_train,
                                        epochs=nepochs,
                                        batch_size=128,
@@ -222,7 +191,7 @@ class VSAutoencoder:
             
     def plot_spatial_distribution(self, input_set, encoding, output_set, labels, results_path):
         '''
-        Plots the spatial distribution of input, encoding and output using PCA, TSNE and LDA
+        Plots the spatial distribution of input, encoding and output using PCA and TSNE
         
         @param input_set: autoencoder input
         @param encoding: autoencoder encoded features
@@ -273,26 +242,6 @@ class VSAutoencoder:
             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))  
         except ValueError:
             print('>> ERROR: TSNE could not be computed')
-            
-#         try:
-#             lda = LatentDirichletAllocation(n_components=2)
-#             
-#             ax = plt.subplot(337)
-#             ax.set_title('LDA - Input')
-#             input_fts = lda.fit_transform(input_set)
-#             plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-#             
-#             ax = plt.subplot(338)
-#             ax.set_title('LDA - Encoding')
-#             encoding_fts = lda.fit_transform(encoding)
-#             plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-#             
-#             ax = plt.subplot(339)
-#             ax.set_title('LDA - Output')
-#             output_fts = lda.fit_transform(output_set)
-#             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
-#         except ValueError:
-#             print('>> ERROR: LDA could not be computed')
         
         try:
             root_path = os.sep.join(results_path.split(os.sep)[:-1])
