@@ -15,7 +15,7 @@ import numpy as np
 from random import randint
 from keras.models import Model
 from keras.callbacks import LambdaCallback
-from keras.layers import Input, Dense, BatchNormalization
+from keras.layers import Input, Dense, BatchNormalization, Concatenate
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -24,7 +24,7 @@ from matplotlib import pyplot as plt
 from core.vsclassifier import SVMClassifier
 
 
-class VSAutoencoder:
+class VSAutoencoderSingleInput:
     
     def __init__(self, cv=5, njobs=1, **kwargs):
         '''
@@ -290,3 +290,98 @@ class VSAutoencoder:
             plt.savefig(results_path)
         except (OSError, ValueError):
             print('>> ERROR: PCA vs Encoding image could not be saved under %s' % results_path)
+            
+            
+class VSAutoencoderDoubleInput:
+    
+    def __init__(self, cv=5, njobs=1, **kwargs):
+        '''
+        Initialize all models and runs grid search on SVM
+        
+        @param kwargs: dictionary with training and testing data
+        @param cv: grid search number of folds in cross validation
+        @param njobs: grid search number of jobs to run in parallel
+        '''
+        self.svm = None
+        self.encoder = None
+        self.decoder = None
+        self.autoencoder = None
+        self.svm_history = []
+    
+        split = kwargs.get('split')
+        self.x_train_vis = kwargs.get('x_train')[:,:split]
+        self.x_test_vis = kwargs.get('x_test')[:,:split]
+        self.x_train_sem = kwargs.get('x_train')[:,split:]
+        self.x_test_sem = kwargs.get('x_test')[:,split:]
+        
+        self.y_train = kwargs.get('y_train')
+        self.y_test = kwargs.get('y_test')
+
+        self.svm = SVMClassifier()
+        self.svm.run_classifier(kwargs.get('x_train'), self.y_train, cv, njobs)
+        
+    def run_autoencoder(self, enc_dim, nepochs, results_path):
+        '''
+        Builds and trains autoencoder model
+        
+        @param enc_dim: encoding size
+        @param nepochs: number of epochs
+        @param results_path: string with path to svm save results under
+        @return object with training details and history
+        '''
+        def svm_callback(epoch, logs):
+            '''
+            Runs SVM and saves prediction results
+            
+            @param epoch: default callback parameter. Epoch index
+            @param logs:default callback parameter. Loss result
+            '''
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train_vis, self.x_train_sem]), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test_vis, self.x_test_sem]), self.y_test)
+            self.svm_history.append(pred_dict)
+            
+            if epoch == nepochs - 1:
+                self.svm.save_results(prediction, results_path, {'epoch': epoch + 1, 'AE Loss': logs})
+
+        input_vis_fts = Input(shape=(self.x_train_vis.shape[1],))
+        input_sem_fts = Input(shape=(self.x_train_sem.shape[1],))
+        
+        encoded = Dense(1426, activation='relu')(input_vis_fts)
+        encoded = Concatenate()([encoded, input_sem_fts])
+        encoded = Dense(732, activation='relu')(encoded)
+        encoded = Dense(328, activation='relu')(encoded)
+        
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+        encoded = Dense(enc_dim, activation='relu')(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+        
+        decoded = Dense(328, activation='relu')(encoded)
+        decoded = Dense(732, activation='relu')(decoded)
+        decoded = Dense(1426, activation='relu')(decoded)
+        decoded = Dense(self.x_train_vis.shape[1], activation='relu')(decoded)
+
+        
+        self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
+        self.autoencoder.compile(optimizer='adam', loss='mse')
+            
+        encoded_input = Input(shape=(enc_dim,))
+        decoder_layer = self.autoencoder.layers[-4](encoded_input)
+        decoder_layer = self.autoencoder.layers[-3](decoder_layer)
+        decoder_layer = self.autoencoder.layers[-2](decoder_layer)
+        decoder_layer = self.autoencoder.layers[-1](decoder_layer)
+
+        self.encoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=encoded)
+        self.decoder = Model(encoded_input, decoder_layer)
+        
+        svm = LambdaCallback(on_epoch_end=svm_callback)
+        
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_vis.shape)) / 10
+        history = self.autoencoder.fit([self.x_train_vis + noise, self.x_train_sem], 
+                                       self.x_train_vis,
+                                       epochs=nepochs,
+                                       batch_size=128,
+                                       shuffle=True,
+                                       verbose=1,
+                                       validation_split=0.2,
+                                       callbacks=[svm])
+        return history

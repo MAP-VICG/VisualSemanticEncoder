@@ -16,8 +16,8 @@ from math import floor
 from keras.utils import normalize
 from sklearn.model_selection import train_test_split
 
-from core.vsautoencoder import VSAutoencoder
 from core.featuresparser import FeaturesParser, PredicateType
+from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput
 
 
 class VSAutoencoderTests(unittest.TestCase):
@@ -45,12 +45,17 @@ class VSAutoencoderTests(unittest.TestCase):
         x_train, cls.x_test, y_train, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
         cls.enc_dim = 32
-        cls.io_dim = x_train.shape[1]
         cls.nexamples = x_train.shape[0]
         
-        cls.ae = VSAutoencoder(cv=2, njobs=2, x_train=x_train, x_test=cls.x_test, y_train=y_train, y_test=cls.y_test)
-        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 15, 
-                                             os.path.join(cls.res_path, 'ae_svm_classification.txt'))
+        cls.ae = VSAutoencoderSingleInput(cv=2, njobs=2, x_train=x_train, x_test=cls.x_test, 
+                                          y_train=y_train, y_test=cls.y_test)
+        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 15, os.path.join(cls.res_path, 
+                                                                           'ae_svm_classification.txt'))
+        
+        cls.ae_double = VSAutoencoderDoubleInput(cv=2, njobs=2, x_train=x_train, x_test=cls.x_test, 
+                                                 y_train=y_train, y_test=cls.y_test, split=2048)
+        cls.ae_double_history = cls.ae_double.run_autoencoder(cls.enc_dim, 15, os.path.join(cls.res_path, 
+                                                                                            'ae_svm_classification.txt'))
         
     def test_build_autoencoder(self):
         '''
@@ -59,13 +64,13 @@ class VSAutoencoderTests(unittest.TestCase):
         middle = floor(len(self.ae.autoencoder.layers) / 2)
            
         # input
-        self.assertEqual((None, self.io_dim), self.ae.autoencoder.layers[0].input_shape)
+        self.assertEqual((None, 2133), self.ae.autoencoder.layers[0].input_shape)
            
         # encoding
         self.assertEqual((None,  self.enc_dim), self.ae.autoencoder.layers[middle].output_shape)
            
         # output
-        self.assertEqual((None, self.io_dim), self.ae.autoencoder.layers[-1].output_shape)
+        self.assertEqual((None, 2133), self.ae.autoencoder.layers[-1].output_shape)
           
     def test_train_autoencoder(self):
         '''
@@ -76,6 +81,32 @@ class VSAutoencoderTests(unittest.TestCase):
         self.assertEqual(self.history.params['epochs'], len(self.history.history['loss']))
         self.assertEqual(floor(self.nexamples * 0.8), self.history.params['samples'])
         self.assertTrue(self.history.params['do_validation'])
+        
+    def test_build_autoencoder_double(self):
+        '''
+        Tests if autoencoder is built correctly
+        '''
+        middle = floor(len(self.ae_double.autoencoder.layers) / 2) + 1
+           
+        # input
+        self.assertEqual((None, 2048), self.ae_double.autoencoder.layers[0].input_shape)
+        self.assertEqual((None, 85), self.ae_double.autoencoder.layers[2].input_shape)
+           
+        # encoding
+        self.assertEqual((None,  self.enc_dim), self.ae_double.autoencoder.layers[middle].output_shape)
+           
+        # output
+        self.assertEqual((None, 2048), self.ae_double.autoencoder.layers[-1].output_shape)
+                 
+    def test_train_autoencoder_double(self):
+        '''
+        Tests if autoencoder can be trained
+        '''
+        self.assertEqual(self.ae_double_history.params['epochs'], len(self.ae_double_history.epoch))
+        self.assertEqual(self.ae_double_history.params['epochs'], len(self.ae_double_history.history['val_loss']))
+        self.assertEqual(self.ae_double_history.params['epochs'], len(self.ae_double_history.history['loss']))
+        self.assertEqual(floor(self.nexamples * 0.8), self.ae_double_history.params['samples'])
+        self.assertTrue(self.ae_double_history.params['do_validation'])
         
     def test_plot_loss(self):
         '''
