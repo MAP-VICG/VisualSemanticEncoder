@@ -33,6 +33,7 @@ def main():
     enc.encode_visual()
     enc.encode_semantic()
     enc.encode_concatenated()
+    enc.encode_split_features()
     enc.plot_classification_results()
     
 

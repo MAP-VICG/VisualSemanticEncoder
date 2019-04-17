@@ -292,7 +292,7 @@ class VSAutoencoderSingleInput:
             print('>> ERROR: PCA vs Encoding image could not be saved under %s' % results_path)
             
             
-class VSAutoencoderDoubleInput:
+class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
     
     def __init__(self, cv=5, njobs=1, **kwargs):
         '''

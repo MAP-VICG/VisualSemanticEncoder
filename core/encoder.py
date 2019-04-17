@@ -17,13 +17,13 @@ from keras.utils import normalize
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 
-from core.vsautoencoder import VSAutoencoder
+from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput
 from core.vsclassifier import SVMClassifier
 from core.featuresparser import FeaturesParser
 from core.annotationsparser import PredicateType
 
 
-class SemanticEncoder:
+class SemanticEncoderSingleInput:
     def __init__(self, epochs, encoding_dim, res_path, **kwargs):
         '''
         Initializes common parameters
@@ -57,8 +57,8 @@ class SemanticEncoder:
         
         @return dictionary with svm results
         '''
-        ae = VSAutoencoder(cv=5, njobs=-1, x_train=self.x_train, x_test=self.x_test, 
-                           y_train=self.y_train, y_test=self.y_test)
+        ae = VSAutoencoderSingleInput(cv=5, njobs=-1, x_train=self.x_train, x_test=self.x_test, 
+                                      y_train=self.y_train, y_test=self.y_test)
         
         history = ae.run_autoencoder(enc_dim=min(self.enc_dim, self.x_train.shape[1]), nepochs=self.epochs, 
                                      results_path=os.path.join(self.res_path, 'svm_ae_class.txt'))
@@ -96,7 +96,53 @@ class SemanticEncoder:
         '''
         self.clear_memmory()
         
+
+class SemanticEncoderDoubleInput(SemanticEncoderSingleInput):
+    def __init__(self, epochs, encoding_dim, res_path, **kwargs):
+        '''
+        Initializes common parameters
         
+        @param kwargs: dictionary with training and testing data
+        @param res_path: string with path to save results under 
+        @param encoding_dim: autoencoder encoding size
+        @param epochs: number of epochs
+        '''
+        self.epochs = epochs
+        self.enc_dim = encoding_dim
+        self.res_path = res_path
+        
+        self.split = kwargs.get('split')
+        self.x_train = kwargs.get('x_train')
+        self.x_test = kwargs.get('x_test')
+        self.y_train = kwargs.get('y_train')
+        self.y_test = kwargs.get('y_test')
+    
+    def run_encoder(self):
+        '''
+        Runs autoencoder and plots results. It automatically splits the data set into 
+        training and test sets
+        
+        @return dictionary with svm results
+        '''
+        ae = VSAutoencoderDoubleInput(cv=5, njobs=-1, x_train=self.x_train, x_test=self.x_test, 
+                                      y_train=self.y_train, y_test=self.y_test, split=self.split)
+        
+        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, self.x_train[:,:self.split].shape[1]), nepochs=self.epochs, 
+                                     results_path=os.path.join(self.res_path, 'svm_ae_class.txt'))
+        
+        encoded_fts = ae.encoder.predict([self.x_test[:,:self.split], self.x_test[:,self.split:]])
+        decoded_fts = ae.decoder.predict(encoded_fts)
+        
+        ae.plot_loss(history.history, os.path.join(self.res_path, 'ae_loss.png'))
+        ae.plot_encoding(self.x_test[:,:self.split], encoded_fts, decoded_fts, os.path.join(self.res_path, 'ae_encoding.png'))
+        ae.plot_pca_vs_encoding(self.x_test[:,:self.split], encoded_fts, os.path.join(self.res_path, 'ae_components.png'))
+        ae.plot_spatial_distribution(self.x_test[:,:self.split], encoded_fts, decoded_fts, self.y_test, 
+                                     os.path.join(self.res_path, 'ae_distribution.png'))
+        self.clear_memmory()
+        
+        return ae.svm_history
+    
+
 class EncodingFeatures:
     def __init__(self, fts_path, ann_path, res_path, epochs, enc_dim, pred_type=PredicateType.CONTINUOUS):
         '''
@@ -138,7 +184,7 @@ class EncodingFeatures:
                                                             random_state=self.seed, 
                                                             test_size=self.test_size)
     
-        enc = SemanticEncoder(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
+        enc = SemanticEncoderSingleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                               y_test=y_test, res_path=os.path.join(self.res_path, 'vis'))
         
         self.results_dict['vis'] = enc.run_svm()
@@ -155,7 +201,7 @@ class EncodingFeatures:
                                                             random_state=self.seed, 
                                                             test_size=self.test_size)
      
-        enc = SemanticEncoder(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
+        enc = SemanticEncoderSingleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                               y_test=y_test, res_path=os.path.join(self.res_path, 'sem'))
         
         self.results_dict['sem'] = enc.run_svm()
@@ -174,13 +220,31 @@ class EncodingFeatures:
                                                             random_state=self.seed, 
                                                             test_size=self.test_size)
     
-        enc = SemanticEncoder(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
+        enc = SemanticEncoderSingleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                               y_test=y_test, res_path=os.path.join(self.res_path, 'con'))
         
         self.results_dict['con'] = enc.run_svm()
         self.ae_results_dict['ae_con'] = enc.run_encoder()
-    
         
+    def encode_split_features(self):
+        '''
+        Runs encoding for semantic and visual features concatenated and saves 
+        results to dictionary
+        '''
+        con_fts = FeaturesParser.concatenate_features(self.vis_fts, self.sem_fts)
+        x_train, x_test, y_train, y_test = train_test_split(con_fts, 
+                                                            self.labels, 
+                                                            stratify=self.labels, 
+                                                            shuffle=True, 
+                                                            random_state=self.seed, 
+                                                            test_size=self.test_size)
+    
+        enc = SemanticEncoderDoubleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
+                                         y_test=y_test, split=self.vis_fts.shape[1], res_path=os.path.join(self.res_path, 'spt'))
+        
+        self.results_dict['spt'] = enc.run_svm()
+        self.ae_results_dict['ae_spt'] = enc.run_encoder()
+    
     def plot_classification_results(self):
         '''
         Plots classification results for each model type
@@ -192,7 +256,7 @@ class EncodingFeatures:
             plt.figure()
             plt.rcParams.update({'font.size': 8})
                     
-            styles = ['dashed', 'dotted', 'dashdot']
+            styles = ['dashed', 'dotted', 'dashdot', 'solid']
             for i, key in enumerate(self.results_dict.keys()):
                 prediction = [self.results_dict[key]['weighted avg']['recall'] for _ in range(self.epochs)]
                 plt.plot(prediction, linestyle=styles[i])
