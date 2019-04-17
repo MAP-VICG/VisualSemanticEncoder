@@ -26,7 +26,7 @@ class AnnotationsParserTests(unittest.TestCase):
         labels = parser.get_labels()
          
         self.assertTrue(isinstance(labels, np.ndarray))
-        self.assertEqual((250,), labels.shape)
+        self.assertEqual((1000,), labels.shape)
         for label in labels:
             self.assertTrue(label <= 50 and label >= 1)
              
@@ -46,7 +46,7 @@ class AnnotationsParserTests(unittest.TestCase):
         parser = FeaturesParser('./_mockfiles/awa2/features/ResNet101')
         features = parser.get_visual_features()
           
-        self.assertEqual((250, 2048), features.shape)
+        self.assertEqual((1000, 2048), features.shape)
         self.assertTrue(sum(sum(features)) != 0)
         self.assertTrue(sum(sum(features)) != 1)
           
@@ -66,7 +66,7 @@ class AnnotationsParserTests(unittest.TestCase):
         parser = FeaturesParser('./_mockfiles/awa2/features/ResNet101')
         features = parser.get_semantic_features('./_mockfiles/awa2/base/')
           
-        self.assertEqual((250, 85), features.shape)
+        self.assertEqual((1000, 85), features.shape)
         self.assertTrue(sum(sum(features)) > 0)
          
     def test_concatenate_features(self):
@@ -78,5 +78,5 @@ class AnnotationsParserTests(unittest.TestCase):
         sem_fts = parser.get_semantic_features('./_mockfiles/awa2/base/')
         features = parser.concatenate_features(vis_fts, sem_fts)
          
-        self.assertEqual((250, 2048 + 85), features.shape)
+        self.assertEqual((1000, 2048 + 85), features.shape)
         self.assertTrue(sum(sum(features)) > 0)
