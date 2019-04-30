@@ -15,6 +15,7 @@ import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 
 from core.encoder import EncodingFeatures
+from core.annotationsparser import PredicateType
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
     if not os.path.isdir(res_path):
         os.mkdir(res_path)
     
-    enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim)
+    enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
     enc.encode_visual()
     enc.encode_semantic()
     enc.encode_concatenated()

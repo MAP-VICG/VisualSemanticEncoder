@@ -14,8 +14,9 @@ import os
 import numpy as np
 from random import randint
 from keras.models import Model
+from keras import backend as K
 from keras.callbacks import LambdaCallback
-from keras.layers import Input, Dense, BatchNormalization, Concatenate
+from keras.layers import Input, Dense, BatchNormalization, Concatenate, Embedding, Flatten, Lambda, Conv1D
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -336,18 +337,23 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
-            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train_vis, self.x_train_sem]), self.y_train)
-            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test_vis, self.x_test_sem]), self.y_test)
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test_vis, np.expand_dims(self.x_test_sem, axis=-1)]), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
                 self.svm.save_results(prediction, results_path, {'epoch': epoch + 1, 'AE Loss': logs})
 
         input_vis_fts = Input(shape=(self.x_train_vis.shape[1],))
-        input_sem_fts = Input(shape=(self.x_train_sem.shape[1],))
+        input_sem_fts = Input(shape=(self.x_train_sem.shape[1],1))
+        embedding_sem = Conv1D(25, 85)(input_sem_fts)
+#         embedding_sem = Embedding(input_dim=2, output_dim=45, input_length=85)(input_sem_fts)
+#         embedding_sem = Lambda(lambda x: K.tf.Print(x, [x], 'Oi'))(embedding_sem)
         
-        encoded = Dense(1426, activation='relu')(input_vis_fts)
-        encoded = Concatenate()([encoded, input_sem_fts])
+        flatten_sem = Flatten()(embedding_sem)
+        encoded = Concatenate()([input_vis_fts, flatten_sem])
+        
+        encoded = Dense(1426, activation='relu')(encoded)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
@@ -376,7 +382,7 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
         noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_vis.shape)) / 10
-        history = self.autoencoder.fit([self.x_train_vis + noise, self.x_train_sem], 
+        history = self.autoencoder.fit([self.x_train_vis + noise, np.expand_dims(self.x_train_sem, axis=-1)], 
                                        self.x_train_vis,
                                        epochs=nepochs,
                                        batch_size=128,

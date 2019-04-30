@@ -11,6 +11,7 @@ Model to encode visual and semantic features of images
 '''
 import os
 import gc
+import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.utils import normalize
@@ -129,8 +130,8 @@ class SemanticEncoderDoubleInput(SemanticEncoderSingleInput):
         
         history = ae.run_autoencoder(enc_dim=min(self.enc_dim, self.x_train[:,:self.split].shape[1]), nepochs=self.epochs, 
                                      results_path=os.path.join(self.res_path, 'svm_ae_class.txt'))
-        
-        encoded_fts = ae.encoder.predict([self.x_test[:,:self.split], self.x_test[:,self.split:]])
+
+        encoded_fts = ae.encoder.predict([self.x_test[:,:self.split], np.expand_dims(self.x_test[:,self.split:], axis=-1)])
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         ae.plot_loss(history.history, os.path.join(self.res_path, 'ae_loss.png'))
