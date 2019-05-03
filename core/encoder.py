@@ -18,10 +18,11 @@ from keras.utils import normalize
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 
-from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput
 from core.vsclassifier import SVMClassifier
 from core.featuresparser import FeaturesParser
 from core.annotationsparser import PredicateType
+from utils.logwriter import Logger, MessageType
+from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput
 
 
 class SemanticEncoderSingleInput:
@@ -178,6 +179,8 @@ class EncodingFeatures:
         '''
         Runs encoding for visual features and saves results to dictionary
         '''
+        Logger().write_message('Encoding visual features...', MessageType.INF)
+        
         x_train, x_test, y_train, y_test = train_test_split(self.vis_fts, 
                                                             self.labels, 
                                                             stratify=self.labels, 
@@ -195,6 +198,8 @@ class EncodingFeatures:
         '''
         Runs encoding for semantic features and saves results to dictionary
         '''
+        Logger().write_message('Encoding semantic features...', MessageType.INF)
+        
         x_train, x_test, y_train, y_test = train_test_split(self.sem_fts, 
                                                             self.labels, 
                                                             stratify=self.labels, 
@@ -213,6 +218,7 @@ class EncodingFeatures:
         Runs encoding for semantic and visual features concatenated and saves 
         results to dictionary
         '''
+        Logger().write_message('Encoding concatenated features...', MessageType.INF)
         con_fts = FeaturesParser.concatenate_features(self.vis_fts, self.sem_fts)
         x_train, x_test, y_train, y_test = train_test_split(con_fts, 
                                                             self.labels, 
@@ -232,6 +238,8 @@ class EncodingFeatures:
         Runs encoding for semantic and visual features concatenated and saves 
         results to dictionary
         '''
+        Logger().write_message('Encoding split features...', MessageType.INF)
+        
         con_fts = FeaturesParser.concatenate_features(self.vis_fts, self.sem_fts)
         x_train, x_test, y_train, y_test = train_test_split(con_fts, 
                                                             self.labels, 
@@ -278,4 +286,4 @@ class EncodingFeatures:
             
             plt.savefig(res_path)
         except OSError:
-            print('>> ERROR: SVM plot could not be saved under %s' % res_path)
+            Logger().write_message('SVM plot could not be saved under %s.' % res_path, MessageType.ERR)

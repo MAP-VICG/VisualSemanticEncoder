@@ -9,20 +9,22 @@ Autoencoder for visual and semantic features of images
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
-
+import io
 import os
+import sys
 import numpy as np
 from random import randint
 from keras.models import Model
-from keras import backend as K
+# from keras import backend as K
 from keras.callbacks import LambdaCallback
-from keras.layers import Input, Dense, BatchNormalization, Concatenate, Embedding, Flatten, Lambda, Conv1D, Dropout
+from keras.layers import Input, Dense, BatchNormalization, Concatenate, Flatten, Conv1D#, Lambda, Embedding
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
 
 from core.vsclassifier import SVMClassifier
+from utils.logwriter import Logger, MessageType
 
 
 class VSAutoencoderSingleInput:
@@ -86,11 +88,19 @@ class VSAutoencoderSingleInput:
         decoded = Dense(732, activation='relu')(decoded)
         decoded = Dense(1426, activation='relu')(decoded)
         decoded = Dense(self.x_train.shape[1], activation='relu')(decoded)
-
-        
+     
         self.autoencoder = Model(inputs=[input_fts], outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
-            
+        
+        old_stdout = sys.stdout
+        sys.stdout = buffer = io.StringIO()
+        
+        self.autoencoder.summary()
+        
+        sys.stdout = old_stdout
+        
+        Logger().write_message(buffer.getvalue(), MessageType.INF)
+
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)
         decoder_layer = self.autoencoder.layers[-3](decoder_layer)
@@ -138,7 +148,7 @@ class VSAutoencoderSingleInput:
             
             plt.savefig(results_path)
         except OSError:
-            print('>> ERROR: Loss image could not be saved under %s' % results_path)
+            Logger().write_message('Loss image could not be saved under %s.' % results_path, MessageType.ERR)
     
     def plot_encoding(self, input_set, encoding, output_set, results_path):
         '''
@@ -188,7 +198,7 @@ class VSAutoencoderSingleInput:
             
             plt.savefig(results_path)
         except OSError:
-            print('>> ERROR: Error image could not be saved under %s' % results_path)
+            Logger().write_message('Error image could not be saved under %s.' % results_path, MessageType.ERR)
             
     def plot_spatial_distribution(self, input_set, encoding, output_set, labels, results_path):
         '''
@@ -222,7 +232,7 @@ class VSAutoencoderSingleInput:
             output_fts = pca.fit_transform(output_set)
             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
         except ValueError:
-            print('>> ERROR: PCA could not be computed')
+            Logger().write_message('PCA could not be computed.', MessageType.ERR)
             
         try:
             tsne = TSNE(n_components=2)
@@ -242,7 +252,7 @@ class VSAutoencoderSingleInput:
             output_fts = tsne.fit_transform(output_set)
             plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))  
         except ValueError:
-            print('>> ERROR: TSNE could not be computed')
+            Logger().write_message('TSNE could not be computed.', MessageType.ERR)
         
         try:
             root_path = os.sep.join(results_path.split(os.sep)[:-1])
@@ -251,7 +261,7 @@ class VSAutoencoderSingleInput:
 
             plt.savefig(results_path)
         except OSError:
-            print('>> ERROR: Scatter plots could not be saved under %s' % results_path)
+            Logger().write_message('Scatter plots could not be saved under %s.' % results_path, MessageType.ERR)
             
     def plot_pca_vs_encoding(self, input_set, encoding, results_path):
         '''
@@ -290,7 +300,8 @@ class VSAutoencoderSingleInput:
             
             plt.savefig(results_path)
         except (OSError, ValueError):
-            print('>> ERROR: PCA vs Encoding image could not be saved under %s' % results_path)
+            Logger().write_message('PCA vs Encoding image could not be saved under %s.' 
+                                   % results_path, MessageType.ERR)
             
             
 class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
@@ -337,8 +348,10 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
-            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
-            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test_vis, np.expand_dims(self.x_test_sem, axis=-1)]), self.y_test)
+            self.svm.model.best_estimator_.fit(
+                self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
+            pred_dict, prediction = self.svm.predict(self.encoder.predict(
+                [self.x_test_vis, np.expand_dims(self.x_test_sem, axis=-1)]), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
@@ -366,9 +379,17 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         decoded = Dense(1426, activation='relu')(decoded)
         decoded = Dense(self.x_train_vis.shape[1], activation='relu')(decoded)
 
-        
         self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
+        
+        old_stdout = sys.stdout
+        sys.stdout = buffer = io.StringIO()
+        
+        self.autoencoder.summary()
+        
+        sys.stdout = old_stdout
+        
+        Logger().write_message(buffer.getvalue(), MessageType.INF)
             
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)

@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from enum import Enum
 from os.path import join
+from utils.logwriter import Logger, MessageType
 
 
 class PredicateType(Enum):
@@ -48,7 +49,7 @@ class AnnotationsParser():
                 
             return labels
         except FileNotFoundError:
-            print('>> ERROR: file %s could not be found.' % file_path)
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return []
     
     def get_predicates(self):
@@ -64,7 +65,7 @@ class AnnotationsParser():
                 
             return predicates
         except FileNotFoundError:
-            print('>> ERROR: file %s could not be found.' % file_path)
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return []
         
     def get_attributes(self, ptype=PredicateType.BINARY):
@@ -92,5 +93,5 @@ class AnnotationsParser():
                                 index=self.get_labels(),
                                 columns=self.get_predicates())
         except FileNotFoundError:
-            print('>> ERROR: file %s could not be found.' % file_path)
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return None

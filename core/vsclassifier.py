@@ -14,6 +14,8 @@ from sklearn.svm import LinearSVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 
+from utils.logwriter import Logger, MessageType
+
 
 class SVMClassifier:
     
@@ -21,8 +23,9 @@ class SVMClassifier:
         '''
         Setting tuning parameters
         '''
-        self.tuning_params = {'C': [1, 10, 100, 1000]}
         self.model = None
+        self.tuning_params = {'C': [1, 10, 100, 1000]}
+        Logger().write_message('SVM tuning parameters are %s.' % str(self.tuning_params), MessageType.INF)
         
     def run_classifier(self, x_train, y_train, nfolds=5, njobs=None):
         '''
@@ -34,9 +37,9 @@ class SVMClassifier:
         @param njobs: number of jobs to run in parallel on Grid Search
         '''
         if nfolds < 2:
-            raise ValueError('>> ERROR: number of folds cannot be less than 2')
+            raise ValueError('Number of folds cannot be less than 2')
         
-        self.model = GridSearchCV(LinearSVC(verbose=0), 
+        self.model = GridSearchCV(LinearSVC(verbose=0, max_iter=1200), 
                                   self.tuning_params, cv=nfolds, 
                                   iid=False, scoring='recall_macro', n_jobs=njobs)
         
@@ -88,4 +91,4 @@ class SVMClassifier:
                         f.write('\n%s: %s' % (key, str(appendix[key])))
                     
         except (IsADirectoryError, OSError):
-            print('>> ERROR: could not save prediction results under %s' % results_path)
+            Logger().write_message('Could not save prediction results under %s.' % results_path, MessageType.ERR)

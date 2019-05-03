@@ -15,6 +15,7 @@ import numpy as np
 from os.path import join
 from keras.utils import normalize
 
+from utils.logwriter import Logger, MessageType
 from core.annotationsparser import AnnotationsParser, PredicateType
 
 
@@ -45,7 +46,7 @@ class FeaturesParser():
                 
             return labels
         except FileNotFoundError:
-            print('>> ERROR: file %s could not be found.' % file_path)
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return None
         
     def get_visual_features(self, norm=False, norm_axis=1):
@@ -66,12 +67,12 @@ class FeaturesParser():
                         features[i, j] = float(value)
                 
             if norm:
-                print('>> Normalizing visual features')
+                Logger().write_message('Normalizing visual features.', MessageType.INF)
                 return normalize(features, order=2, axis=norm_axis)
         
             return features
         except FileNotFoundError:
-            print('>> ERROR: file %s could not be found.' % file_path)
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return None
     
     def get_semantic_features(self, ann_path, ptype=PredicateType.BINARY, norm=False, norm_axis=1):
@@ -93,7 +94,7 @@ class FeaturesParser():
             features[idx, :] = att_map.loc[labels[label-1]].values
         
         if norm:
-            print('>> Normalizing semantic features')
+            Logger().write_message('Normalizing semantic features.', MessageType.INF)
             return normalize(features, order=2, axis=norm_axis)
         return features
     
