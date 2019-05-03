@@ -67,7 +67,14 @@ class VSAutoencoderSingleInput:
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
+            old_stdout = sys.stdout
+            sys.stdout = buffer = io.StringIO()
+            
             self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
+            
+            sys.stdout = old_stdout
+            Logger().write_message('Epoch %dSVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
+            
             pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test]), self.y_test)
             self.svm_history.append(pred_dict)
             
@@ -99,7 +106,7 @@ class VSAutoencoderSingleInput:
         
         sys.stdout = old_stdout
         
-        Logger().write_message(buffer.getvalue(), MessageType.INF)
+        Logger().write_message('Model summary:\n' + buffer.getvalue(), MessageType.INF)
 
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)
@@ -348,8 +355,15 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
             '''
+            old_stdout = sys.stdout
+            sys.stdout = buffer = io.StringIO()
+            
             self.svm.model.best_estimator_.fit(
                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
+            
+            sys.stdout = old_stdout
+            Logger().write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
+            
             pred_dict, prediction = self.svm.predict(self.encoder.predict(
                 [self.x_test_vis, np.expand_dims(self.x_test_sem, axis=-1)]), self.y_test)
             self.svm_history.append(pred_dict)
@@ -389,7 +403,7 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         
         sys.stdout = old_stdout
         
-        Logger().write_message(buffer.getvalue(), MessageType.INF)
+        Logger().write_message('Model summary:\n' + buffer.getvalue(), MessageType.INF)
             
         encoded_input = Input(shape=(enc_dim,))
         decoder_layer = self.autoencoder.layers[-4](encoded_input)

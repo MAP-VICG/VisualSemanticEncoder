@@ -66,7 +66,8 @@ class SVMClassifier:
             values = row.split()
             for idx, key in enumerate(keys):
                 pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
-                
+               
+        Logger().write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
         
     def save_results(self, prediction, results_path, appendix=None):
