@@ -25,14 +25,14 @@ def main():
     ann_path = os.path.join(fls_path, 'base')
     
     enc_dim = 128
-    epochs = 30
+    epochs = 50
 
     if not os.path.isdir(res_path):
         os.mkdir(res_path)
     
     enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
     enc.encode_visual()
-    enc.encode_semantic()
+#     enc.encode_semantic()
     enc.encode_concatenated()
     enc.encode_split_features()
     enc.plot_classification_results()

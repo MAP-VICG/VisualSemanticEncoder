@@ -243,7 +243,7 @@ class EncodingFeatures:
         enc = SemanticEncoderDoubleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                                          y_test=y_test, split=self.vis_fts.shape[1], res_path=os.path.join(self.res_path, 'spt'))
         
-        self.results_dict['spt'] = enc.run_svm()
+#         self.results_dict['spt'] = enc.run_svm()
         self.ae_results_dict['ae_spt'] = enc.run_encoder()
     
     def plot_classification_results(self):
@@ -257,7 +257,7 @@ class EncodingFeatures:
             plt.figure()
             plt.rcParams.update({'font.size': 8})
                     
-            styles = ['dashed', 'dotted', 'dashdot', 'solid']
+            styles = ['dashed', 'dotted', 'dashdot', 'dotted']
             for i, key in enumerate(self.results_dict.keys()):
                 prediction = [self.results_dict[key]['weighted avg']['recall'] for _ in range(self.epochs)]
                 plt.plot(prediction, linestyle=styles[i])

@@ -16,7 +16,7 @@ from random import randint
 from keras.models import Model
 from keras import backend as K
 from keras.callbacks import LambdaCallback
-from keras.layers import Input, Dense, BatchNormalization, Concatenate, Embedding, Flatten, Lambda, Conv1D
+from keras.layers import Input, Dense, BatchNormalization, Concatenate, Embedding, Flatten, Lambda, Conv1D, Dropout
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -346,7 +346,7 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
 
         input_vis_fts = Input(shape=(self.x_train_vis.shape[1],))
         input_sem_fts = Input(shape=(self.x_train_sem.shape[1],1))
-        embedding_sem = Conv1D(25, 85)(input_sem_fts)
+        embedding_sem = Conv1D(5, 25, use_bias=False, padding='same')(input_sem_fts)
 #         embedding_sem = Embedding(input_dim=2, output_dim=45, input_length=85)(input_sem_fts)
 #         embedding_sem = Lambda(lambda x: K.tf.Print(x, [x], 'Oi'))(embedding_sem)
         
