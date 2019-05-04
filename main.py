@@ -40,11 +40,11 @@ def main():
     log.write_message('The model will be trained for %d epochs' % epochs, MessageType.INF)
     
     enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
+    
     enc.encode_visual()
 #     enc.encode_semantic()
     enc.encode_concatenated()
     enc.encode_split_features()
-    
     enc.plot_classification_results()
     
     elapsed = time.time() - init_time

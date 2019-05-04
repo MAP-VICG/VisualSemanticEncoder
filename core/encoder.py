@@ -164,6 +164,7 @@ class EncodingFeatures:
             self.sem_fts = normalize(self.sem_fts + 1, order=1, axis=1)
         else:
             self.sem_fts = parser.get_semantic_features(ann_path, PredicateType.BINARY)
+            self.sem_fts = np.multiply(self.sem_fts, np.array([v for v in range(1, self.sem_fts.shape[1] + 1)]))
     
         self.seed = 42
         self.test_size = 0.2
@@ -276,22 +277,22 @@ class EncodingFeatures:
         try:
             plt.figure()
             plt.rcParams.update({'font.size': 8})
-                    
+            
+            lg = []        
             styles = ['dashed', 'dotted', 'dashdot', 'dotted']
             for i, key in enumerate(self.results_dict.keys()):
                 prediction = [self.results_dict[key]['weighted avg']['recall'] for _ in range(self.epochs)]
                 plt.plot(prediction, linestyle=styles[i])
+                lg.append(key)
             
             for key in self.ae_results_dict.keys():
                 learning_curve = [value['weighted avg']['recall'] for value in self.ae_results_dict[key]]
                 plt.plot(learning_curve)
+                lg.append(key)
                 
             plt.xlabel('Epochs')
             plt.ylabel('Weighted Avg - Recall')
             plt.title('SVM Prediction')
-            
-            lg = list(self.results_dict.keys())
-            lg.extend(self.ae_results_dict.keys())
             plt.legend(lg, loc='upper right')
             
             res_path = os.path.join(self.res_path, 'svm_prediction.png')
