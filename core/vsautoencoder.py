@@ -24,6 +24,7 @@ from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
 
 from core.vsclassifier import SVMClassifier
+from core.featuresparser import FeaturesParser
 from utils.logwriter import Logger, MessageType
 
 
@@ -391,7 +392,7 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
         decoded = Dense(1426, activation='relu')(decoded)
-        decoded = Dense(self.x_train_vis.shape[1], activation='relu')(decoded)
+        decoded = Dense(self.x_train_vis.shape[1] + self.x_train_sem.shape[1], activation='relu')(decoded)
 
         self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse')
@@ -417,8 +418,9 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
         noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_vis.shape)) / 10
+
         history = self.autoencoder.fit([self.x_train_vis + noise, np.expand_dims(self.x_train_sem, axis=-1)], 
-                                       self.x_train_vis,
+                                       FeaturesParser.concatenate_features(self.x_train_vis, self.x_train_sem),
                                        epochs=nepochs,
                                        batch_size=128,
                                        shuffle=True,

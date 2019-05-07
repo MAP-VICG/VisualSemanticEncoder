@@ -136,9 +136,9 @@ class SemanticEncoderDoubleInput(SemanticEncoderSingleInput):
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         ae.plot_loss(history.history, os.path.join(self.res_path, 'ae_loss.png'))
-        ae.plot_encoding(self.x_test[:,:self.split], encoded_fts, decoded_fts, os.path.join(self.res_path, 'ae_encoding.png'))
-        ae.plot_pca_vs_encoding(self.x_test[:,:self.split], encoded_fts, os.path.join(self.res_path, 'ae_components.png'))
-        ae.plot_spatial_distribution(self.x_test[:,:self.split], encoded_fts, decoded_fts, self.y_test, 
+        ae.plot_encoding(self.x_test, encoded_fts, decoded_fts, os.path.join(self.res_path, 'ae_encoding.png'))
+        ae.plot_pca_vs_encoding(self.x_test, encoded_fts, os.path.join(self.res_path, 'ae_components.png'))
+        ae.plot_spatial_distribution(self.x_test, encoded_fts, decoded_fts, self.y_test, 
                                      os.path.join(self.res_path, 'ae_distribution.png'))
         self.clear_memmory()
         
