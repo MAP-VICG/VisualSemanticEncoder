@@ -120,7 +120,7 @@ class VSAutoencoderSingleInput:
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
-        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) / 10
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) * 100
         history = self.autoencoder.fit([self.x_train + noise], 
                                        self.x_train,
                                        epochs=nepochs,
@@ -417,9 +417,10 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
         
-        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_vis.shape)) / 10
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_vis.shape)) * 100
+        noise_sem = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_sem.shape)) * 100
 
-        history = self.autoencoder.fit([self.x_train_vis + noise, np.expand_dims(self.x_train_sem, axis=-1)], 
+        history = self.autoencoder.fit([self.x_train_vis + noise, np.expand_dims(self.x_train_sem + noise_sem, axis=-1)], 
                                        FeaturesParser.concatenate_features(self.x_train_vis, self.x_train_sem),
                                        epochs=nepochs,
                                        batch_size=128,

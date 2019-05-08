@@ -23,13 +23,13 @@ from utils.logwriter import Logger, MessageType
 def main():
     init_time = time.time()
     
-    fls_path = os.path.join(os.getcwd(), '_files/awa2')
+    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2')
     fts_path = os.path.join(fls_path, 'features/ResNet101')
     res_path = os.path.join(fls_path, 'results')
     ann_path = os.path.join(fls_path, 'base')
     
     enc_dim = 128
-    epochs = 100
+    epochs = 10
 
     if not os.path.isdir(res_path):
         os.mkdir(res_path)
@@ -41,7 +41,7 @@ def main():
     
     enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
     
-    enc.encode_visual()
+#     enc.encode_visual()
 #     enc.encode_semantic()
     enc.encode_concatenated()
     enc.encode_split_features()
