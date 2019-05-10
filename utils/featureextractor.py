@@ -12,7 +12,10 @@ Extracts features from the specified layer from the ResNet50 model
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+
+from keras.models import Model
 from keras.preprocessing import image
+from keras.layers import Input, GlobalAveragePooling2D
 from keras.applications.resnet50 import ResNet50
 from keras.applications.resnet50 import preprocess_input, decode_predictions
 
@@ -59,7 +62,6 @@ class ImageParser():
         images = np.zeros((0, self.width, self.height, 3))
         
         for img_file in input_imgs:
-            print('Loading ' + img_file)
             images = np.vstack([images, self.preprocess_image(img_file)])
             
         return images
@@ -68,13 +70,17 @@ class ImageParser():
         '''
         Classifies an image with ResNet50 model trained on imagenet dataset
         
-        @param input_img: string with image complete path
+        @param input_img: string or list of strings with images complete path
         @param labels_only: if true returns only labels, otherwise returns labels and probabilities
         @result list of possible labels of the input image if labels_only is True or list 
         of labels and probabilities
         '''
         self.load_resnet()
-        batch = self.preprocess_batch([input_img])
+        if isinstance(input_img, list):
+            batch = self.preprocess_batch(input_img)
+        else:
+            batch = self.preprocess_image(input_img)
+            
         batch = preprocess_input(batch)
         labels = decode_predictions(self.model.predict(batch), top=3)[0]
 
@@ -88,11 +94,14 @@ class ImageParser():
         Gets the result of activations in a specific layer
         
         @param layer_name: string with layer name
-        @param input_img: string with image complete path
+        @param input_img: string or list of strings with image complete path
         @return output of activation filters of specified layer 
         '''
         self.load_resnet()
-        stimuli = self.preprocess_image(input_img)
+        if isinstance(input_img, list):
+            stimuli = self.preprocess_batch(input_img)
+        else:
+            stimuli = self.preprocess_image(input_img)
         
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())

@@ -71,3 +71,15 @@ class ImagesParserTests(unittest.TestCase):
         activations = self._parser.get_activations(layer_name, input_img)
         self._parser.plot_activations(activations[0,:,:,0:16], file_name)
         self.assertTrue(os.path.isfile(file_name))
+        
+    def test_get_imageset_features(self):
+        '''
+        Tests if features from all images in folder are retrieved and save to file
+        '''
+        layer_name = 'avg_pool'
+        input_folder = os.getcwd() + '/_mockfiles/awa2/images/'
+        images = [input_folder + img for img in os.listdir(input_folder)]
+        activations = self._parser.get_activations(layer_name, images)
+        
+        self.assertEquals((6, 2048), activations.shape)
+        

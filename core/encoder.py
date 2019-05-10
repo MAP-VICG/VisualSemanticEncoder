@@ -165,6 +165,12 @@ class EncodingFeatures:
         else:
             self.sem_fts = parser.get_semantic_features(ann_path, PredicateType.BINARY)
             self.sem_fts = np.multiply(self.sem_fts, np.array([v for v in range(1, self.sem_fts.shape[1] + 1)]))
+            
+            color_mask = np.zeros((self.sem_fts.shape[1],))
+            for k in range(0, 7):
+                color_mask[k] = 1
+                
+            self.sem_fts = np.multiply(self.sem_fts, np.array(color_mask))
     
         self.seed = 42
         self.test_size = 0.2
