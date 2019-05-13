@@ -41,7 +41,7 @@ def main():
     
     enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
     
-#     enc.encode_visual()
+    enc.encode_visual()
 #     enc.encode_semantic()
     enc.encode_concatenated()
     enc.encode_split_features()
