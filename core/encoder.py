@@ -167,9 +167,11 @@ class EncodingFeatures:
             self.sem_fts = np.multiply(self.sem_fts, np.array([v for v in range(1, self.sem_fts.shape[1] + 1)]))
             
             color_mask = np.zeros((self.sem_fts.shape[1],))
-            for k in range(0, 7):
+            for k in range(14, 18):
                 color_mask[k] = 1
-                
+            
+            color_mask[44] = 1
+            color_mask[45] = 1
             self.sem_fts = np.multiply(self.sem_fts, np.array(color_mask))
     
         self.seed = 42
