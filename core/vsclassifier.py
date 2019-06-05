@@ -39,11 +39,12 @@ class SVMClassifier:
         if nfolds < 2:
             raise ValueError('Number of folds cannot be less than 2')
         
-#         self.model = GridSearchCV(LinearSVC(verbose=0, max_iter=1200), 
-#                                   self.tuning_params, cv=nfolds, 
-#                                   iid=False, scoring='recall_macro', n_jobs=njobs)
         from sklearn.svm import SVC
-        self.model = SVC(gamma='auto')
+        self.model = GridSearchCV(SVC(verbose=0, gamma='auto', max_iter=1000), 
+                                  self.tuning_params, cv=nfolds, 
+                                  iid=False, scoring='recall_macro', n_jobs=njobs)
+        
+#         self.model = SVC(gamma='auto')
 #         self.model = LinearSVC(random_state=0, tol=1e-5)
         
         self.model.fit(x_train, y_train)
@@ -89,7 +90,7 @@ class SVMClassifier:
         try:
             with open(results_path, 'w+') as f:
                 f.write(prediction)
-#                 f.write('\nbest parameters: %s' % str(self.model.best_params_))
+                f.write('\nbest parameters: %s' % str(self.model.best_params_))
                 
                 if appendix:
                     for key in appendix.keys():

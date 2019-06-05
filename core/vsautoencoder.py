@@ -71,8 +71,8 @@ class VSAutoencoderSingleInput:
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             
-            self.svm.model.fit(self.encoder.predict([self.x_train]), self.y_train)
-#             self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
+#             self.svm.model.fit(self.encoder.predict([self.x_train]), self.y_train)
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
             
             sys.stderr = old_stderr
             Logger().write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.ERR)
@@ -360,11 +360,11 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             
-#             self.svm.model.best_estimator_.fit(
-#                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
-            
-            self.svm.model.fit(
+            self.svm.model.best_estimator_.fit(
                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
+            
+#             self.svm.model.fit(
+#                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
             
             sys.stderr = old_stderr
             Logger().write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)

@@ -86,8 +86,8 @@ class SemanticEncoderSingleInput:
         svm = SVMClassifier()
         svm.run_classifier(self.x_train, self.y_train, 5, -1)
         
-#         svm.model.best_estimator_.fit(self.x_train, self.y_train)
-        svm.model.fit(self.x_train, self.y_train)
+        svm.model.best_estimator_.fit(self.x_train, self.y_train)
+#         svm.model.fit(self.x_train, self.y_train)
         pred_dict, prediction = svm.predict(self.x_test, self.y_test)
         svm.save_results(prediction, os.path.join(self.res_path, 'svm_class.txt'))
         
