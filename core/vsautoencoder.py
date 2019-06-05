@@ -14,14 +14,14 @@ import os
 import sys
 import numpy as np
 from random import randint
+from matplotlib import pyplot as plt
+
 from keras.models import Model
-# from keras import backend as K
 from keras.callbacks import LambdaCallback
-from keras.layers import Input, Dense, BatchNormalization, Concatenate, Flatten, Conv1D#, Lambda, Embedding
+from keras.layers import Input, Dense, BatchNormalization, Concatenate, Flatten, Conv1D, Add
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-from matplotlib import pyplot as plt
 
 from core.vsclassifier import SVMClassifier
 from core.featuresparser import FeaturesParser
@@ -71,7 +71,8 @@ class VSAutoencoderSingleInput:
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             
-            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
+            self.svm.model.fit(self.encoder.predict([self.x_train]), self.y_train)
+#             self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
             
             sys.stderr = old_stderr
             Logger().write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.ERR)
@@ -359,7 +360,10 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             
-            self.svm.model.best_estimator_.fit(
+#             self.svm.model.best_estimator_.fit(
+#                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
+            
+            self.svm.model.fit(
                 self.encoder.predict([self.x_train_vis, np.expand_dims(self.x_train_sem, axis=-1)]), self.y_train)
             
             sys.stderr = old_stderr
@@ -421,7 +425,89 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
 #         noise_sem = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train_sem.shape)) * 100
 
         history = self.autoencoder.fit([self.x_train_vis + noise, np.expand_dims(self.x_train_sem, axis=-1)], 
-                                       FeaturesParser.concatenate_features(self.x_train_vis, self.x_train_sem),
+                                       FeaturesParser.concatenate_features(self.x_train_vis, self.x_train_sem, 23),
+                                       epochs=nepochs,
+                                       batch_size=128,
+                                       shuffle=True,
+                                       verbose=1,
+                                       validation_split=0.2,
+                                       callbacks=[svm])
+        return history
+
+
+class VSAutoencoderUNet(VSAutoencoderSingleInput):
+        
+    def run_autoencoder(self, enc_dim, nepochs, results_path):
+        '''
+        Builds and trains autoencoder model
+        
+        @param enc_dim: encoding size
+        @param nepochs: number of epochs
+        @param results_path: string with path to svm save results under
+        @return object with training details and history
+        '''
+        def svm_callback(epoch, logs):
+            '''
+            Runs SVM and saves prediction results
+            
+            @param epoch: default callback parameter. Epoch index
+            @param logs:default callback parameter. Loss result
+            '''
+            old_stderr = sys.stderr
+            sys.stderr = buffer = io.StringIO()
+            
+            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
+            
+            sys.stderr = old_stderr
+            Logger().write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
+            
+            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test]), self.y_test)
+            self.svm_history.append(pred_dict)
+            
+            if epoch == nepochs - 1:
+                self.svm.save_results(prediction, results_path, {'epoch': epoch + 1, 'AE Loss': logs})
+
+        input_fts = Input(shape=(self.x_train.shape[1],))
+        
+        encoded_1 = Dense(1426, activation='relu')(input_fts)
+        encoded_2 = Dense(732, activation='relu')(encoded_1)
+        encoded_3 = Dense(328, activation='relu')(encoded_2)
+        
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded_3)
+        encoded = Dense(enc_dim, activation='relu')(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+        
+        decoded = Dense(328, activation='relu')(encoded)
+        decoded = Dense(732, activation='relu')(Add()([encoded_3, decoded]))
+        decoded = Dense(1426, activation='relu')(Add()([encoded_2, decoded]))
+        decoded = Dense(self.x_train.shape[1], activation='relu')(Add()([encoded_1, decoded]))
+     
+        self.autoencoder = Model(inputs=[input_fts], outputs=decoded)
+        self.autoencoder.compile(optimizer='adam', loss='mse')
+        
+        old_stdout = sys.stdout
+        sys.stdout = buffer = io.StringIO()
+        
+        self.autoencoder.summary()
+        
+        sys.stdout = old_stdout
+        
+        Logger().write_message('Model summary:\n' + buffer.getvalue(), MessageType.INF)
+
+        encoded_input = Input(shape=(enc_dim,))
+        decoder_layer = self.autoencoder.layers[-4](encoded_input)
+        decoder_layer = self.autoencoder.layers[-3](decoder_layer)
+        decoder_layer = self.autoencoder.layers[-2](decoder_layer)
+        decoder_layer = self.autoencoder.layers[-1](decoder_layer)
+
+        self.encoder = Model(inputs=[input_fts], outputs=encoded)
+        self.decoder = Model(encoded_input, decoder_layer)
+        
+        svm = LambdaCallback(on_epoch_end=svm_callback)
+        
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) / 10
+        history = self.autoencoder.fit([self.x_train + noise], 
+                                       self.x_train,
                                        epochs=nepochs,
                                        batch_size=128,
                                        shuffle=True,

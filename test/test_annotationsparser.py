@@ -73,7 +73,7 @@ class AnnotationsParserTests(unittest.TestCase):
         self.assertEqual((50,), attributes['toughskin'].values.shape)
         self.assertEqual((85,), attributes.loc['gorilla'].values.shape)
         
-    def test__attributes_content(self):
+    def test_attributes_content(self):
         '''
         Tests if data frame with attributes have reasonable values
         '''
@@ -88,4 +88,36 @@ class AnnotationsParserTests(unittest.TestCase):
         for att in parser.get_predicates():
             self.assertTrue(sum(attributes[att].values) < 50)
             for value in attributes.loc[label].values:
+                self.assertTrue(value == 0 or value == 1)
+
+    
+    def test_get_subset_annotations(self):
+        '''
+        Tests if dictionary of attributes description is correctly retrieved
+        '''
+        parser = AnnotationsParser('./_mockfiles/awa2/base/')
+        attributes = parser.get_subset_annotations()
+        
+        self.assertTrue(4, len(attributes.keys()))
+        self.assertTrue(8, len(attributes['COLOR']))
+        self.assertTrue(5, len(attributes['TEXTURE']))
+        self.assertTrue(5, len(attributes['SHAPE']))
+        self.assertTrue(5, len(attributes['PARTS']))
+        
+    def test_get_subset_features(self):
+        '''
+        Tests if dictionary of features is correctly retrieved
+        '''
+        parser = AnnotationsParser('./_mockfiles/awa2/base/')
+        attributes = parser.get_subset_annotations()
+        features = parser.get_subset_features(attributes)
+        
+        for label in parser.get_labels():
+            self.assertTrue(sum(features.loc[label].values) < 23)
+            for value in features.loc[label].values:
+                self.assertTrue(value == 0 or value == 1)
+            
+        for att in [att[1] for key in attributes.keys() for att in attributes[key]]:
+            self.assertTrue(sum(features[att].values) < 50)
+            for value in features.loc[label].values:
                 self.assertTrue(value == 0 or value == 1)

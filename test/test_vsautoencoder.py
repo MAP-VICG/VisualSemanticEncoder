@@ -17,7 +17,7 @@ from keras.utils import normalize
 from sklearn.model_selection import train_test_split
 
 from core.featuresparser import FeaturesParser, PredicateType
-from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput
+from core.vsautoencoder import VSAutoencoderSingleInput, VSAutoencoderDoubleInput, VSAutoencoderUNet
 
 
 class VSAutoencoderTests(unittest.TestCase):
@@ -54,8 +54,15 @@ class VSAutoencoderTests(unittest.TestCase):
             
         cls.ae_double = VSAutoencoderDoubleInput(cv=2, njobs=2, x_train=x_train, x_test=cls.x_test, 
                                                  y_train=y_train, y_test=cls.y_test, split=2048)
-        cls.ae_double_history = cls.ae_double.run_autoencoder(cls.enc_dim, 15, os.path.join(cls.res_path, 
-                                                                                            'ae_svm_classification.txt'))
+        cls.ae_double_history = cls.ae_double.run_autoencoder(cls.enc_dim, 15, 
+                                                              os.path.join(cls.res_path, 
+                                                                           'ae_svm_classification.txt'))
+        
+        cls.ae_unet = VSAutoencoderUNet(cv=2, njobs=2, x_train=x_train, x_test=cls.x_test, 
+                                                 y_train=y_train, y_test=cls.y_test, split=2048)
+        cls.ae_unet_history = cls.ae_unet.run_autoencoder(cls.enc_dim, 15, 
+                                                          os.path.join(cls.res_path, 
+                                                                       'ae_svm_classification.txt'))
          
     def test_build_autoencoder(self):
         '''
@@ -91,13 +98,12 @@ class VSAutoencoderTests(unittest.TestCase):
         # input
         self.assertEqual((None, 85, 1), self.ae_double.autoencoder.layers[1].input_shape)
         self.assertEqual((None, 2048), self.ae_double.autoencoder.layers[2].input_shape)
-        self.assertEqual((None, 1, 25), self.ae_double.autoencoder.layers[3].input_shape)
            
         # encoding
         self.assertEqual((None,  self.enc_dim), self.ae_double.autoencoder.layers[middle].output_shape)
            
         # output
-        self.assertEqual((None, 2048), self.ae_double.autoencoder.layers[-1].output_shape)
+        self.assertEqual((None, 2133), self.ae_double.autoencoder.layers[-1].output_shape)
                  
     def test_train_autoencoder_double(self):
         '''
@@ -108,6 +114,31 @@ class VSAutoencoderTests(unittest.TestCase):
         self.assertEqual(self.ae_double_history.params['epochs'], len(self.ae_double_history.history['loss']))
         self.assertEqual(floor(self.nexamples * 0.8), self.ae_double_history.params['samples'])
         self.assertTrue(self.ae_double_history.params['do_validation'])
+        
+    def test_build_autoencoder_unet(self):
+        '''
+        Tests if autoencoder is built correctly
+        '''
+        middle = floor(len(self.ae_unet.autoencoder.layers) / 2)
+             
+        # input
+        self.assertEqual((None, 2133), self.ae_unet.autoencoder.layers[0].input_shape)
+             
+        # encoding
+        self.assertEqual((None,  self.enc_dim), self.ae_unet.autoencoder.layers[middle].output_shape)
+             
+        # output
+        self.assertEqual((None, 2133), self.ae_unet.autoencoder.layers[-1].output_shape)
+                 
+    def test_train_autoencoder_unet(self):
+        '''
+        Tests if autoencoder can be trained
+        '''
+        self.assertEqual(self.ae_unet_history.params['epochs'], len(self.ae_unet_history.epoch))
+        self.assertEqual(self.ae_unet_history.params['epochs'], len(self.ae_unet_history.history['val_loss']))
+        self.assertEqual(self.ae_unet_history.params['epochs'], len(self.ae_unet_history.history['loss']))
+        self.assertEqual(floor(self.nexamples * 0.8), self.ae_unet_history.params['samples'])
+        self.assertTrue(self.ae_unet_history.params['do_validation'])
          
     def test_plot_loss(self):
         '''

@@ -95,3 +95,53 @@ class AnnotationsParser():
         except FileNotFoundError:
             Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return None
+        
+    def get_subset_features(self, ann_dict, ptype=PredicateType.BINARY):
+        '''
+        Creates a dictionary with a subset of attributes based on the attributes stated in 
+        predicates-subset.txt
+        
+        @param ann_dict: dictionary with the annotations to create a subset of features
+        @return pandas data frame with 50 labels and X corresponding attributes
+        '''
+        features = self.get_attributes(ptype)
+        attributes = [att[1] for key in ann_dict.keys() for att in ann_dict[key]]
+        subset = pd.DataFrame(index=features.index, columns=attributes)
+        
+        for att in attributes:
+            subset[att] = features[att]
+            
+        return subset
+    
+    def get_subset_annotations(self):
+        '''
+        Creates a dictionary with the annotations to create a subset of features
+        
+        @return dictionary of size (N, X) per key, where X is the number of features for that key
+        and N the number of keys. Each element in the list is a tuple where first value is a numeric
+        label and last value the text label
+        '''
+        try:
+            file_path = join(self.base_path, 'predicates-subset.txt')
+            attributes = dict()
+            key = ''
+            
+            with open(file_path) as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    
+                    if line:
+                        if not line[0].isdigit():
+                            attributes[line] = []
+                            key = line
+                        else:
+                            labels = line.split()
+                            attributes[key].append((int(labels[0]), labels[1]))
+                
+            return attributes
+        except KeyError:
+            Logger().write_message('Row %s could not be parsed' % line, MessageType.ERR)
+            return None
+        except FileNotFoundError:
+            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
+            return None

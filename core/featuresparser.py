@@ -75,39 +75,49 @@ class FeaturesParser():
             Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
             return None
     
-    def get_semantic_features(self, ann_path, ptype=PredicateType.BINARY, norm=False, norm_axis=1):
+    def get_semantic_features(self, ann_path, ptype=PredicateType.BINARY, subset=False, norm=False, norm_axis=1):
         '''
         Retrieves semantic features based on annotations
         
         @param ann_path: annotation path
         @param ptype: predicate type (binary or continuous)
         @param norm: normalize features
+        @param subset: if True return a subset of the features with 19 attributes only
         @return numpy array of shape (37322, 85) with features for images in AwA2 data set
         '''
         ann_parser = AnnotationsParser(ann_path)
-        att_map = ann_parser.get_attributes(ptype)
+        
+        if subset:
+            Logger().write_message('Using a subset of the semantic features', MessageType.INF)
+            att_map = ann_parser.get_subset_features(ann_parser.get_subset_annotations(), ptype)
+        else:
+            Logger().write_message('Using whole set of the semantic features', MessageType.INF)
+            att_map = ann_parser.get_attributes(ptype)
+        
         labels = ann_parser.get_labels()
         available_labels = self.get_labels()
+        features = np.zeros((available_labels.shape[0], att_map.shape[1]), dtype=np.float32)
         
-        features = np.zeros((available_labels.shape[0], 85), dtype=np.float32)
         for idx, label in enumerate(available_labels):
             features[idx, :] = att_map.loc[labels[label-1]].values
         
         if norm:
             Logger().write_message('Normalizing semantic features.', MessageType.INF)
             return normalize(features, order=2, axis=norm_axis)
+        
         return features
     
     @staticmethod
-    def concatenate_features(vis_fts, sem_fts):
+    def concatenate_features(vis_fts, sem_fts, nfts):
         '''
         Concatenates semantic and visual features along x axis
         
         @param vis_fts: visual features
         @param sem_fts: semantic features
+        @param nfts: number of semantic features
         @return: numpy array of shape (37322, 2048 + 85) with all features
         '''
-        features = np.zeros((vis_fts.shape[0], 2048 + 85), dtype=np.float32)
+        features = np.zeros((vis_fts.shape[0], 2048 + nfts), dtype=np.float32)
          
         for ft in range(features.shape[0]):
             features[ft,:vis_fts.shape[1]] = vis_fts[ft]

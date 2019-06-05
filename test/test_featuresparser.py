@@ -80,3 +80,4 @@ class AnnotationsParserTests(unittest.TestCase):
          
         self.assertEqual((1000, 2048 + 85), features.shape)
         self.assertTrue(sum(sum(features)) > 0)
+        

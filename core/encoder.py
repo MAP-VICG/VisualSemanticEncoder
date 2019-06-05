@@ -86,7 +86,8 @@ class SemanticEncoderSingleInput:
         svm = SVMClassifier()
         svm.run_classifier(self.x_train, self.y_train, 5, -1)
         
-        svm.model.best_estimator_.fit(self.x_train, self.y_train)
+#         svm.model.best_estimator_.fit(self.x_train, self.y_train)
+        svm.model.fit(self.x_train, self.y_train)
         pred_dict, prediction = svm.predict(self.x_test, self.y_test)
         svm.save_results(prediction, os.path.join(self.res_path, 'svm_class.txt'))
         
@@ -163,16 +164,8 @@ class EncodingFeatures:
             self.sem_fts = parser.get_semantic_features(ann_path, PredicateType.CONTINUOUS)
             self.sem_fts = normalize(self.sem_fts + 1, order=1, axis=1)
         else:
-            self.sem_fts = parser.get_semantic_features(ann_path, PredicateType.BINARY)
+            self.sem_fts = parser.get_semantic_features(ann_path, PredicateType.BINARY, subset=True)
             self.sem_fts = np.multiply(self.sem_fts, np.array([v for v in range(1, self.sem_fts.shape[1] + 1)]))
-            
-            color_mask = np.zeros((self.sem_fts.shape[1],))
-            for k in range(14, 18):
-                color_mask[k] = 1
-            
-            color_mask[44] = 1
-            color_mask[45] = 1
-            self.sem_fts = np.multiply(self.sem_fts, np.array(color_mask))
     
         self.seed = 42
         self.test_size = 0.2
@@ -222,8 +215,8 @@ class EncodingFeatures:
         enc = SemanticEncoderSingleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                               y_test=y_test, res_path=os.path.join(self.res_path, 'sem'))
         
-        Logger().write_message('Classifying semantic features...', MessageType.INF)
-        self.results_dict['sem'] = enc.run_svm()
+#         Logger().write_message('Classifying semantic features...', MessageType.INF)
+#         self.results_dict['sem'] = enc.run_svm()
         
         Logger().write_message('Classifying encoded semantic features...', MessageType.INF)
         self.ae_results_dict['ae_sem'] = enc.run_encoder()
@@ -251,14 +244,16 @@ class EncodingFeatures:
         Logger().write_message('Classifying encoded concatenated features...', MessageType.INF)
         self.ae_results_dict['ae_con'] = enc.run_encoder()
         
-    def encode_split_features(self):
+    def encode_split_features(self, nfts=85):
         '''
         Runs encoding for semantic and visual features concatenated and saves 
         results to dictionary
+        
+        @param nfts: number of semantic features
         '''
         Logger().write_message('Encoding split features...', MessageType.INF)
         
-        con_fts = FeaturesParser.concatenate_features(self.vis_fts, self.sem_fts)
+        con_fts = FeaturesParser.concatenate_features(self.vis_fts, self.sem_fts, nfts)
         x_train, x_test, y_train, y_test = train_test_split(con_fts, 
                                                             self.labels, 
                                                             stratify=self.labels, 
@@ -269,8 +264,8 @@ class EncodingFeatures:
         enc = SemanticEncoderDoubleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                                          y_test=y_test, split=self.vis_fts.shape[1], res_path=os.path.join(self.res_path, 'spt'))
         
-#         Logger().write_message('Classifying concatenated features...', MessageType.INF)
-#         self.results_dict['spt'] = enc.run_svm()
+        Logger().write_message('Classifying concatenated features...', MessageType.INF)
+        self.results_dict['spt'] = enc.run_svm()
 
         Logger().write_message('Classifying encoded split features...', MessageType.INF)
         self.ae_results_dict['ae_spt'] = enc.run_encoder()
