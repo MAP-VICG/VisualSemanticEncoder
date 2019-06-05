@@ -1,0 +1,30 @@
+COLOR
+ 1	 black
+ 2	 white
+ 3	 blue
+ 4	 brown
+ 5	 gray
+ 6	 orange
+ 7	 red
+ 8	 yellow
+ 
+TEXTURE
+ 9	 patches
+10	 spots
+11	 stripes
+12	 furry    
+13	 hairless
+
+SHAPE
+17	 bulbous
+45   bipedal
+46   quadrapedal
+24   longleg
+25   longneck
+
+PARTS 
+19	 flippers
+20   hands 
+23   paws
+26   tail
+31	 horns
