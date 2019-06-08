@@ -24,11 +24,11 @@ class AnnotationsParserTests(unittest.TestCase):
         '''
         cls.parser = AnnotationsParser(console=True)
     
-    def test_get_labels(self):
+    def test_get_classes(self):
         '''
-        Tests if list of labels is retrieved
+        Tests if list of classes is retrieved
         '''
-        labels = self.parser.get_labels()
+        labels = self.parser.get_classes()
         
         self.assertEqual(50, len(labels))
         self.assertEqual('antelope', labels[0])
@@ -76,7 +76,7 @@ class AnnotationsParserTests(unittest.TestCase):
         attributes = self.parser.get_predicate_matrix()
          
         self.assertTrue(isinstance(attributes, pd.DataFrame))
-        self.assertEqual(self.parser.get_labels(), list(attributes.index.values))
+        self.assertEqual(self.parser.get_classes(), list(attributes.index.values))
         self.assertEqual(self.parser.get_attributes_set(), list(attributes.columns.values))
         self.assertEqual((50,), attributes['toughskin'].values.shape)
         self.assertEqual((85,), attributes.loc['gorilla'].values.shape)
@@ -88,7 +88,7 @@ class AnnotationsParserTests(unittest.TestCase):
         attributes = self.parser.get_predicate_matrix(subset=True)
          
         self.assertTrue(isinstance(attributes, pd.DataFrame))
-        self.assertEqual(self.parser.get_labels(), list(attributes.index.values))
+        self.assertEqual(self.parser.get_classes(), list(attributes.index.values))
         self.assertEqual(self.parser.get_attributes_subset(), list(attributes.columns.values))
         self.assertEqual((50,), attributes['horns'].values.shape)
         self.assertEqual((23,), attributes.loc['gorilla'].values.shape)
@@ -99,7 +99,7 @@ class AnnotationsParserTests(unittest.TestCase):
         '''
         attributes = self.parser.get_predicate_matrix()
          
-        for label in self.parser.get_labels():
+        for label in self.parser.get_classes():
             self.assertTrue(sum(attributes.loc[label].values) < 85)
             for value in attributes.loc[label].values:
                 self.assertTrue(value == 0 or value == 1)
@@ -115,7 +115,7 @@ class AnnotationsParserTests(unittest.TestCase):
         '''
         attributes = self.parser.get_predicate_matrix(subset=True)
          
-        for label in self.parser.get_labels():
+        for label in self.parser.get_classes():
             self.assertTrue(sum(attributes.loc[label].values) < 23)
             for value in attributes.loc[label].values:
                 self.assertTrue(value == 0 or value == 1)

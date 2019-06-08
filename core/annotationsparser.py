@@ -33,7 +33,7 @@ class AnnotationsParser():
         self.predicate_subset = os.path.join(base_path, 'AwA2-predicate-subset.txt')
         self.logger = Logger(console=console)
         
-    def get_labels(self):
+    def get_classes(self):
         '''
         Retrieves the labels available for objects in Animals with Attributes 2 data set
         
@@ -62,7 +62,7 @@ class AnnotationsParser():
                     for j, value in enumerate(line.strip().split()):
                         matrix[i,j] = float(value)
                 
-            predicates = pd.DataFrame(data=matrix, index=self.get_labels(), columns=self.get_attributes_set())
+            predicates = pd.DataFrame(data=matrix, index=self.get_classes(), columns=self.get_attributes_set())
             
             if subset:
                 subset = pd.DataFrame(index=predicates.index, columns=self.get_attributes_subset())
