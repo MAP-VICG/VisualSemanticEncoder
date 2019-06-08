@@ -9,115 +9,118 @@ Tests for module annotationsparser
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
-
 import unittest
 import pandas as pd
 
-from core.annotationsparser import AnnotationsParser, PredicateType
+from core.annotationsparser import AnnotationsParser
 
 
 class AnnotationsParserTests(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        '''
+        Initializes model for all tests
+        '''
+        cls.parser = AnnotationsParser(console=True)
     
     def test_get_labels(self):
         '''
         Tests if list of labels is retrieved
         '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        labels = parser.get_labels()
+        labels = self.parser.get_labels()
         
         self.assertEqual(50, len(labels))
         self.assertEqual('antelope', labels[0])
         self.assertEqual('dolphin', labels[49])
         self.assertEqual('humpback+whale', labels[17])
         
-    def test_get_labels_file_not_found(self):
-        '''
-        Tests if empty list is returned when file is not found
-        '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/dummy/')
-        labels = parser.get_labels()
-        
-        self.assertEqual(0, len(labels))
-        
-    def test_get_predicates(self):
+    def test_get_attributes_set(self):
         '''
         Tests if list of attributes is retrieved
         '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        predicates = parser.get_predicates()
+        attributes = self.parser.get_attributes_set()
+         
+        self.assertEqual(85, len(attributes))
+        self.assertEqual('orange', attributes[5])
+        self.assertEqual('tree', attributes[76])
+        self.assertEqual('hands', attributes[19])
         
-        self.assertEqual(85, len(predicates))
-        self.assertEqual('orange', predicates[5])
-        self.assertEqual('tree', predicates[76])
-        self.assertEqual('hands', predicates[19])
+    def test_get_attributes_subset(self):
+        '''
+        Tests if list of attributes subset is retrieved
+        '''
+        attributes = self.parser.get_attributes_subset()
+         
+        self.assertEqual(23, len(attributes))
+        self.assertEqual('orange', attributes[5])
+        self.assertEqual('stripes', attributes[10])
+        self.assertEqual('hands', attributes[19])
         
-    def test_get_predicates_file_not_found(self):
+    def test_get_attributes_subset_as_dict(self):
         '''
-        Tests if empty list is returned when file is not found
+        Tests if dictionary of attributes subset is correctly retrieved
         '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/dummy/')
-        predicates = parser.get_predicates()
-        
-        self.assertEqual(0, len(predicates))    
-    
-    def test_get_attributes(self):
-        '''
-        Tests if data frame with attributes is retrieved
-        '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        attributes = parser.get_attributes()
-        
-        self.assertTrue(isinstance(attributes, pd.DataFrame))
-        self.assertEqual(parser.get_labels(), list(attributes.index.values))
-        self.assertEqual(parser.get_predicates(), list(attributes.columns.values))
-        self.assertEqual((50,), attributes['toughskin'].values.shape)
-        self.assertEqual((85,), attributes.loc['gorilla'].values.shape)
-        
-    def test_attributes_content(self):
-        '''
-        Tests if data frame with attributes have reasonable values
-        '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        attributes = parser.get_attributes(PredicateType.BINARY)
-        
-        for label in parser.get_labels():
-            self.assertTrue(sum(attributes.loc[label].values) < 85)
-            for value in attributes.loc[label].values:
-                self.assertTrue(value == 0 or value == 1)
-            
-        for att in parser.get_predicates():
-            self.assertTrue(sum(attributes[att].values) < 50)
-            for value in attributes.loc[label].values:
-                self.assertTrue(value == 0 or value == 1)
-
-    
-    def test_get_subset_annotations(self):
-        '''
-        Tests if dictionary of attributes description is correctly retrieved
-        '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        attributes = parser.get_subset_annotations()
-        
+        attributes = self.parser.get_attributes_subset(as_dict=True)
+         
         self.assertTrue(4, len(attributes.keys()))
         self.assertTrue(8, len(attributes['COLOR']))
         self.assertTrue(5, len(attributes['TEXTURE']))
         self.assertTrue(5, len(attributes['SHAPE']))
-        self.assertTrue(5, len(attributes['PARTS']))
-        
-    def test_get_subset_features(self):
+        self.assertTrue(5, len(attributes['PARTS'])) 
+     
+    def test_get_predicate_matrix(self):
         '''
-        Tests if dictionary of features is correctly retrieved
+        Tests if data frame with predicate matrix is retrieved
         '''
-        parser = AnnotationsParser('./_mockfiles/awa2/base/')
-        attributes = parser.get_subset_annotations()
-        features = parser.get_subset_features(attributes)
+        attributes = self.parser.get_predicate_matrix()
+         
+        self.assertTrue(isinstance(attributes, pd.DataFrame))
+        self.assertEqual(self.parser.get_labels(), list(attributes.index.values))
+        self.assertEqual(self.parser.get_attributes_set(), list(attributes.columns.values))
+        self.assertEqual((50,), attributes['toughskin'].values.shape)
+        self.assertEqual((85,), attributes.loc['gorilla'].values.shape)
         
-        for label in parser.get_labels():
-            self.assertTrue(sum(features.loc[label].values) < 23)
-            for value in features.loc[label].values:
+    def test_get_predicate_matrix_subset(self):
+        '''
+        Tests if data frame with predicate matrix for subset is retrieved
+        '''
+        attributes = self.parser.get_predicate_matrix(subset=True)
+         
+        self.assertTrue(isinstance(attributes, pd.DataFrame))
+        self.assertEqual(self.parser.get_labels(), list(attributes.index.values))
+        self.assertEqual(self.parser.get_attributes_subset(), list(attributes.columns.values))
+        self.assertEqual((50,), attributes['horns'].values.shape)
+        self.assertEqual((23,), attributes.loc['gorilla'].values.shape)
+         
+    def test_attributes_content(self):
+        '''
+        Tests if data frame with predicate matrix has reasonable values
+        '''
+        attributes = self.parser.get_predicate_matrix()
+         
+        for label in self.parser.get_labels():
+            self.assertTrue(sum(attributes.loc[label].values) < 85)
+            for value in attributes.loc[label].values:
                 self.assertTrue(value == 0 or value == 1)
-            
-        for att in [att[1] for key in attributes.keys() for att in attributes[key]]:
-            self.assertTrue(sum(features[att].values) < 50)
-            for value in features.loc[label].values:
+             
+        for att in self.parser.get_attributes_set():
+            self.assertTrue(sum(attributes[att].values) < 50)
+            for value in attributes.loc[label].values:
+                self.assertTrue(value == 0 or value == 1)
+ 
+    def test_attributes_content_subset(self):
+        '''
+        Tests if data frame with predicate matrix or subset has reasonable values
+        '''
+        attributes = self.parser.get_predicate_matrix(subset=True)
+         
+        for label in self.parser.get_labels():
+            self.assertTrue(sum(attributes.loc[label].values) < 23)
+            for value in attributes.loc[label].values:
+                self.assertTrue(value == 0 or value == 1)
+             
+        for att in self.parser.get_attributes_subset():
+            self.assertTrue(sum(attributes[att].values) < 50)
+            for value in attributes.loc[label].values:
                 self.assertTrue(value == 0 or value == 1)

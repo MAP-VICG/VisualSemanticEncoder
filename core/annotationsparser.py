@@ -10,31 +10,28 @@ data retrieved includes all possible classes and attributes.
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
-
+import os
 import numpy as np
 import pandas as pd
-from enum import Enum
-from os.path import join
 from utils.logwriter import Logger, MessageType
-
-
-class PredicateType(Enum):
-    '''
-    Enum for predicate type
-    '''
-    BINARY =  1
-    CONTINUOUS = 2
 
 
 class AnnotationsParser():
     
-    def __init__(self, base_path):
+    def __init__(self, console=False):
         '''
         Initialization
         
-        @param base_path: string that points to path where the base data files are
+        @param console: if True, prints debug in console
         '''
-        self.base_path = base_path
+        base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
+                                                           'SemanticEncoder'), '_files'), 'base')
+        
+        self.classes = os.path.join(base_path, 'AwA2-classes.txt')
+        self.predicate_set = os.path.join(base_path, 'AwA2-predicate-set.txt')
+        self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix.txt')
+        self.predicate_subset = os.path.join(base_path, 'AwA2-predicate-subset.txt')
+        self.logger = Logger(console=console)
         
     def get_labels(self):
         '''
@@ -43,105 +40,91 @@ class AnnotationsParser():
         @return list of strings with available labels
         '''
         try:
-            file_path = join(self.base_path, 'classes.txt')
-            with open(file_path) as f:
-                labels = [line.split()[1] for line in f.readlines()]
+            with open(self.classes) as f:
+                labels = [line.strip().split()[1] for line in f.readlines()]
                 
             return labels
         except FileNotFoundError:
-            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
-            return []
-    
-    def get_predicates(self):
-        '''
-        Retrieves the attributes available for objects in Animals with Attributes 2 data set
-        
-        @return list of strings with available predicates
-        '''
-        try:
-            file_path = join(self.base_path, 'predicates.txt')
-            with open(file_path) as f:
-                predicates = [line.split()[1] for line in f.readlines()]
-                
-            return predicates
-        except FileNotFoundError:
-            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
+            self.logger.write_message('File %s could not be found.' % self.classes, MessageType.ERR)
             return []
         
-    def get_attributes(self, ptype=PredicateType.BINARY):
+    def get_predicate_matrix(self, subset=False):
         '''
         Retrieves data frame with object labels and corresponding attributes
         
         @return pandas data frame with 50 labels and 85 corresponding attributes
         '''
         try:
-            if ptype == PredicateType.BINARY:
-                file_path = join(self.base_path, 'predicate-matrix-binary.txt')
-            elif ptype == PredicateType.CONTINUOUS:
-                file_path = join(self.base_path, 'predicate-matrix-continuous.txt')
-            else:
-                raise ValueError('Invalid predicate type')
-            
-            with open(file_path) as f:
+            with open(self.predicate_matrix) as f:
                 matrix = np.zeros((50, 85), dtype=np.float32)
                 
                 for i, line in enumerate(f.readlines()):
-                    for j, value in enumerate(line.split()):
+                    for j, value in enumerate(line.strip().split()):
                         matrix[i,j] = float(value)
                 
-            return pd.DataFrame(data=matrix,
-                                index=self.get_labels(),
-                                columns=self.get_predicates())
+            predicates = pd.DataFrame(data=matrix, index=self.get_labels(), columns=self.get_attributes_set())
+            
+            if subset:
+                subset = pd.DataFrame(index=predicates.index, columns=self.get_attributes_subset())
+                 
+                for att in subset.columns:
+                    subset[att] = predicates[att]
+                return subset
+            
+            return predicates
         except FileNotFoundError:
-            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
+            self.logger.write_message('File %s could not be found.' % self.predicate_matrix, MessageType.ERR)
             return None
         
-    def get_subset_features(self, ann_dict, ptype=PredicateType.BINARY):
+    def get_attributes_set(self):
         '''
-        Creates a dictionary with a subset of attributes based on the attributes stated in 
-        predicates-subset.txt
+        Retrieves the attributes available for objects in Animals with Attributes 2 data set
         
-        @param ann_dict: dictionary with the annotations to create a subset of features
-        @return pandas data frame with 50 labels and X corresponding attributes
-        '''
-        features = self.get_attributes(ptype)
-        attributes = [att[1] for key in ann_dict.keys() for att in ann_dict[key]]
-        subset = pd.DataFrame(index=features.index, columns=attributes)
-        
-        for att in attributes:
-            subset[att] = features[att]
-            
-        return subset
-    
-    def get_subset_annotations(self):
-        '''
-        Creates a dictionary with the annotations to create a subset of features
-        
-        @return dictionary of size (N, X) per key, where X is the number of features for that key
-        and N the number of keys. Each element in the list is a tuple where first value is a numeric
-        label and last value the text label
+        @return list of strings with available predicates
         '''
         try:
-            file_path = join(self.base_path, 'predicates-subset.txt')
-            attributes = dict()
-            key = ''
-            
-            with open(file_path) as f:
-                for line in f.readlines():
-                    line = line.strip()
-                    
-                    if line:
-                        if not line[0].isdigit():
-                            attributes[line] = []
-                            key = line
-                        else:
-                            labels = line.split()
-                            attributes[key].append((int(labels[0]), labels[1]))
+            with open(self.predicate_set) as f:
+                predicates = [line.strip().split()[1] for line in f.readlines()]
                 
-            return attributes
+            return predicates
+        except FileNotFoundError:
+            self.logger.write_message('File %s could not be found.' % self.predicate_subset, MessageType.ERR)
+            return []
+        
+    def get_attributes_subset(self, as_dict=False):
+        '''
+        Retrieves the attributes to be considered for objects in Animals with Attributes 2 data set
+        
+        @param as_dict: if True, returns a dictionary with features category as key
+        @return list of strings with predicates to be considered
+        '''
+        try:
+            with open(self.predicate_subset) as f:
+                if as_dict:
+                    key = ''
+                    predicates = dict()
+                    
+                    for line in f.readlines():
+                        line = line.strip()
+                         
+                        if line:
+                            if not line[0].isdigit():
+                                predicates[line] = []
+                                key = line
+                            else:
+                                labels = line.split()
+                                predicates[key].append((int(labels[0]), labels[1]))
+                else:
+                    predicates = []
+                    for line in f.readlines():
+                        line = line.strip()
+                        if line and line[0].isdigit():
+                            predicates.append(line.split()[1])
+                
+            return predicates
         except KeyError:
-            Logger().write_message('Row %s could not be parsed' % line, MessageType.ERR)
+            self.logger.write_message('Row %s could not be parsed' % line, MessageType.ERR)
             return None
         except FileNotFoundError:
-            Logger().write_message('File %s could not be found.' % file_path, MessageType.ERR)
-            return None
+            self.logger.write_message('File %s could not be found.' % self.predicate_subset, MessageType.ERR)
+            return []

@@ -17,7 +17,7 @@ from datetime import datetime
 
 class Singleton(type):
     '''
-    Singleton base class to be used as a metaclass
+    Singleton base class to be used as a meta class
     '''
     _instances = {}
     def __call__(self, *args, **kwargs):
@@ -36,15 +36,20 @@ class MessageType(Enum):
 
 
 class Logger(metaclass=Singleton):
-    def __init__(self, logpath=None):
+    def __init__(self, logpath=None, console=False):
         '''
         Initializes parameters
+        
+        @param logpath: if specified, changes log default saving path
+        @console console: if True, prints log in console instead of file
         '''
-        if logpath:
+        if logpath and isinstance(logpath, str):
             self.logpath = logpath
         else:
             self.logpath = os.getcwd()
-        self.ref_date = datetime.now().strftime('%Y%m%d_%H%M00')
+            
+        self.console = console
+        self.ref_date = datetime.now().strftime('%Y%m%d_%H%M')
     
     def write_message(self, message, mtype):
         '''
@@ -60,7 +65,11 @@ class Logger(metaclass=Singleton):
         execution_details = stack[1][3] + '[' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ']'
         
         log_file = os.path.join(self.logpath, 'semantic_encoder_log_%s.log' % self.ref_date)
+        full_message = '%s\n%s\n%s\n%s: %s\n\n' % ('=' * 100, file_details, execution_details, 
+                                                   mtype.value, message)
         
-        with open(log_file, 'a+') as f:
-            f.write('====================================================================\n%s\n%s\n%s: %s\n\n'
-                    % (file_details, execution_details, mtype.value, message))
+        if self.console:
+            print(full_message)
+        else:
+            with open(log_file, 'a+') as f:
+                f.write(full_message)
