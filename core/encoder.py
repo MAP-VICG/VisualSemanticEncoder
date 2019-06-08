@@ -196,8 +196,8 @@ class EncodingFeatures:
         Logger().write_message('Classifying visual features...', MessageType.INF)
         self.results_dict['vis'] = enc.run_svm()
         
-        Logger().write_message('Classifying encoded visual features...', MessageType.INF)
-        self.ae_results_dict['ae_vis'] = enc.run_encoder()
+#         Logger().write_message('Classifying encoded visual features...', MessageType.INF)
+#         self.ae_results_dict['ae_vis'] = enc.run_encoder()
         
     def encode_semantic(self):
         '''
@@ -215,11 +215,11 @@ class EncodingFeatures:
         enc = SemanticEncoderSingleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                               y_test=y_test, res_path=os.path.join(self.res_path, 'sem'))
         
-#         Logger().write_message('Classifying semantic features...', MessageType.INF)
-#         self.results_dict['sem'] = enc.run_svm()
+        Logger().write_message('Classifying semantic features...', MessageType.INF)
+        self.results_dict['sem'] = enc.run_svm()
         
-        Logger().write_message('Classifying encoded semantic features...', MessageType.INF)
-        self.ae_results_dict['ae_sem'] = enc.run_encoder()
+#         Logger().write_message('Classifying encoded semantic features...', MessageType.INF)
+#         self.ae_results_dict['ae_sem'] = enc.run_encoder()
         
     def encode_concatenated(self):
         '''
@@ -264,8 +264,8 @@ class EncodingFeatures:
         enc = SemanticEncoderDoubleInput(self.epochs, self.enc_dim, x_train=x_train, x_test=x_test, y_train=y_train, 
                                          y_test=y_test, split=self.vis_fts.shape[1], res_path=os.path.join(self.res_path, 'spt'))
         
-        Logger().write_message('Classifying concatenated features...', MessageType.INF)
-        self.results_dict['spt'] = enc.run_svm()
+#         Logger().write_message('Classifying concatenated features...', MessageType.INF)
+#         self.results_dict['spt'] = enc.run_svm()
 
         Logger().write_message('Classifying encoded split features...', MessageType.INF)
         self.ae_results_dict['ae_spt'] = enc.run_encoder()

@@ -23,13 +23,13 @@ from utils.logwriter import Logger, MessageType
 def main():
     init_time = time.time()
     
-    fls_path = os.path.join(os.getcwd(), '_files/awa2')
+    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2')
     fts_path = os.path.join(fls_path, 'features/ResNet101')
     res_path = os.path.join(fls_path, 'results')
     ann_path = os.path.join(fls_path, 'base')
     
     enc_dim = 128
-    epochs = 100
+    epochs = 50
 
     if not os.path.isdir(res_path):
         os.mkdir(res_path)

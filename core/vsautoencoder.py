@@ -89,9 +89,9 @@ class VSAutoencoderSingleInput:
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
-        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+#         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
-        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+#         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
@@ -389,9 +389,9 @@ class VSAutoencoderDoubleInput(VSAutoencoderSingleInput):
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
-        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+#         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
-        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+#         encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)

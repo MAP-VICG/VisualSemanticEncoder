@@ -39,8 +39,8 @@ class SVMClassifier:
         if nfolds < 2:
             raise ValueError('Number of folds cannot be less than 2')
         
-        from sklearn.svm import SVC
-        self.model = GridSearchCV(SVC(verbose=0, gamma='auto', max_iter=1000), 
+#         from sklearn.svm import SVC
+        self.model = GridSearchCV(LinearSVC(verbose=0, max_iter=1000), 
                                   self.tuning_params, cv=nfolds, 
                                   iid=False, scoring='recall_macro', n_jobs=njobs)
         
