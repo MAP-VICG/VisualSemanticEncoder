@@ -114,3 +114,21 @@ class FeaturesParser():
             return normalize(features, order=2, axis=norm_axis)
         
         return features
+
+    @staticmethod
+    def concatenate_features(vis_fts, sem_fts):
+        '''
+        Concatenates semantic and visual features along x axis
+        
+        @param vis_fts: visual features
+        @param sem_fts: semantic features
+        @return: numpy array of shape (37322, 2048 + X) with all features, where X is the number of
+            semantic features
+        '''
+        features = np.zeros((vis_fts.shape[0], vis_fts.shape[1] + sem_fts.shape[1]), dtype=np.float32)
+         
+        for ft in range(features.shape[0]):
+            features[ft,:vis_fts.shape[1]] = vis_fts[ft]
+            features[ft,vis_fts.shape[1]:] = sem_fts[ft] 
+  
+        return features
