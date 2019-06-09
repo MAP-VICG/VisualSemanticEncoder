@@ -67,13 +67,14 @@ class VSAutoencoder:
             self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train]), self.y_train)
             
             sys.stderr = old_stderr
-            self.logger.write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.ERR)
+            self.logger.write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
             
             pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test]), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
-                self.svm.save_results(prediction, {'epoch': epoch + 1, 'AE Loss': logs})
+                self.svm.save_results(prediction, {'epoch': epoch + 1, 'AE Loss': logs}, 
+                                      'ae_svm_prediction.txt')
 
         input_fts = Input(shape=(self.x_train.shape[1],))
         
