@@ -11,8 +11,10 @@ Tests for module vsautoencoder
 '''
 import os
 import unittest
-from core.vsclassifier import SVMClassifier
+
 from sklearn.model_selection import train_test_split
+
+from core.vsclassifier import SVMClassifier
 from core.featuresparser import FeaturesParser
 
 

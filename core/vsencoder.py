@@ -9,18 +9,11 @@ Model to encode visual and semantic features of images
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
-import os
 import gc
-import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.utils import normalize
-from matplotlib import pyplot as plt
-from sklearn.model_selection import train_test_split
 
 from core.vsclassifier import SVMClassifier
-from core.featuresparser import FeaturesParser
-from utils.logwriter import Logger, MessageType
 from core.vsautoencoder import VSAutoencoder
 from utils.vsplotter import Plotter
 
