@@ -55,19 +55,3 @@ class VSEncoderTests(unittest.TestCase):
             self.assertIsNotNone(res.get('weighted avg', None))
         for f in files:
             self.assertTrue(os.path.isfile(file_name))
-            
-    def test_run_svm(self):
-        '''
-        Tests if SVM runs and if results are saved
-        '''
-        file_name = os.path.join(self.encoder.svm.results_path, 'svm_prediction.txt')
-                  
-        if os.path.isfile(file_name):
-            os.remove(file_name)
-                
-        pred_dict = self.encoder.run_svm()
-        self.assertIsNotNone(pred_dict.get('micro avg', None))
-        self.assertIsNotNone(pred_dict.get('macro avg', None))
-        self.assertIsNotNone(pred_dict.get('weighted avg', None))
-        
-        self.assertTrue(os.path.isfile(file_name))

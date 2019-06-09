@@ -74,6 +74,26 @@ class SVMClassifier:
                
         self.logger.write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
+
+    def run_svm(self, x_train, y_train, x_test, y_test, nfolds=5, njobs=None):
+        '''
+        Runs SVM and saves results
+         
+        @param x_train: 2D numpy array training set
+        @param y_train: 1D numpy array test labels
+        @param x_test: 2D numpy array with test set
+        @param y_test: 1D numpy array test labels
+        @param nfolds: number of folds in cross validation
+        @param njobs: number of jobs to run in parallel on Grid Search
+        @return dictionary with svm results
+        '''
+        self.run_classifier(x_train, y_train, nfolds, njobs)
+         
+        self.model.best_estimator_.fit(x_train, y_train)
+        pred_dict, prediction = self.predict(x_test, y_test)
+        self.save_results(prediction, pred_dict)
+         
+        return pred_dict
         
     def save_results(self, prediction, appendix=None, file_name=None):
         '''

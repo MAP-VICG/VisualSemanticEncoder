@@ -75,3 +75,20 @@ class SVMClassifierTests(unittest.TestCase):
         self.svm.save_results(prediction)
             
         self.assertTrue(os.path.isfile(result_file))
+        
+    def test_run_svm(self):
+        '''
+        Tests if SVM runs and if results are saved
+        '''
+        file_name = os.path.join(self.svm.results_path, 'svm_prediction.txt')
+                  
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+                
+        pred_dict = self.svm.run_svm(self.x_train, self.y_train, self.x_test, self.y_test)
+        self.assertIsNotNone(pred_dict.get('micro avg', None))
+        self.assertIsNotNone(pred_dict.get('macro avg', None))
+        self.assertIsNotNone(pred_dict.get('weighted avg', None))
+        
+        self.assertTrue(os.path.isfile(file_name))
+    

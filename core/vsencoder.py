@@ -68,20 +68,6 @@ class SemanticEncoder:
         
         self.clear_memmory()
         return ae.svm_history
-    
-    def run_svm(self):
-        '''
-        Runs SVM and saves results
-         
-        @return dictionary with svm results
-        '''
-        self.svm.run_classifier(self.x_train, self.y_train, 5, -1)
-         
-        self.svm.model.best_estimator_.fit(self.x_train, self.y_train)
-        pred_dict, prediction = self.svm.predict(self.x_test, self.y_test)
-        self.svm.save_results(prediction, pred_dict)
-         
-        return pred_dict
  
     def __del__(self):
         '''
