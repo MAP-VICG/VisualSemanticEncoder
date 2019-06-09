@@ -30,6 +30,10 @@ class SVMClassifier:
         self.tuning_params = {'C': [0.1, 0.3, 0.6, 1]}
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
+        
+        if not os.path.isdir(self.results_path):
+            os.mkdir(self.results_path)
+            
         self.logger.write_message('SVM tuning parameters are %s.' % str(self.tuning_params), MessageType.INF)
         
     def run_classifier(self, x_train, y_train, nfolds=5, njobs=None):
@@ -95,20 +99,21 @@ class SVMClassifier:
          
         return pred_dict
         
-    def save_results(self, prediction, appendix=None, file_name=None):
+    def save_results(self, prediction, appendix=None, tag=None):
         '''
         Saves classification results
         
         @param prediction: string with full prediction table
-        @param file_name: file name to save results under
+        @param tag: string with folder name to saver results under
         @param appendix: dictionary with extra data to save to results file
         '''
-        if not os.path.isdir(self.results_path):
-            os.mkdir(self.results_path)
-        
         try:
-            if file_name and isinstance(file_name, str):
-                result_file = os.path.join(self.results_path, file_name)
+            if tag and isinstance(tag, str):
+                result_file = os.path.join(self.results_path, tag)
+                if not os.path.isdir(result_file):
+                    os.mkdir(result_file)
+                    
+                result_file = os.path.join(result_file, 'svm_prediction.txt')
             else:
                 result_file = os.path.join(self.results_path, 'svm_prediction.txt')
 
@@ -121,4 +126,5 @@ class SVMClassifier:
                         f.write('\n%s: %s' % (key, str(appendix[key])))
                     
         except (IsADirectoryError, OSError):
-            self.logger.write_message('Could not save prediction results under %s.' % result_file, MessageType.ERR)
+            self.logger.write_message('Could not save prediction results under %s.' 
+                                      % result_file, MessageType.ERR)

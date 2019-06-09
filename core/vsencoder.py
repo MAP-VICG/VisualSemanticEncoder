@@ -56,7 +56,7 @@ class SemanticEncoder:
         
         ae = VSAutoencoder(cv=5, njobs=-1, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
         
-        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs)
+        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, tag=tag)
         
         encoded_fts = ae.encoder.predict(x_test)
         decoded_fts = ae.decoder.predict(encoded_fts)

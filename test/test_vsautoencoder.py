@@ -36,7 +36,7 @@ class VSAutoencoderTests(unittest.TestCase):
         cls.nexamples = x_train.shape[0]
         
         cls.ae = VSAutoencoder(cv=2, njobs=2, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test)
-        cls.svm_file = os.path.join(cls.ae.svm.results_path, 'ae_svm_prediction.txt')
+        cls.svm_file = os.path.join(cls.ae.svm.results_path, 'svm_prediction.txt')
         if os.path.isfile(cls.svm_file):
             os.remove(cls.svm_file)
             

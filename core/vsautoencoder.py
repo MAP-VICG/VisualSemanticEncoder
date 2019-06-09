@@ -46,12 +46,13 @@ class VSAutoencoder:
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
         self.logger = Logger(console=console)
         
-    def run_autoencoder(self, enc_dim, nepochs):
+    def run_autoencoder(self, enc_dim, nepochs, tag=None):
         '''
         Builds and trains autoencoder model
         
         @param enc_dim: encoding size
         @param nepochs: number of epochs
+        @param tag: string with folder name to saver results under
         @return object with training details and history
         '''
         def svm_callback(epoch, logs):
@@ -73,8 +74,7 @@ class VSAutoencoder:
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
-                self.svm.save_results(prediction, {'epoch': epoch + 1, 'AE Loss': logs}, 
-                                      'ae_svm_prediction.txt')
+                self.svm.save_results(prediction, {'epoch': epoch + 1, 'AE Loss': logs}, tag)
 
         input_fts = Input(shape=(self.x_train.shape[1],))
         
