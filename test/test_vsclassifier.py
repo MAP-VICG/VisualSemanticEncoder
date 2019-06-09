@@ -11,40 +11,26 @@ Tests for module vsautoencoder
 '''
 import os
 import unittest
-from keras.utils import normalize
 from core.vsclassifier import SVMClassifier
 from sklearn.model_selection import train_test_split
-from core.featuresparser import FeaturesParser, PredicateType
+from core.featuresparser import FeaturesParser
 
 
 class SVMClassifierTests(unittest.TestCase):
     
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         '''
         Initializes model for all tests
         '''
-        fls_path = os.path.join(os.getcwd(), '_mockfiles/awa2')
-        fts_path = os.path.join(fls_path, 'features/ResNet101')
-        self.res_path = os.path.join(fls_path, 'results/')
-        ann_path = os.path.join(fls_path, 'base')
+        parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'), console=True)
         
-        if not os.path.isdir(self.res_path):
-            os.mkdir(self.res_path)
-                    
-        parser = FeaturesParser(fts_path)
-        vis_fts = parser.get_visual_features()
-        sem_fts = normalize(parser.get_semantic_features(ann_path, 
-                                                         PredicateType.CONTINUOUS) + 1, 
-                                                         order=1, axis=1)
         Y = parser.get_labels()
-        X = parser.concatenate_features(vis_fts, sem_fts)
+        X = parser.concatenate_features(parser.get_visual_features(), parser.get_semantic_features())
+        cls.x_train, cls.x_test, cls.y_train, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(X, Y, 
-                                                                               stratify=Y, 
-                                                                               test_size=0.2)
-        self.svm = SVMClassifier()
-        self.svm.run_classifier(self.x_train, self.y_train, 2, 2)
+        cls.svm = SVMClassifier()
+        cls.svm.run_classifier(cls.x_train, cls.y_train, 2, 2)
         
     def test_grid_search(self):
         '''
@@ -78,12 +64,12 @@ class SVMClassifierTests(unittest.TestCase):
         '''
         Tests if prediction results can be saved
         '''
-        result_file = os.path.join(self.res_path, 'svm_prediction.txt')
+        result_file = os.path.join(self.svm.results_path, 'svm_prediction.txt')
             
         if os.path.isfile(result_file):
             os.remove(result_file)
         
         _, prediction = self.svm.predict(self.x_test, self.y_test)
-        self.svm.save_results(prediction, result_file)
+        self.svm.save_results(prediction)
             
         self.assertTrue(os.path.isfile(result_file))

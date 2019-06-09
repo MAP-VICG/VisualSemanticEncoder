@@ -19,13 +19,18 @@ from utils.logwriter import Logger, MessageType
 
 class SVMClassifier:
     
-    def __init__(self):
+    def __init__(self, console=False):
         '''
         Setting tuning parameters
+        
+        @param console: if True, prints debug in console
         '''
         self.model = None
-        self.tuning_params = {'C': [1, 10, 100, 1000]}
-        Logger().write_message('SVM tuning parameters are %s.' % str(self.tuning_params), MessageType.INF)
+        self.logger = Logger(console=console)
+        self.tuning_params = {'C': [0.1, 0.3, 0.6, 1]}
+        self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
+                                                           'SemanticEncoder'), '_files'), 'results')
+        self.logger.write_message('SVM tuning parameters are %s.' % str(self.tuning_params), MessageType.INF)
         
     def run_classifier(self, x_train, y_train, nfolds=5, njobs=None):
         '''
@@ -39,13 +44,9 @@ class SVMClassifier:
         if nfolds < 2:
             raise ValueError('Number of folds cannot be less than 2')
         
-#         from sklearn.svm import SVC
         self.model = GridSearchCV(LinearSVC(verbose=0, max_iter=1000), 
                                   self.tuning_params, cv=nfolds, 
                                   iid=False, scoring='recall_macro', n_jobs=njobs)
-        
-#         self.model = SVC(gamma='auto')
-#         self.model = LinearSVC(random_state=0, tol=1e-5)
         
         self.model.fit(x_train, y_train)
     
@@ -58,8 +59,7 @@ class SVMClassifier:
         @return tuple with dictionary with prediction results and string with 
         full prediction table
         '''
-        y_true, y_pred = y_test, self.model.predict(x_test)
-#         y_true, y_pred = y_test, self.model.best_estimator_.predict(x_test)
+        y_true, y_pred = y_test, self.model.best_estimator_.predict(x_test)
         prediction = classification_report(y_true, y_pred)
 
         keys = ['precision', 'recall', 'f1-score', 'support']
@@ -72,23 +72,22 @@ class SVMClassifier:
             for idx, key in enumerate(keys):
                 pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
                
-        Logger().write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
+        self.logger.write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
         
-    def save_results(self, prediction, results_path, appendix=None):
+    def save_results(self, prediction, appendix=None):
         '''
         Saves classification results
         
         @param prediction: string with full prediction table
-        @param results_path: string with full path to save results under
         @param appendix: dictionary with extra data to save to results file
         '''
-        root_path = os.sep.join(results_path.split(os.sep)[:-1])
-        if not os.path.isdir(root_path):
-            os.mkdir(root_path)
+        if not os.path.isdir(self.results_path):
+            os.mkdir(self.results_path)
         
         try:
-            with open(results_path, 'w+') as f:
+            result_file = os.path.join(self.results_path, 'svm_prediction.txt')
+            with open(result_file, 'w+') as f:
                 f.write(prediction)
                 f.write('\nbest parameters: %s' % str(self.model.best_params_))
                 
@@ -97,4 +96,4 @@ class SVMClassifier:
                         f.write('\n%s: %s' % (key, str(appendix[key])))
                     
         except (IsADirectoryError, OSError):
-            Logger().write_message('Could not save prediction results under %s.' % results_path, MessageType.ERR)
+            self.logger.write_message('Could not save prediction results under %s.' % result_file, MessageType.ERR)
