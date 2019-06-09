@@ -40,12 +40,12 @@ class VSEncoderTests(unittest.TestCase):
         files = ['ae_loss.png', 'ae_encoding.png', 'ae_components.png', 'ae_distribution.png']
          
         for f in files:
-            file_name = os.path.join(self.encoder.plotter.results_path, f)
+            file_name = os.path.join(os.path.join(self.encoder.plotter.results_path, 'mock'), f)
                    
             if os.path.isfile(file_name):
                 os.remove(file_name)
      
-        hist = self.encoder.run_encoder(x_train=self.x_train, y_train=self.y_train, 
+        hist = self.encoder.run_encoder(tag='mock', x_train=self.x_train, y_train=self.y_train, 
                                         x_test=self.x_test, y_test=self.y_test)
           
         self.assertEqual(self.nepochs, len(hist))

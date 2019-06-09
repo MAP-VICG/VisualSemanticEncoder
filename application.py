@@ -29,7 +29,7 @@ def main():
     mock = True
     
     seed = 42
-    epochs = 50
+    epochs = 5
     enc_dim = 128
     log = Logger(console=True)
     
@@ -49,12 +49,40 @@ def main():
     log.write_message('Autoencoder encoding dimension is %d' % enc_dim, MessageType.INF)
     log.write_message('The model will be trained for %d epochs' % epochs, MessageType.INF)
     
-    svm = SVMClassifier()
-    svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], y_train=y_train, y_test=y_test)
+    results = dict()
     
+    # classifying visual features
+    svm = SVMClassifier()
+    results['ref'] = svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], 
+                                 y_train=y_train, y_test=y_test)
+        
     # ALL
     enc = SemanticEncoder(epochs, enc_dim)
-    enc.run_encoder(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    results['all'] = enc.run_encoder('all', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # COLORS
+    results['col'] = enc.run_encoder('col', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # NOT COLORS
+    results['_col'] = enc.run_encoder('_col', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # TEXTURE
+    results['tex'] = enc.run_encoder('tex', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # NOT TEXTURE
+    results['_tex'] = enc.run_encoder('_tex', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # SHAPE
+    results['shp'] = enc.run_encoder('shp', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # NOT SHAPE
+    results['_shp'] = enc.run_encoder('_shp', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # PARTS
+    results['prt'] = enc.run_encoder('prt', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
+    
+    # NOT PARTS
+    results['_prt'] = enc.run_encoder('_prt', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
     
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)

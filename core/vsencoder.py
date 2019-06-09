@@ -40,11 +40,12 @@ class SemanticEncoder:
         K.clear_session()
         gc.collect()
     
-    def run_encoder(self, **kwargs):
+    def run_encoder(self, tag, **kwargs):
         '''
         Runs autoencoder and plots results. It automatically splits the data set into 
         training and test sets
         
+        @param tag: string with folder name to saver results under
         @param kwargs: dictionary with training and testing data
         @return dictionary with svm results
         '''
@@ -60,10 +61,10 @@ class SemanticEncoder:
         encoded_fts = ae.encoder.predict(x_test)
         decoded_fts = ae.decoder.predict(encoded_fts)
         
-        self.plotter.plot_loss(history.history)
-        self.plotter.plot_encoding(x_test, encoded_fts, decoded_fts)
-        self.plotter.plot_pca_vs_encoding(x_test, encoded_fts)
-        self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test)
+        self.plotter.plot_loss(history.history, tag)
+        self.plotter.plot_encoding(x_test, encoded_fts, decoded_fts, tag)
+        self.plotter.plot_pca_vs_encoding(x_test, encoded_fts, tag)
+        self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, tag)
         
         self.clear_memmory()
         return ae.svm_history

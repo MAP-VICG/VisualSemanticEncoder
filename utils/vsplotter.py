@@ -31,16 +31,17 @@ class Plotter:
         self.logger = Logger(console=console)
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
+        if not os.path.isdir(self.results_path):
+            os.mkdir(self.results_path)
         
-    def plot_loss(self, history):
+    def plot_loss(self, history, tag=''):
         '''
         Plots loss and validation loss along training
         
+        @param tag: string with folder name to saver results under
         @param history: dictionary with training history
         '''
         try:
-            file_path = os.path.join(self.results_path, 'ae_loss.png')
-            
             plt.figure()
             plt.rcParams.update({'font.size': 10})
             
@@ -52,14 +53,19 @@ class Plotter:
             plt.ylabel('Loss (MSE)')
             plt.legend(['train', 'test'], loc='upper right')
             
-            if not os.path.isdir(self.results_path):
-                os.mkdir(self.results_path)
+            if tag and isinstance(tag, str):
+                root = os.path.join(self.results_path, tag)
+                file_name = os.path.join(root, 'ae_loss.png')
+                if not os.path.isdir(root):
+                    os.mkdir(root)
+            else:
+                file_name = os.path.join(self.results_path, 'ae_loss.png')
             
-            plt.savefig(file_path)
+            plt.savefig(file_name)
         except OSError:
-            self.logger.write_message('Loss image could not be saved under %s.' % file_path, MessageType.ERR)
+            self.logger.write_message('Loss image could not be saved under %s.' % file_name, MessageType.ERR)
     
-    def plot_encoding(self, input_set, encoding, output_set):
+    def plot_encoding(self, input_set, encoding, output_set, tag=None):
         '''
         Plots input example vs encoded example vs decoded example of 5 random examples
         in test set
@@ -67,6 +73,7 @@ class Plotter:
         @param input_set: autoencoder input
         @param encoding: autoencoder encoded features
         @param output_set: autoencoder output
+        @param tag: string with folder name to saver results under
         '''
         ex_idx = set()
         while len(ex_idx) < 5:
@@ -74,9 +81,7 @@ class Plotter:
         
         error = output_set - input_set
     
-        try:
-            file_path = os.path.join(self.results_path, 'ae_encoding.png')
-            
+        try:    
             plt.figure()
             plt.rcParams.update({'font.size': 6})
             plt.subplots_adjust(wspace=0.4, hspace=0.9)
@@ -102,14 +107,19 @@ class Plotter:
                 ax.set_title('Error')
                 ax.axes.get_xaxis().set_visible(False)
             
-            if not os.path.isdir(self.results_path):
-                os.mkdir(self.results_path)
+            if tag and isinstance(tag, str):
+                root = os.path.join(self.results_path, tag)
+                file_name = os.path.join(root, 'ae_encoding.png')
+                if not os.path.isdir(root):
+                    os.mkdir(root)
+            else:
+                file_name = os.path.join(self.results_path, 'ae_encoding.png')
             
-            plt.savefig(file_path)
+            plt.savefig(file_name)
         except OSError:
-            self.logger.write_message('Error image could not be saved under %s.' % file_path, MessageType.ERR)
+            self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
             
-    def plot_spatial_distribution(self, input_set, encoding, output_set, labels):
+    def plot_spatial_distribution(self, input_set, encoding, output_set, labels, tag=None):
         '''
         Plots the spatial distribution of input, encoding and output using PCA and TSNE
         
@@ -117,6 +127,7 @@ class Plotter:
         @param encoding: autoencoder encoded features
         @param output_set: autoencoder output
         @param labels: data set labels
+        @param tag: string with folder name to saver results under
         ''' 
         plt.figure()
         plt.rcParams.update({'font.size': 8})
@@ -183,21 +194,29 @@ class Plotter:
             self.logger.write_message('LDA could not be computed.', MessageType.ERR)
             
         try:
+            if tag and isinstance(tag, str):
+                root = os.path.join(self.results_path, tag)
+                file_name = os.path.join(root, 'ae_distribution.png')
+                if not os.path.isdir(root):
+                    os.mkdir(root)
+            else:
+                file_name = os.path.join(self.results_path, 'ae_distribution.png')
+                
             if not os.path.isdir(self.results_path):
                 os.mkdir(self.results_path)
-
-            file_name = os.path.join(self.results_path, 'ae_distribution.png')
+                
             plt.savefig(file_name)
         except OSError:
             self.logger.write_message('Scatter plots could not be saved under %s.' 
                                       % file_name, MessageType.ERR)
             
-    def plot_pca_vs_encoding(self, input_set, encoding):
+    def plot_pca_vs_encoding(self, input_set, encoding, tag=None):
         '''
         Plots PCA against encoding components
         
         @param input_set: autoencoder input
         @param encoding: autoencoder encoded features
+        @param tag: string with folder name to saver results under
         ''' 
         ex_idx = set()
         while len(ex_idx) < 5:
@@ -222,10 +241,14 @@ class Plotter:
                 ax.set_title('%d - Encoding' % idx)
                 ax.axes.get_xaxis().set_visible(False)
             
-            if not os.path.isdir(self.results_path):
-                os.mkdir(self.results_path)
-            
-            file_name = os.path.join(self.results_path, 'ae_components.png')
+            if tag and isinstance(tag, str):
+                root = os.path.join(self.results_path, tag)
+                file_name = os.path.join(root, 'ae_components.png')
+                if not os.path.isdir(root):
+                    os.mkdir(root)
+            else:
+                file_name = os.path.join(self.results_path, 'ae_components.png')
+                
             plt.savefig(file_name)
         except (OSError, ValueError):
             self.logger.write_message('PCA vs Encoding image could not be saved under %s.' 
