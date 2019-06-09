@@ -12,40 +12,49 @@ Model to encode visual and semantic features of images
 
 import os
 import time
+import numpy as np
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
 from keras.backend.tensorflow_backend import set_session
 
-from core.encoder import EncodingFeatures
-from core.annotationsparser import PredicateType
+from core.vsclassifier import SVMClassifier
+from core.vsencoder import SemanticEncoder
+from core.featuresparser import FeaturesParser
 from utils.logwriter import Logger, MessageType
 
 
 def main():
     init_time = time.time()
     
-    fls_path = os.path.join(os.getcwd(), 'test/_mockfiles/awa2')
-    fts_path = os.path.join(fls_path, 'features/ResNet101')
-    res_path = os.path.join(fls_path, 'results')
-    ann_path = os.path.join(fls_path, 'base')
+    mock = True
     
-    enc_dim = 128
+    seed = 42
     epochs = 50
-
-    if not os.path.isdir(res_path):
-        os.mkdir(res_path)
+    enc_dim = 128
+    log = Logger(console=True)
     
-    log = Logger(res_path)
+    if mock:
+        parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
+    else:
+        parser = FeaturesParser()
+    
+    sem_fts = parser.get_semantic_features()
+    sem_fts = np.multiply(sem_fts, np.array([v / 10 for v in range(1, sem_fts.shape[1] + 1)]))
+    
+    Y = parser.get_labels()
+    X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=seed, test_size=0.2)
+    
     log.write_message('Starting Semantic Encoder Application', MessageType.INF)
     log.write_message('Autoencoder encoding dimension is %d' % enc_dim, MessageType.INF)
     log.write_message('The model will be trained for %d epochs' % epochs, MessageType.INF)
     
-    enc = EncodingFeatures(fts_path, ann_path, res_path, epochs, enc_dim, PredicateType.BINARY)
+    svm = SVMClassifier()
+    svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], y_train=y_train, y_test=y_test)
     
-    enc.encode_visual()
-    enc.encode_semantic()
-#     enc.encode_concatenated()
-    enc.encode_split_features(23)
-    enc.plot_classification_results()
+    # ALL
+    enc = SemanticEncoder(epochs, enc_dim)
+    enc.run_encoder(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
     
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
@@ -55,7 +64,7 @@ def main():
     log.write_message('Execution has finished successfully', MessageType.INF)
     log.write_message('Elapsed time is %s' % time_elapsed, MessageType.INF)
     
-
+    
 if __name__ == '__main__':
     config = tf.ConfigProto(log_device_placement=True)
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
