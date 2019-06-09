@@ -28,11 +28,10 @@ class VSEncoderTests(unittest.TestCase):
         X = parser.concatenate_features(parser.get_visual_features(), parser.get_semantic_features())
         Y = parser.get_labels()
         
-        x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
+        cls.x_train, cls.x_test, cls.y_train, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
         cls.nepochs = 5
-        cls.encoder = SemanticEncoder(cls.nepochs, 128, x_train=x_train, 
-                                      y_train=y_train, x_test=x_test, y_test=y_test)
+        cls.encoder = SemanticEncoder(cls.nepochs, 128)
         
     def test_run_encoder(self):
         '''
@@ -46,7 +45,8 @@ class VSEncoderTests(unittest.TestCase):
             if os.path.isfile(file_name):
                 os.remove(file_name)
      
-        hist = self.encoder.run_encoder()
+        hist = self.encoder.run_encoder(x_train=self.x_train, y_train=self.y_train, 
+                                        x_test=self.x_test, y_test=self.y_test)
           
         self.assertEqual(self.nepochs, len(hist))
         for res in hist:

@@ -19,21 +19,15 @@ from utils.vsplotter import Plotter
 
 
 class SemanticEncoder:
-    def __init__(self, epochs, encoding_dim, **kwargs):
+    def __init__(self, epochs, encoding_dim):
         '''
         Initializes common parameters
         
-        @param kwargs: dictionary with training and testing data
         @param encoding_dim: autoencoder encoding size
         @param epochs: number of epochs
         '''
         self.epochs = epochs
         self.enc_dim = encoding_dim
-        
-        self.x_train = kwargs.get('x_train')
-        self.y_train = kwargs.get('y_train')
-        self.x_test = kwargs.get('x_test')
-        self.y_test = kwargs.get('y_test')
         
         self.plotter = Plotter()
         self.svm = SVMClassifier()
@@ -46,25 +40,30 @@ class SemanticEncoder:
         K.clear_session()
         gc.collect()
     
-    def run_encoder(self):
+    def run_encoder(self, **kwargs):
         '''
         Runs autoencoder and plots results. It automatically splits the data set into 
         training and test sets
         
+        @param kwargs: dictionary with training and testing data
         @return dictionary with svm results
         '''
-        ae = VSAutoencoder(cv=5, njobs=-1, x_train=self.x_train, x_test=self.x_test, 
-                                      y_train=self.y_train, y_test=self.y_test)
+        x_train = kwargs.get('x_train')
+        y_train = kwargs.get('y_train')
+        x_test = kwargs.get('x_test')
+        y_test = kwargs.get('y_test')
         
-        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, self.x_train.shape[1]), nepochs=self.epochs)
+        ae = VSAutoencoder(cv=5, njobs=-1, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
         
-        encoded_fts = ae.encoder.predict(self.x_test)
+        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs)
+        
+        encoded_fts = ae.encoder.predict(x_test)
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         self.plotter.plot_loss(history.history)
-        self.plotter.plot_encoding(self.x_test, encoded_fts, decoded_fts)
-        self.plotter.plot_pca_vs_encoding(self.x_test, encoded_fts)
-        self.plotter.plot_spatial_distribution(self.x_test, encoded_fts, decoded_fts, self.y_test)
+        self.plotter.plot_encoding(x_test, encoded_fts, decoded_fts)
+        self.plotter.plot_pca_vs_encoding(x_test, encoded_fts)
+        self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test)
         
         self.clear_memmory()
         return ae.svm_history
