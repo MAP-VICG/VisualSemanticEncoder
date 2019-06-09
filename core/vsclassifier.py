@@ -75,18 +75,23 @@ class SVMClassifier:
         self.logger.write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
         
-    def save_results(self, prediction, appendix=None):
+    def save_results(self, prediction, appendix=None, file_name=None):
         '''
         Saves classification results
         
         @param prediction: string with full prediction table
+        @param file_name: file name to save results under
         @param appendix: dictionary with extra data to save to results file
         '''
         if not os.path.isdir(self.results_path):
             os.mkdir(self.results_path)
         
         try:
-            result_file = os.path.join(self.results_path, 'svm_prediction.txt')
+            if file_name and isinstance(file_name, str):
+                result_file = os.path.join(self.results_path, file_name)
+            else:
+                result_file = os.path.join(self.results_path, 'svm_prediction.txt')
+
             with open(result_file, 'w+') as f:
                 f.write(prediction)
                 f.write('\nbest parameters: %s' % str(self.model.best_params_))
