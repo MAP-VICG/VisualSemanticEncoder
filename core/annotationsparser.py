@@ -102,6 +102,7 @@ class AnnotationsParser():
             with open(self.predicate_subset) as f:
                 if as_dict:
                     key = ''
+                    fts_idx = 0
                     predicates = dict()
                     
                     for line in f.readlines():
@@ -113,9 +114,11 @@ class AnnotationsParser():
                                 key = line
                             else:
                                 labels = line.split()
-                                predicates[key].append((int(labels[0]), labels[1]))
+                                predicates[key].append((fts_idx, int(labels[0]), labels[1]))
+                                fts_idx += 1
                 else:
                     predicates = []
+                    
                     for line in f.readlines():
                         line = line.strip()
                         if line and line[0].isdigit():
