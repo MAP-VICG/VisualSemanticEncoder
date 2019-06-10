@@ -71,10 +71,14 @@ class SVMClassifier:
                      'macro avg': {key: None for key in keys},
                      'weighted avg': {key: None for key in keys}}
         
-        for row in prediction.split('\n')[-4:-1]:
-            values = row.split()
-            for idx, key in enumerate(keys):
-                pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
+        try:
+            for row in prediction.split('\n')[-4:-1]:
+                values = row.split()
+                for idx, key in enumerate(keys):
+                    pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
+        except KeyError:
+            self.logger.write_message('Could not retrieve prediction values from %s: %s' 
+                                      % (str(row), str(values)), MessageType.ERR)
                
         self.logger.write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
