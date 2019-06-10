@@ -13,6 +13,7 @@ import unittest
 from sklearn.model_selection import train_test_split
 
 from core.vsencoder import SemanticEncoder
+from core.vsclassifier import SVMClassifier
 from core.featuresparser import FeaturesParser
 
 
@@ -33,64 +34,85 @@ class VSEncoderTests(unittest.TestCase):
         cls.nepochs = 5
         cls.encoder = SemanticEncoder(cls.nepochs, 128)
         
-    def test_run_encoder(self):
+#     def test_run_encoder(self):
+#         '''
+#         Tests if history for all epochs is returned and if results are saved
+#         '''     
+#         files = ['ae_loss.png', 'ae_encoding.png', 'ae_components.png', 'ae_distribution.png']
+#            
+#         for f in files:
+#             file_name = os.path.join(os.path.join(self.encoder.plotter.results_path, 'mock'), f)
+#                      
+#             if os.path.isfile(file_name):
+#                 os.remove(file_name)
+#        
+#         hist = self.encoder.run_encoder(tag='mock', x_train=self.x_train, y_train=self.y_train, 
+#                                         x_test=self.x_test, y_test=self.y_test)
+#             
+#         self.assertEqual(self.nepochs, len(hist))
+#         for res in hist:
+#             self.assertIsNotNone(res.get('micro avg', None))
+#             self.assertIsNotNone(res.get('macro avg', None))
+#             self.assertIsNotNone(res.get('weighted avg', None))
+#         for f in files:
+#             self.assertTrue(os.path.isfile(file_name))
+#                  
+#     def test_pick_semantic_features(self):
+#         '''
+#         Tests if features selection retrieves the correct features
+#         '''
+#         dataset = self.encoder.pick_semantic_features('SHAPE', self.x_test)
+#          
+#         self.assertEqual((200, 2053), dataset.shape)
+#         self.assertTrue((dataset[:, 2048] == self.x_test[:, 2048 + 13]).all())
+#         self.assertTrue((dataset[:, 2049] == self.x_test[:, 2048 + 14]).all())
+#         self.assertTrue((dataset[:, 2050] == self.x_test[:, 2048 + 15]).all())
+#         self.assertTrue((dataset[:, 2051] == self.x_test[:, 2048 + 16]).all())
+#         self.assertTrue((dataset[:, 2052] == self.x_test[:, 2048 + 17]).all())
+#         
+#     def test_pick_semantic_features_opposite(self):
+#         '''
+#         Tests if features selection retrieves the correct features with opposite option enabled
+#         '''
+#         dataset = self.encoder.pick_semantic_features('TEXTURE', self.x_test, opposite=True)
+#         
+#         self.assertEqual((200, 2066), dataset.shape)
+#         self.assertTrue((dataset[:, 2048] == self.x_test[:, 2048 + 0]).all())
+#         self.assertTrue((dataset[:, 2049] == self.x_test[:, 2048 + 1]).all())
+#         self.assertTrue((dataset[:, 2050] == self.x_test[:, 2048 + 2]).all())
+#         self.assertTrue((dataset[:, 2051] == self.x_test[:, 2048 + 3]).all())
+#         self.assertTrue((dataset[:, 2052] == self.x_test[:, 2048 + 4]).all())
+#         self.assertTrue((dataset[:, 2053] == self.x_test[:, 2048 + 5]).all())
+#         self.assertTrue((dataset[:, 2054] == self.x_test[:, 2048 + 6]).all())
+#         self.assertTrue((dataset[:, 2055] == self.x_test[:, 2048 + 7]).all())
+#         self.assertTrue((dataset[:, 2056] == self.x_test[:, 2048 + 13]).all())
+#         self.assertTrue((dataset[:, 2057] == self.x_test[:, 2048 + 14]).all())
+#         self.assertTrue((dataset[:, 2058] == self.x_test[:, 2048 + 15]).all())
+#         self.assertTrue((dataset[:, 2059] == self.x_test[:, 2048 + 16]).all())
+#         self.assertTrue((dataset[:, 2060] == self.x_test[:, 2048 + 17]).all())
+#         self.assertTrue((dataset[:, 2061] == self.x_test[:, 2048 + 18]).all())
+#         self.assertTrue((dataset[:, 2062] == self.x_test[:, 2048 + 19]).all())
+#         self.assertTrue((dataset[:, 2063] == self.x_test[:, 2048 + 20]).all())
+#         self.assertTrue((dataset[:, 2064] == self.x_test[:, 2048 + 21]).all())
+#         self.assertTrue((dataset[:, 2065] == self.x_test[:, 2048 + 22]).all())
+
+    def test_save_results(self):
         '''
-        Tests if history for all epochs is returned and if results are saved
-        '''     
-        files = ['ae_loss.png', 'ae_encoding.png', 'ae_components.png', 'ae_distribution.png']
-           
-        for f in files:
-            file_name = os.path.join(os.path.join(self.encoder.plotter.results_path, 'mock'), f)
-                     
-            if os.path.isfile(file_name):
-                os.remove(file_name)
-       
-        hist = self.encoder.run_encoder(tag='mock', x_train=self.x_train, y_train=self.y_train, 
-                                        x_test=self.x_test, y_test=self.y_test)
+        Tests if results are correctly saved to XML
+        '''
+        results = dict()
+        svm = SVMClassifier()
+        results['REF'] = svm.run_svm(x_train=self.x_train[:,:2048], x_test=self.x_test[:,:2048], 
+                             y_train=self.y_train, y_test=self.y_test)
+        
+        enc = SemanticEncoder(5, 32)
+        results['ALL'] = enc.run_encoder('ALL', x_train=self.x_train, x_test=self.x_test, 
+                                         y_train=self.y_train, y_test=self.y_test)
+    
+        file_name = os.path.join(svm.results_path, 'ae_results.xml')
+              
+        if os.path.isfile(file_name):
+            os.remove(file_name)
             
-        self.assertEqual(self.nepochs, len(hist))
-        for res in hist:
-            self.assertIsNotNone(res.get('micro avg', None))
-            self.assertIsNotNone(res.get('macro avg', None))
-            self.assertIsNotNone(res.get('weighted avg', None))
-        for f in files:
-            self.assertTrue(os.path.isfile(file_name))
-                 
-    def test_pick_semantic_features(self):
-        '''
-        Tests if features selection retrieves the correct features
-        '''
-        dataset = self.encoder.pick_semantic_features('SHAPE', self.x_test)
-         
-        self.assertEqual((200, 2053), dataset.shape)
-        self.assertTrue((dataset[:, 2048] == self.x_test[:, 2048 + 13]).all())
-        self.assertTrue((dataset[:, 2049] == self.x_test[:, 2048 + 14]).all())
-        self.assertTrue((dataset[:, 2050] == self.x_test[:, 2048 + 15]).all())
-        self.assertTrue((dataset[:, 2051] == self.x_test[:, 2048 + 16]).all())
-        self.assertTrue((dataset[:, 2052] == self.x_test[:, 2048 + 17]).all())
-        
-    def test_pick_semantic_features_opposite(self):
-        '''
-        Tests if features selection retrieves the correct features with opposite option enabled
-        '''
-        dataset = self.encoder.pick_semantic_features('TEXTURE', self.x_test, opposite=True)
-        
-        self.assertEqual((200, 2066), dataset.shape)
-        self.assertTrue((dataset[:, 2048] == self.x_test[:, 2048 + 0]).all())
-        self.assertTrue((dataset[:, 2049] == self.x_test[:, 2048 + 1]).all())
-        self.assertTrue((dataset[:, 2050] == self.x_test[:, 2048 + 2]).all())
-        self.assertTrue((dataset[:, 2051] == self.x_test[:, 2048 + 3]).all())
-        self.assertTrue((dataset[:, 2052] == self.x_test[:, 2048 + 4]).all())
-        self.assertTrue((dataset[:, 2053] == self.x_test[:, 2048 + 5]).all())
-        self.assertTrue((dataset[:, 2054] == self.x_test[:, 2048 + 6]).all())
-        self.assertTrue((dataset[:, 2055] == self.x_test[:, 2048 + 7]).all())
-        self.assertTrue((dataset[:, 2056] == self.x_test[:, 2048 + 13]).all())
-        self.assertTrue((dataset[:, 2057] == self.x_test[:, 2048 + 14]).all())
-        self.assertTrue((dataset[:, 2058] == self.x_test[:, 2048 + 15]).all())
-        self.assertTrue((dataset[:, 2059] == self.x_test[:, 2048 + 16]).all())
-        self.assertTrue((dataset[:, 2060] == self.x_test[:, 2048 + 17]).all())
-        self.assertTrue((dataset[:, 2061] == self.x_test[:, 2048 + 18]).all())
-        self.assertTrue((dataset[:, 2062] == self.x_test[:, 2048 + 19]).all())
-        self.assertTrue((dataset[:, 2063] == self.x_test[:, 2048 + 20]).all())
-        self.assertTrue((dataset[:, 2064] == self.x_test[:, 2048 + 21]).all())
-        self.assertTrue((dataset[:, 2065] == self.x_test[:, 2048 + 22]).all())
+        self.encoder.save_results(results)
+        self.assertTrue(os.path.isfile(file_name))

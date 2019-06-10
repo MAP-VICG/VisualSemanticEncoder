@@ -9,13 +9,17 @@ Model to encode visual and semantic features of images
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
+import os
 import gc
 import numpy as np
 import tensorflow as tf
+from xml.dom import minidom
 from keras import backend as K
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 from core.annotationsparser import AnnotationsParser
 from core.vsclassifier import SVMClassifier
+from utils.logwriter import Logger, MessageType
 from core.vsautoencoder import VSAutoencoder
 from utils.vsplotter import Plotter
 
@@ -35,8 +39,15 @@ class SemanticEncoder:
         self.plotter = Plotter()
         self.svm = SVMClassifier()
         
+        self.logger = Logger(console=console)
         parser = AnnotationsParser(console=console)
         self.attributes_map = parser.get_attributes_subset(as_dict=True)
+        
+        self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
+                                                           'SemanticEncoder'), '_files'), 'results')
+        
+        if not os.path.isdir(self.results_path):
+            os.mkdir(self.results_path)
 
     def clear_memmory(self):
         '''
@@ -96,6 +107,52 @@ class SemanticEncoder:
             new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0]]
         
         return new_dataset
+        
+    def save_results(self, res_dict):
+        '''
+        Saves results to XML
+        
+        @param res_dict: dictionary with results for each category
+        @return None
+        '''    
+        root = Element('SemanticEncoder')
+        for key in res_dict.keys():
+            if key == 'REF':
+                child = SubElement(root, key)
+                for k in res_dict[key].keys():
+                    sub_child = SubElement(child, k.replace(' ', '_'))
+                    for x in res_dict[key][k].keys():
+                        sub_sub_child = SubElement(sub_child, x.replace(' ', '_'))
+                        sub_sub_child.text = str(res_dict[key][k][x])
+            else:
+                child = SubElement(root, key)
+                for epoch in res_dict[key]:
+                    for k in epoch.keys():
+                        name = k.replace(' ', '_')
+                        sub_child = child.find(name)
+                        
+                        if not sub_child:
+                            sub_child = SubElement(child, name)
+                            
+                        for x in epoch[k].keys():
+                            name = x.replace(' ', '_')
+                            sub_sub_child = sub_child.find(name)
+                            
+                            if sub_sub_child != None:
+                                sub_sub_child.text += ',' + str(epoch[k][x])
+                            else:
+                                sub_sub_child = SubElement(sub_child, name)
+                                sub_sub_child.text = str(epoch[k][x])
+            
+        try:
+            result_file = os.path.join(self.results_path, 'ae_results.xml')
+            xml = minidom.parseString(tostring(root, 'utf-8')).toprettyxml(indent="  ")
+            
+            with open(result_file, 'w+') as f:
+                f.write(xml)
+        
+        except (IsADirectoryError, OSError):
+            self.logger.write_message('Could not save results under %s.' % result_file, MessageType.ERR)
         
     def __del__(self):
         '''
