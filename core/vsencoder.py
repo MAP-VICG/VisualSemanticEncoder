@@ -83,6 +83,10 @@ class SemanticEncoder:
         self.plotter.plot_pca_vs_encoding(x_test, encoded_fts, tag)
         self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, tag)
         
+        ae.autoencoder.save(os.path.join(os.path.join(self.results_path, tag), 'autoencoder.h5'))
+        ae.encoder.save(os.path.join(os.path.join(self.results_path, tag), 'encoder.h5'))
+        ae.decoder.save(os.path.join(os.path.join(self.results_path, tag), 'decoder.h5'))
+        
         self.clear_memmory()
         return ae.svm_history
     
@@ -102,6 +106,7 @@ class SemanticEncoder:
             att_fts = self.attributes_map[key]
             
         new_dataset = np.zeros((dataset.shape[0], 2048 + len(att_fts)))
+        new_dataset[:,:2048] = dataset[:,:2048]
         
         for idx, fts in enumerate(att_fts):
             new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0]]

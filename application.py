@@ -26,24 +26,34 @@ from utils.logwriter import Logger, MessageType
 def main():
     init_time = time.time()
     
-    mock = False
+    mock = True
     
     epochs = 50
-    enc_dim = 128
-    log = Logger(console=True)
+    enc_dim = 32
     
     if mock:
+        log = Logger(console=True)
         parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
         epochs = 5
     else:
+        log = Logger(console=False)
         parser = FeaturesParser()
     
+    log.write_message('Testing', MessageType.INF)
+    
     sem_fts = parser.get_semantic_features()
-    sem_fts = np.multiply(sem_fts, np.array([v / 10 for v in range(1, sem_fts.shape[1] + 1)]))
+    sem_fts = np.multiply(sem_fts, np.array([v / 100 for v in range(1, sem_fts.shape[1] + 1)]))
     
     Y = parser.get_labels()
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
+    
+    with open('test_set.txt', 'w') as f:
+        for row in x_test:
+            f.write(', '.join(map(str, list(row))) + '\n')
+    
+    with open('test_labels.txt', 'w') as f:
+        f.write(', '.join(map(str, list(y_test))))
     
     log.write_message('Starting Semantic Encoder Application', MessageType.INF)
     log.write_message('Autoencoder encoding dimension is %d' % enc_dim, MessageType.INF)
@@ -54,60 +64,61 @@ def main():
     # classifying visual features
     svm = SVMClassifier()
     results['REF'] = svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], 
-                                 y_train=y_train, y_test=y_test)
+                                 y_train=y_train, y_test=y_test, njobs=-1)
         
     # ALL
     enc = SemanticEncoder(epochs, enc_dim)
     results['ALL'] = enc.run_encoder('ALL', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
     
+     
     # COLOR
     results['COLOR'] = enc.run_encoder('COLOR', 
                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
-    
-    # NOT COLOR
-    results['_COLOR'] = enc.run_encoder('_COLOR', 
-                                        x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
-                                        x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
-                                        y_train=y_train, y_test=y_test)
-    
-    # TEXTURE
-    results['TEXTURE'] = enc.run_encoder('TEXTURE', 
-                                        x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
-                                        x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
-                                        y_train=y_train, y_test=y_test)
-    
-    # NOT TEXTURE
-    results['_TEXTURE'] = enc.run_encoder('_TEXTURE', 
-                                        x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
-                                        x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
-                                        y_train=y_train, y_test=y_test)
-    
-    # SHAPE
-    results['SHAPE'] = enc.run_encoder('SHAPE', 
-                                        x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
-                                        x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
-                                        y_train=y_train, y_test=y_test)
-    
-    # NOT SHAPE
-    results['_SHAPE'] = enc.run_encoder('_SHAPE', 
-                                        x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
-                                        x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
-                                        y_train=y_train, y_test=y_test)
-    
-    # PARTS
-    results['PARTS'] = enc.run_encoder('PARTS', 
-                                        x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
-                                        x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
-                                        y_train=y_train, y_test=y_test)
-    
-    # NOT PARTS
-    results['_PARTS'] = enc.run_encoder('_PARTS', 
-                                        x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 
-                                        x_test=enc.pick_semantic_features('PARTS', x_test, opposite=True),
-                                        y_train=y_train, y_test=y_test)
-    
+     
+#     # NOT COLOR
+#     results['_COLOR'] = enc.run_encoder('_COLOR', 
+#                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
+#                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # TEXTURE
+#     results['TEXTURE'] = enc.run_encoder('TEXTURE', 
+#                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
+#                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # NOT TEXTURE
+#     results['_TEXTURE'] = enc.run_encoder('_TEXTURE', 
+#                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
+#                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # SHAPE
+#     results['SHAPE'] = enc.run_encoder('SHAPE', 
+#                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
+#                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # NOT SHAPE
+#     results['_SHAPE'] = enc.run_encoder('_SHAPE', 
+#                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
+#                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # PARTS
+#     results['PARTS'] = enc.run_encoder('PARTS', 
+#                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
+#                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
+#                                         y_train=y_train, y_test=y_test)
+#     
+#     # NOT PARTS
+#     results['_PARTS'] = enc.run_encoder('_PARTS', 
+#                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 
+#                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=True),
+#                                         y_train=y_train, y_test=y_test)
+#     
     enc.save_results(results)
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)

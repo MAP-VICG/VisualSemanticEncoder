@@ -67,15 +67,21 @@ class SVMClassifier:
         prediction = classification_report(y_true, y_pred)
 
         keys = ['precision', 'recall', 'f1-score', 'support']
-        pred_dict = {'micro avg': {key: None for key in keys},
-                     'macro avg': {key: None for key in keys},
+        pred_dict = {'accuracy': {key: None for key in keys},
+                     'macro avg': {key: None for key in keys[-2:]},
                      'weighted avg': {key: None for key in keys}}
         
         try:
             for row in prediction.split('\n')[-4:-1]:
                 values = row.split()
-                for idx, key in enumerate(keys):
-                    pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
+                
+                if values[0] == 'accuracy':
+                    pred_dict[values[0]]['f1-score'] = float(values[-2])
+                    pred_dict[values[0]]['support'] = float(values[-1])
+                else:
+                    for idx, key in enumerate(keys):
+                        pred_dict[values[0] + ' ' + values[1]][key] = float(values[idx + 2])
+                    
         except KeyError:
             self.logger.write_message('Could not retrieve prediction values from %s: %s' 
                                       % (str(row), str(values)), MessageType.ERR)
