@@ -77,48 +77,48 @@ def main():
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
      
-#     # NOT COLOR
-#     results['_COLOR'] = enc.run_encoder('_COLOR', 
-#                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
-#                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # TEXTURE
-#     results['TEXTURE'] = enc.run_encoder('TEXTURE', 
-#                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
-#                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # NOT TEXTURE
-#     results['_TEXTURE'] = enc.run_encoder('_TEXTURE', 
-#                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
-#                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # SHAPE
-#     results['SHAPE'] = enc.run_encoder('SHAPE', 
-#                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
-#                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # NOT SHAPE
-#     results['_SHAPE'] = enc.run_encoder('_SHAPE', 
-#                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
-#                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # PARTS
-#     results['PARTS'] = enc.run_encoder('PARTS', 
-#                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
-#                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
-#                                         y_train=y_train, y_test=y_test)
-#     
-#     # NOT PARTS
-#     results['_PARTS'] = enc.run_encoder('_PARTS', 
-#                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 
-#                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=True),
-#                                         y_train=y_train, y_test=y_test)
-#     
+    # NOT COLOR
+    results['_COLOR'] = enc.run_encoder('_COLOR', 
+                                        x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
+                                        x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
+                                        y_train=y_train, y_test=y_test)
+     
+    # TEXTURE
+    results['TEXTURE'] = enc.run_encoder('TEXTURE', 
+                                        x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
+                                        x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
+                                        y_train=y_train, y_test=y_test)
+     
+    # NOT TEXTURE
+    results['_TEXTURE'] = enc.run_encoder('_TEXTURE', 
+                                        x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
+                                        x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
+                                        y_train=y_train, y_test=y_test)
+     
+    # SHAPE
+    results['SHAPE'] = enc.run_encoder('SHAPE', 
+                                        x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
+                                        x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
+                                        y_train=y_train, y_test=y_test)
+     
+    # NOT SHAPE
+    results['_SHAPE'] = enc.run_encoder('_SHAPE', 
+                                        x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
+                                        x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
+                                        y_train=y_train, y_test=y_test)
+     
+    # PARTS
+    results['PARTS'] = enc.run_encoder('PARTS', 
+                                        x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
+                                        x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
+                                        y_train=y_train, y_test=y_test)
+     
+    # NOT PARTS
+    results['_PARTS'] = enc.run_encoder('_PARTS', 
+                                        x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 
+                                        x_test=enc.pick_semantic_features('PARTS', x_test, opposite=True),
+                                        y_train=y_train, y_test=y_test)
+     
     enc.save_results(results)
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
