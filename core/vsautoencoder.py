@@ -65,29 +65,34 @@ class VSAutoencoder:
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             
-            self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train[:,:2048],
-                                                                     np.expand_dims(self.x_train[:,2048:], 
-                                                                                    axis=-1)]), self.y_train)
+#             self.svm.model.best_estimator_.fit(self.encoder.predict([self.x_train[:,:2048],
+#                                                                      np.expand_dims(self.x_train[:,2048:], 
+#                                                                                     axis=-1)]), self.y_train)
+            self.svm.model.best_estimator_.fit(self.encoder.predict(self.x_train), self.y_train)
             
             sys.stderr = old_stderr
             self.logger.write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
             
-            pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test[:,:2048], 
-                                                                           np.expand_dims(self.x_test[:,2048:], 
-                                                                                          axis=-1)]), self.y_test)
+#             pred_dict, prediction = self.svm.predict(self.encoder.predict([self.x_test[:,:2048], 
+#                                                                            np.expand_dims(self.x_test[:,2048:], 
+#                                                                                           axis=-1)]), self.y_test)
+            
+            pred_dict, prediction = self.svm.predict(self.encoder.predict(self.x_test), self.y_test)
             self.svm_history.append(pred_dict)
             
             if epoch == nepochs - 1:
                 self.svm.save_results(prediction, {'epoch': epoch + 1, 'AE Loss': logs}, tag)
 
-        input_vis_fts = Input(shape=(self.x_train[:,:2048].shape[1],))
-        input_sem_fts = Input(shape=(self.x_train[:,2048:].shape[1],1))
-        embedding_sem = Conv1D(5, 25, use_bias=False, padding='same')(input_sem_fts)
+#         input_vis_fts = Input(shape=(self.x_train[:,:2048].shape[1],))
+#         input_sem_fts = Input(shape=(self.x_train[:,2048:].shape[1],1))
+#         embedding_sem = Conv1D(5, 25, use_bias=False, padding='same')(input_sem_fts)
+
+#         flatten_sem = Flatten()(embedding_sem)
+#         encoded = Concatenate()([input_vis_fts, flatten_sem])
+#         encoded = Dense(1426, activation='relu')(encoded)        
+        input_fts = Input(shape=(self.x_train.shape[1],))
         
-        flatten_sem = Flatten()(embedding_sem)
-        encoded = Concatenate()([input_vis_fts, flatten_sem])
-        
-        encoded = Dense(1426, activation='relu')(encoded)
+        encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
@@ -100,7 +105,8 @@ class VSAutoencoder:
         decoded = Dense(1426, activation='relu')(decoded)
         decoded = Dense(self.x_train[:,:2048].shape[1] + self.x_train[:,2048:].shape[1], activation='relu')(decoded)
      
-        self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
+#         self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
+        self.autoencoder = Model(inputs=input_fts, outputs=decoded)
         self.autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
         
         old_stdout = sys.stdout
@@ -118,14 +124,23 @@ class VSAutoencoder:
         decoder_layer = self.autoencoder.layers[-2](decoder_layer)
         decoder_layer = self.autoencoder.layers[-1](decoder_layer)
 
-        self.encoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=encoded)
+#         self.encoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=encoded)
+        self.encoder = Model(inputs=input_fts, outputs=encoded)
         self.decoder = Model(encoded_input, decoder_layer)
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
         noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train[:,:2048].shape)) / 10
         
-        history = self.autoencoder.fit([self.x_train[:,:2048] + noise, 
-                                        np.expand_dims(self.x_train[:,2048:], axis=-1)], 
+#         history = self.autoencoder.fit([self.x_train[:,:2048] + noise, 
+#                                         np.expand_dims(self.x_train[:,2048:], axis=-1)], 
+#                                        self.x_train,
+#                                        epochs=nepochs,
+#                                        batch_size=512,
+#                                        shuffle=True,
+#                                        verbose=1,
+#                                        validation_split=0.2,
+#                                        callbacks=[svm])
+        history = self.autoencoder.fit(self.x_train, 
                                        self.x_train,
                                        epochs=nepochs,
                                        batch_size=512,

@@ -83,7 +83,8 @@ class SemanticEncoder:
             f.write('acc: ' + ','.join([str(v) for v in history.history['acc']]) + '\n')
             f.write('val_acc: ' + ','.join([str(v) for v in history.history['val_acc']]) + '\n')
         
-        encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
+#         encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
+        encoded_fts = ae.encoder.predict(x_test)
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         self.plotter.plot_loss(history.history, tag)

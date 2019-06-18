@@ -65,7 +65,7 @@ def main():
     svm = SVMClassifier()
     results['REF'] = svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], 
                                  y_train=y_train, y_test=y_test, njobs=-1)
-          
+           
     # ALL
     enc = SemanticEncoder(epochs, enc_dim)
     results['ALL'] = enc.run_encoder('ALL', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
