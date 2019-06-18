@@ -75,6 +75,14 @@ class SemanticEncoder:
         
         history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, tag=tag)
         
+        with open(os.path.join(os.path.join(self.results_path, tag), 'history.txt'),'w') as f:
+            f.write('loss: ' + ','.join([str(v) for v in history.history['loss']]) + '\n')
+            f.write('val_loss: ' + ','.join([str(v) for v in history.history['val_loss']]) + '\n')
+            f.write('val_mean_absolute_error: ' + ','.join([str(v) for v in history.history['val_mean_absolute_error']]) + '\n')
+            f.write('mean_absolute_error: ' + ','.join([str(v) for v in history.history['mean_absolute_error']]) + '\n')
+            f.write('acc: ' + ','.join([str(v) for v in history.history['acc']]) + '\n')
+            f.write('val_acc: ' + ','.join([str(v) for v in history.history['val_acc']]) + '\n')
+        
         encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
         decoded_fts = ae.decoder.predict(encoded_fts)
         

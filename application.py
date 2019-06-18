@@ -26,10 +26,10 @@ from utils.logwriter import Logger, MessageType
 def main():
     init_time = time.time()
     
-    mock = True
+    mock = False
     
     epochs = 50
-    enc_dim = 32
+    enc_dim = 128
     
     if mock:
         log = Logger(console=True)
@@ -42,11 +42,11 @@ def main():
     log.write_message('Testing', MessageType.INF)
     
     sem_fts = parser.get_semantic_features()
-    sem_fts = np.multiply(sem_fts, np.array([v / 100 for v in range(1, sem_fts.shape[1] + 1)]))
+    sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
     
     Y = parser.get_labels()
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=27, test_size=0.2)
     
     with open('test_set.txt', 'w') as f:
         for row in x_test:
@@ -65,7 +65,7 @@ def main():
     svm = SVMClassifier()
     results['REF'] = svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], 
                                  y_train=y_train, y_test=y_test, njobs=-1)
-        
+          
     # ALL
     enc = SemanticEncoder(epochs, enc_dim)
     results['ALL'] = enc.run_encoder('ALL', x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
@@ -76,43 +76,43 @@ def main():
                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # NOT COLOR
     results['_COLOR'] = enc.run_encoder('_COLOR', 
                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # TEXTURE
     results['TEXTURE'] = enc.run_encoder('TEXTURE', 
                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # NOT TEXTURE
     results['_TEXTURE'] = enc.run_encoder('_TEXTURE', 
                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # SHAPE
     results['SHAPE'] = enc.run_encoder('SHAPE', 
                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # NOT SHAPE
     results['_SHAPE'] = enc.run_encoder('_SHAPE', 
                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # PARTS
     results['PARTS'] = enc.run_encoder('PARTS', 
                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
-     
+      
     # NOT PARTS
     results['_PARTS'] = enc.run_encoder('_PARTS', 
                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 

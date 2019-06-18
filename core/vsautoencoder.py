@@ -14,7 +14,7 @@ import sys
 import numpy as np
 
 from keras.models import Model
-from keras.layers import Input, Dense, Conv1D, Flatten, Concatenate
+from keras.layers import Input, Dense, Conv1D, Flatten, Concatenate, BatchNormalization
 from keras.callbacks import LambdaCallback
 
 from core.vsclassifier import SVMClassifier
@@ -91,9 +91,9 @@ class VSAutoencoder:
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
         
-        #encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         encoded = Dense(enc_dim, activation='relu')(encoded)
-        #encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
+        encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
         
         decoded = Dense(328, activation='relu')(encoded)
         decoded = Dense(732, activation='relu')(decoded)
@@ -101,7 +101,7 @@ class VSAutoencoder:
         decoded = Dense(self.x_train[:,:2048].shape[1] + self.x_train[:,2048:].shape[1], activation='relu')(decoded)
      
         self.autoencoder = Model(inputs=[input_vis_fts, input_sem_fts], outputs=decoded)
-        self.autoencoder.compile(optimizer='adam', loss='mse')
+        self.autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
         
         old_stdout = sys.stdout
         sys.stdout = buffer = io.StringIO()
@@ -128,7 +128,7 @@ class VSAutoencoder:
                                         np.expand_dims(self.x_train[:,2048:], axis=-1)], 
                                        self.x_train,
                                        epochs=nepochs,
-                                       batch_size=128,
+                                       batch_size=512,
                                        shuffle=True,
                                        verbose=1,
                                        validation_split=0.2,
