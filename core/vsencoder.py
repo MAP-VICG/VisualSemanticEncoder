@@ -75,7 +75,7 @@ class SemanticEncoder:
         
         history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, tag=tag)
         
-        encoded_fts = ae.encoder.predict(x_test)
+        encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         self.plotter.plot_loss(history.history, tag)
