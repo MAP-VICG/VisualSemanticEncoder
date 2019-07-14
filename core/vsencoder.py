@@ -57,11 +57,12 @@ class SemanticEncoder:
         K.clear_session()
         gc.collect()
     
-    def run_encoder(self, tag, **kwargs):
+    def run_encoder(self, tag, simple, batch_norm, **kwargs):
         '''
         Runs autoencoder and plots results. It automatically splits the data set into 
         training and test sets
         
+        @param simple: if True, considers simple AE
         @param tag: string with folder name to saver results under
         @param kwargs: dictionary with training and testing data
         @return dictionary with svm results
@@ -73,7 +74,10 @@ class SemanticEncoder:
         
         ae = VSAutoencoder(cv=5, njobs=-1, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
         
-        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, tag=tag)
+        if simple:
+            history = ae.run_simple_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, batch_norm=batch_norm, tag=tag)
+        else:
+            history = ae.run_conv_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, batch_norm=batch_norm, tag=tag)
         
         with open(os.path.join(os.path.join(self.results_path, tag), 'history.txt'),'w') as f:
             f.write('loss: ' + ','.join([str(v) for v in history.history['loss']]) + '\n')
@@ -83,8 +87,11 @@ class SemanticEncoder:
             f.write('acc: ' + ','.join([str(v) for v in history.history['acc']]) + '\n')
             f.write('val_acc: ' + ','.join([str(v) for v in history.history['val_acc']]) + '\n')
         
-#         encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
-        encoded_fts = ae.encoder.predict(x_test)
+        if simple:
+            encoded_fts = ae.encoder.predict(x_test)
+        else:
+            encoded_fts = ae.encoder.predict([x_test[:,:2048], np.expand_dims(x_test[:,2048:], axis=-1)])
+        
         decoded_fts = ae.decoder.predict(encoded_fts)
         
         self.plotter.plot_loss(history.history, tag)
@@ -110,7 +117,7 @@ class SemanticEncoder:
         @return numpy array with filtered features
         '''
         if opposite:
-            att_fts = [fts for k in self.attributes_map.keys() for fts in self.attributes_map[k] if k != key]
+            att_fts = [fts for k in self.attributes_map.keys() for fts in self.attributes_map[k] if k != key and k != 'ALL']
         else:
             att_fts = self.attributes_map[key]
             

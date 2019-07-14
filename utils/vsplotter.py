@@ -129,6 +129,7 @@ class Plotter:
         @param labels: data set labels
         @param tag: string with folder name to saver results under
         ''' 
+        return
         plt.figure()
         plt.rcParams.update({'font.size': 8})
              
