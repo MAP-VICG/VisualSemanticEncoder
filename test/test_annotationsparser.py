@@ -52,10 +52,10 @@ class AnnotationsParserTests(unittest.TestCase):
         '''
         attributes = self.parser.get_attributes_subset()
          
-        self.assertEqual(23, len(attributes))
+        self.assertEqual(24, len(attributes))
         self.assertEqual('orange', attributes[5])
         self.assertEqual('stripes', attributes[10])
-        self.assertEqual('hands', attributes[19])
+        self.assertEqual('flippers', attributes[19])
         
     def test_get_attributes_subset_as_dict(self):
         '''
@@ -67,7 +67,8 @@ class AnnotationsParserTests(unittest.TestCase):
         self.assertTrue(8, len(attributes['COLOR']))
         self.assertTrue(5, len(attributes['TEXTURE']))
         self.assertTrue(5, len(attributes['SHAPE']))
-        self.assertTrue(5, len(attributes['PARTS'])) 
+        self.assertTrue(5, len(attributes['PARTS']))
+        self.assertTrue(23, len(attributes['ALL']))
      
     def test_get_predicate_matrix(self):
         '''
@@ -91,7 +92,7 @@ class AnnotationsParserTests(unittest.TestCase):
         self.assertEqual(self.parser.get_classes(), list(attributes.index.values))
         self.assertEqual(self.parser.get_attributes_subset(), list(attributes.columns.values))
         self.assertEqual((50,), attributes['horns'].values.shape)
-        self.assertEqual((23,), attributes.loc['gorilla'].values.shape)
+        self.assertEqual((24,), attributes.loc['gorilla'].values.shape)
          
     def test_attributes_content(self):
         '''

@@ -61,7 +61,7 @@ class FeaturesParserTests(unittest.TestCase):
         '''
         features = self.parser.get_semantic_features(subset=True)
            
-        self.assertEqual((1000, 23), features.shape)
+        self.assertEqual((1000, 24), features.shape)
         self.assertTrue(sum(sum(features)) > 0)
         
     def test_concatenate_features(self):

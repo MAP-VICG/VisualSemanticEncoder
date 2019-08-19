@@ -40,7 +40,7 @@ class VSAutoencoderTests(unittest.TestCase):
         if os.path.isfile(cls.svm_file):
             os.remove(cls.svm_file)
             
-        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5)
+        cls.history = cls.ae.run_simple_autoencoder(cls.enc_dim, 5, batch_norm=False)
          
     def test_build_autoencoder(self):
         '''
@@ -49,7 +49,7 @@ class VSAutoencoderTests(unittest.TestCase):
         middle = floor(len(self.ae.autoencoder.layers) / 2)
                
         # input
-        self.assertEqual((None, 2133), self.ae.autoencoder.layers[0].input_shape)
+        self.assertEqual([(None, 2133)], self.ae.autoencoder.layers[0].input_shape)
                
         # encoding
         self.assertEqual((None, self.enc_dim), self.ae.autoencoder.layers[middle].output_shape)

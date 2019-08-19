@@ -13,6 +13,7 @@ data retrieved includes all possible classes and attributes.
 import os
 import numpy as np
 import pandas as pd
+
 from utils.logwriter import Logger, MessageType
 
 
@@ -122,7 +123,9 @@ class AnnotationsParser():
                     for line in f.readlines():
                         line = line.strip()
                         if line and line[0].isdigit():
-                            predicates.append(line.split()[1])
+                            value = line.split()[1]
+                            if value not in predicates:
+                                predicates.append(value)
                 
             return predicates
         except KeyError:

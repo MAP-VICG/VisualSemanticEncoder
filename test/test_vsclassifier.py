@@ -59,8 +59,13 @@ class SVMClassifierTests(unittest.TestCase):
         pred_dict, _ = self.svm.predict(self.x_test, self.y_test)
         
         for avg in pred_dict.keys():
-            for key in pred_dict[avg].keys():
-                self.assertFalse(pred_dict[avg][key] == None)
+            if avg == 'accuracy':
+                self.assertIsNone(pred_dict[avg]['precision'])
+                self.assertIsNone(pred_dict[avg]['recall'])
+                self.assertIsNotNone(pred_dict[avg]['f1-score'])
+            else:
+                for key in pred_dict[avg].keys():
+                    self.assertIsNotNone(pred_dict[avg][key])
         
     def test_save_results(self):
         '''
@@ -86,7 +91,7 @@ class SVMClassifierTests(unittest.TestCase):
             os.remove(file_name)
                 
         pred_dict = self.svm.run_svm(self.x_train, self.y_train, self.x_test, self.y_test)
-        self.assertIsNotNone(pred_dict.get('micro avg', None))
+        self.assertIsNotNone(pred_dict.get('accuracy', None))
         self.assertIsNotNone(pred_dict.get('macro avg', None))
         self.assertIsNotNone(pred_dict.get('weighted avg', None))
         
