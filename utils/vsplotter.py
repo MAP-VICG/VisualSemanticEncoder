@@ -41,10 +41,10 @@ class Plotter:
         @param tag: string with folder name to saver results under
         @param history: dictionary with training history
         '''
-        try:
-            plt.figure()
-            plt.rcParams.update({'font.size': 10})
+        fig = plt.figure()
+        plt.rcParams.update({'font.size': 10})
             
+        try:
             plt.plot(history['loss'])
             plt.plot(history['val_loss'])
             plt.title('Autoencoder Loss')
@@ -62,8 +62,10 @@ class Plotter:
                 file_name = os.path.join(self.results_path, 'ae_loss.png')
             
             plt.savefig(file_name)
+            plt.close(fig)
         except OSError:
             self.logger.write_message('Loss image could not be saved under %s.' % file_name, MessageType.ERR)
+        plt.close(fig)
     
     def plot_encoding(self, input_set, encoding, output_set, tag=None):
         '''
@@ -81,11 +83,11 @@ class Plotter:
         
         error = output_set - input_set
     
-        try:    
-            plt.figure()
-            plt.rcParams.update({'font.size': 6})
-            plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        fig = plt.figure()
+        plt.rcParams.update({'font.size': 6})
+        plt.subplots_adjust(wspace=0.4, hspace=0.9)
             
+        try:
             for i, idx in enumerate(ex_idx):
                 ax = plt.subplot(5, 4, 4 * i + 1)
                 plt.plot(input_set[idx, :], linestyle='None', marker='o', markersize=1)
@@ -118,6 +120,7 @@ class Plotter:
             plt.savefig(file_name)
         except OSError:
             self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
+            plt.close(fig)
             
     def plot_spatial_distribution(self, input_set, encoding, output_set, labels, tag=None):
         '''
@@ -128,9 +131,8 @@ class Plotter:
         @param output_set: autoencoder output
         @param labels: data set labels
         @param tag: string with folder name to saver results under
-        ''' 
-        return
-        plt.figure()
+        '''
+        fig = plt.figure()
         plt.rcParams.update({'font.size': 8})
              
         try:    
@@ -210,6 +212,7 @@ class Plotter:
         except OSError:
             self.logger.write_message('Scatter plots could not be saved under %s.' 
                                       % file_name, MessageType.ERR)
+        plt.close(fig)
             
     def plot_pca_vs_encoding(self, input_set, encoding, tag=None):
         '''
@@ -226,11 +229,11 @@ class Plotter:
         pca = PCA(n_components=encoding.shape[1])
         input_fts = pca.fit_transform(input_set)
     
-        try:
-            plt.figure()
-            plt.rcParams.update({'font.size': 6})
-            plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        fig = plt.figure()
+        plt.rcParams.update({'font.size': 6})
+        plt.subplots_adjust(wspace=0.4, hspace=0.9)
             
+        try:        
             for i, idx in enumerate(ex_idx):
                 ax = plt.subplot(5, 2, 2 * i + 1)
                 plt.plot(input_fts[idx, :], linestyle='None', marker='o', markersize=3)
@@ -249,8 +252,9 @@ class Plotter:
                     os.mkdir(root)
             else:
                 file_name = os.path.join(self.results_path, 'ae_components.png')
-                
+            
             plt.savefig(file_name)
         except (OSError, ValueError):
             self.logger.write_message('PCA vs Encoding image could not be saved under %s.' 
                                       % file_name, MessageType.ERR)
+        plt.close(fig)

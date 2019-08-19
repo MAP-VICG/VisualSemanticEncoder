@@ -12,9 +12,9 @@ Model to encode visual and semantic features of images
 import os
 import gc
 import numpy as np
-import tensorflow as tf
 from xml.dom import minidom
-from keras import backend as K
+from tensorflow.keras import backend as K
+from tensorflow.python.framework import ops
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from core.annotationsparser import AnnotationsParser
@@ -53,7 +53,7 @@ class SemanticEncoder:
         '''
         Resets Tensorflow graph, clear Keras session and calls garbage collector
         '''
-        tf.reset_default_graph()
+        ops.reset_default_graph()
         K.clear_session()
         gc.collect()
     
@@ -82,8 +82,8 @@ class SemanticEncoder:
         with open(os.path.join(os.path.join(self.results_path, tag), 'history.txt'),'w') as f:
             f.write('loss: ' + ','.join([str(v) for v in history.history['loss']]) + '\n')
             f.write('val_loss: ' + ','.join([str(v) for v in history.history['val_loss']]) + '\n')
-            f.write('val_mean_absolute_error: ' + ','.join([str(v) for v in history.history['val_mean_absolute_error']]) + '\n')
-            f.write('mean_absolute_error: ' + ','.join([str(v) for v in history.history['mean_absolute_error']]) + '\n')
+            f.write('val_mae: ' + ','.join([str(v) for v in history.history['val_mae']]) + '\n')
+            f.write('mae: ' + ','.join([str(v) for v in history.history['mae']]) + '\n')
             f.write('acc: ' + ','.join([str(v) for v in history.history['acc']]) + '\n')
             f.write('val_acc: ' + ','.join([str(v) for v in history.history['val_acc']]) + '\n')
         

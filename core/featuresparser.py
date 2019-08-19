@@ -12,7 +12,7 @@ Retrieves features of 37322 images extracted with ResNet101. Each feature vector
 '''
 import os
 import numpy as np
-from keras.utils import normalize
+from tensorflow.keras.utils import normalize
 
 from utils.logwriter import Logger, MessageType
 from core.annotationsparser import AnnotationsParser

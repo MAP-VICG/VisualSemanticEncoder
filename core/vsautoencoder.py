@@ -13,9 +13,9 @@ import io
 import sys
 import numpy as np
 
-from keras.models import Model
-from keras.layers import Input, Dense, Conv1D, Flatten, Concatenate, BatchNormalization
-from keras.callbacks import LambdaCallback
+from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import LambdaCallback
+from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten, Concatenate, BatchNormalization
 
 from core.vsclassifier import SVMClassifier
 from utils.logwriter import Logger, MessageType

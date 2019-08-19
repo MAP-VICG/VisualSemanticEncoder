@@ -15,7 +15,7 @@ import time
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from keras.backend.tensorflow_backend import set_session
+# from tensorflow.compat.v1.keras.backend import set_session
 
 from core.vsclassifier import SVMClassifier
 from core.vsencoder import SemanticEncoder
@@ -138,6 +138,6 @@ def main():
 if __name__ == '__main__':
     config = tf.compat.v1.ConfigProto(log_device_placement=True)
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    set_session(tf.compat.v1.Session(config=config))
+#     tf.keras.backend.set_session(tf.compat.v1.Session(config=config))
     
     main()
