@@ -125,7 +125,7 @@ class SemanticEncoder:
         new_dataset[:,:2048] = dataset[:,:2048]
         
         for idx, fts in enumerate(att_fts):
-            new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0]]
+            new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
         
         return new_dataset
         
