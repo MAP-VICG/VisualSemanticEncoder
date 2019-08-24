@@ -116,6 +116,7 @@ class SemanticEncoder:
         @param opposite: if True instead of getting the features in key, get all features but it
         @return numpy array with filtered features
         '''
+        self.logger.write_message('Considering dataset of shape: %s' % str(dataset.shape), MessageType.INF)
         if opposite:
             att_fts = [fts for k in self.attributes_map.keys() for fts in self.attributes_map[k] if k != key and k != 'ALL']
         else:
@@ -125,6 +126,7 @@ class SemanticEncoder:
         new_dataset[:,:2048] = dataset[:,:2048]
         
         for idx, fts in enumerate(att_fts):
+            self.logger.write_message('Getting attribute: %s' % str(fts), MessageType.INF)
             new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
         
         return new_dataset

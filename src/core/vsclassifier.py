@@ -27,7 +27,7 @@ class SVMClassifier:
         '''
         self.model = None
         self.logger = Logger(console=console)
-        self.tuning_params = {'C': [0.1, 0.3, 0.6, 1]}
+        self.tuning_params = {'C': [0.1, 0.3, 0.6, 1, 10]}
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
         
