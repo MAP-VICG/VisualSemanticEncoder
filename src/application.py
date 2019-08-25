@@ -15,7 +15,7 @@ import time
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-# from tensorflow.compat.v1.keras.backend import set_session
+from tensorflow.compat.v1.keras.backend import set_session
 
 from core.vsclassifier import SVMClassifier
 from core.vsencoder import SemanticEncoder
@@ -26,7 +26,7 @@ from utils.logwriter import Logger, MessageType
 def main():
     init_time = time.time()
     
-    mock = False
+    mock = True
     
     epochs = 50
     enc_dim = 128
@@ -67,69 +67,69 @@ def main():
     
     # classifying visual features
     svm = SVMClassifier()
-    log.write_message('Running REF %s', MessageType.INF)
+    log.write_message('Running REF', MessageType.INF)
     results['REF'] = svm.run_svm(x_train=x_train[:,:2048], x_test=x_test[:,:2048], 
                                  y_train=y_train, y_test=y_test, njobs=-1)
            
     # ALL
     enc = SemanticEncoder(epochs, enc_dim)
-    log.write_message('Running ALL %s', MessageType.INF)
+    log.write_message('Running ALL', MessageType.INF)
     results['ALL'] = enc.run_encoder('ALL', simple, batch_norm,
                                      x_train=enc.pick_semantic_features('ALL', x_train, opposite=False), 
                                      x_test=enc.pick_semantic_features('ALL', x_test, opposite=False), 
                                      y_train=y_train, y_test=y_test)
      
     # COLOR
-    log.write_message('Running COLOR %s', MessageType.INF)
+    log.write_message('Running COLOR', MessageType.INF)
     results['COLOR'] = enc.run_encoder('COLOR', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
       
     # NOT COLOR
-    log.write_message('Running NOT COLOR %s', MessageType.INF)
+    log.write_message('Running NOT COLOR', MessageType.INF)
     results['_COLOR'] = enc.run_encoder('_COLOR', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('COLOR', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('COLOR', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
       
     # TEXTURE
-    log.write_message('Running TEXTURE %s', MessageType.INF)
+    log.write_message('Running TEXTURE', MessageType.INF)
     results['TEXTURE'] = enc.run_encoder('TEXTURE', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
       
     # NOT TEXTURE
-    log.write_message('Running NOT TEXTURE %s', MessageType.INF)
+    log.write_message('Running NOT TEXTURE', MessageType.INF)
     results['_TEXTURE'] = enc.run_encoder('_TEXTURE', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('TEXTURE', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('TEXTURE', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
       
     # SHAPE
-    log.write_message('Running SHAPE %s', MessageType.INF)
+    log.write_message('Running SHAPE', MessageType.INF)
     results['SHAPE'] = enc.run_encoder('SHAPE', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
       
     # NOT SHAPE
-    log.write_message('Running NOT SHAPE %s', MessageType.INF)
+    log.write_message('Running NOT SHAPE', MessageType.INF)
     results['_SHAPE'] = enc.run_encoder('_SHAPE', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('SHAPE', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('SHAPE', x_test, opposite=True),
                                         y_train=y_train, y_test=y_test)
       
     # PARTS
-    log.write_message('Running PARTS %s', MessageType.INF)
+    log.write_message('Running PARTS', MessageType.INF)
     results['PARTS'] = enc.run_encoder('PARTS', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=False), 
                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=False),
                                         y_train=y_train, y_test=y_test)
       
     # NOT PARTS
-    log.write_message('Running NOT PARTS %s', MessageType.INF)
+    log.write_message('Running NOT PARTS', MessageType.INF)
     results['_PARTS'] = enc.run_encoder('_PARTS', simple, batch_norm,
                                         x_train=enc.pick_semantic_features('PARTS', x_train, opposite=True), 
                                         x_test=enc.pick_semantic_features('PARTS', x_test, opposite=True),
@@ -148,6 +148,6 @@ def main():
 if __name__ == '__main__':
     config = tf.compat.v1.ConfigProto(log_device_placement=True)
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
-#     tf.keras.backend.set_session(tf.compat.v1.Session(config=config))
+    set_session(tf.compat.v1.Session(config=config))
     
     main()
