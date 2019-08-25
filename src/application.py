@@ -52,12 +52,13 @@ def main():
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
     
-    with open('test_set.txt', 'w') as f:
-        for row in x_test:
-            f.write(', '.join(map(str, list(row))) + '\n')
-    
-    with open('test_labels.txt', 'w') as f:
-        f.write(', '.join(map(str, list(y_test))))
+    if not mock:
+        with open('test_set.txt', 'w') as f:
+            for row in x_test:
+                f.write(', '.join(map(str, list(row))) + '\n')
+        
+        with open('test_labels.txt', 'w') as f:
+            f.write(', '.join(map(str, list(y_test))))
     
     log.write_message('Starting Semantic Encoder Application', MessageType.INF)
     log.write_message('Autoencoder encoding dimension is %d' % enc_dim, MessageType.INF)
