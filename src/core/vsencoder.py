@@ -19,7 +19,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 
 from core.annotationsparser import AnnotationsParser
 from core.vsclassifier import SVMClassifier
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 from core.vsautoencoder import VSAutoencoder
 from utils.vsplotter import Plotter
 
@@ -39,7 +39,7 @@ class SemanticEncoder:
         self.plotter = Plotter()
         self.svm = SVMClassifier()
         
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         parser = AnnotationsParser(console=console)
         self.attributes_map = parser.get_attributes_subset(as_dict=True)
         
@@ -127,7 +127,10 @@ class SemanticEncoder:
         
         for idx, fts in enumerate(att_fts):
             self.logger.write_message('Getting attribute: %s' % str(fts), MessageType.INF)
-            new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
+            try:
+                new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
+            except IndexError:
+                pass
         
         return new_dataset
         
@@ -140,7 +143,7 @@ class SemanticEncoder:
         '''    
         root = Element('SemanticEncoder')
         for key in res_dict.keys():
-            if key == 'REF':
+            if key == 'REF' or key.endswith('pca'):
                 child = SubElement(root, key)
                 for k in res_dict[key].keys():
                     sub_child = SubElement(child, k.replace(' ', '_'))

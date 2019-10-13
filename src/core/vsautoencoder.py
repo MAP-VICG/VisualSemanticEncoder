@@ -18,7 +18,7 @@ from tensorflow.keras.callbacks import LambdaCallback
 from tensorflow.keras.layers import Input, Dense, Conv1D, Flatten, Concatenate, BatchNormalization
 
 from core.vsclassifier import SVMClassifier
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 
 
 class VSAutoencoder:
@@ -44,7 +44,7 @@ class VSAutoencoder:
 
         self.svm = SVMClassifier()
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         
     def run_simple_autoencoder(self, enc_dim, nepochs, batch_norm, tag=None):
         '''

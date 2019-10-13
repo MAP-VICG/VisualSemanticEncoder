@@ -14,7 +14,7 @@ import os
 import numpy as np
 from tensorflow.keras.utils import normalize
 
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 from core.annotationsparser import AnnotationsParser
 
 
@@ -37,7 +37,7 @@ class FeaturesParser():
         self.features = os.path.join(base_path, 'AwA2-features.txt')
         self.filenames = os.path.join(base_path, 'AwA2-filenames.txt')
         self.labels = os.path.join(base_path, 'AwA2-labels.txt')
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         self.console = console
         
     def get_labels(self):

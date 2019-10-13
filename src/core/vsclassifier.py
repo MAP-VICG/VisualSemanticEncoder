@@ -14,7 +14,7 @@ from sklearn.svm import LinearSVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 
 
 class SVMClassifier:
@@ -26,7 +26,7 @@ class SVMClassifier:
         @param console: if True, prints debug in console
         '''
         self.model = None
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         self.tuning_params = {'C': [0.1, 0.3, 0.6, 1, 10]}
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
@@ -89,7 +89,7 @@ class SVMClassifier:
         self.logger.write_message('SVM Prediction result is %s' % str(pred_dict), MessageType.INF) 
         return pred_dict, prediction
 
-    def run_svm(self, x_train, y_train, x_test, y_test, nfolds=5, njobs=None):
+    def run_svm(self, x_train, y_train, x_test, y_test, tag=None, nfolds=5, njobs=None):
         '''
         Runs SVM and saves results
          
@@ -98,18 +98,22 @@ class SVMClassifier:
         @param x_test: 2D numpy array with test set
         @param y_test: 1D numpy array test labels
         @param nfolds: number of folds in cross validation
+        @param tag: string with folder name to saver results under
         @param njobs: number of jobs to run in parallel on Grid Search
         @return dictionary with svm results
         '''
+        self.logger.write_message('Training set shape %s' % str(x_train.shape), MessageType.INF)
+        self.logger.write_message('Test set shape %s' % str(x_test.shape), MessageType.INF)
+        
         self.run_classifier(x_train, y_train, nfolds, njobs)
          
         self.model.best_estimator_.fit(x_train, y_train)
         pred_dict, prediction = self.predict(x_test, y_test)
-        self.save_results(prediction, pred_dict)
+        self.save_results(prediction, pred_dict, tag)
          
         return pred_dict
         
-    def save_results(self, prediction, appendix=None, tag=None):
+    def save_results(self, prediction, appendix=None, tag=''):
         '''
         Saves classification results
         

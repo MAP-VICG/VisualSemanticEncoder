@@ -14,7 +14,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 
 
 class AnnotationsParser():
@@ -32,7 +32,7 @@ class AnnotationsParser():
         self.predicate_set = os.path.join(base_path, 'AwA2-predicate-set.txt')
         self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix.txt')
         self.predicate_subset = os.path.join(base_path, 'AwA2-predicate-subset.txt')
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         
     def get_classes(self):
         '''

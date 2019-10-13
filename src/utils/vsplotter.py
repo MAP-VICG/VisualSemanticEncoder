@@ -18,7 +18,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 
-from utils.logwriter import Logger, MessageType
+from utils.logwriter import LogWritter, MessageType
 
 
 class Plotter:
@@ -28,7 +28,7 @@ class Plotter:
         
         @param console: if True, prints debug in console
         '''
-        self.logger = Logger(console=console)
+        self.logger = LogWritter(console=console)
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
         if not os.path.isdir(self.results_path):

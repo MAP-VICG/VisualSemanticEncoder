@@ -35,7 +35,7 @@ class MessageType(Enum):
     INF = "INFO"
 
 
-class Logger(metaclass=Singleton):
+class LogWritter(metaclass=Singleton):
     def __init__(self, logpath=None, console=False):
         '''
         Initializes parameters
