@@ -40,7 +40,7 @@ class VSAutoencoderTests(unittest.TestCase):
         if os.path.isfile(cls.svm_file):
             os.remove(cls.svm_file)
             
-        cls.history = cls.ae.run_simple_autoencoder(cls.enc_dim, 5, batch_norm=False)
+        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, batch_norm=False)
          
     def test_build_autoencoder(self):
         '''

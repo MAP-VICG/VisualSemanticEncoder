@@ -37,7 +37,7 @@ class VSAutoencoderTests(unittest.TestCase):
         
         cls.ae = VSAutoencoder(cv=2, njobs=2, x_train=x_train, y_train=y_train, 
                                x_test=cls.x_test, y_test=cls.y_test)
-        cls.history = cls.ae.run_simple_autoencoder(cls.enc_dim, 5, batch_norm=False)
+        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, batch_norm=False)
          
     def test_plot_loss(self):
         '''

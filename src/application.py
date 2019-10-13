@@ -52,23 +52,6 @@ def main():
     Y = parser.get_labels()
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
-    
-#     from sklearn.model_selection import KFold
-#     kf = KFold(n_splits=10)
-#     index = 0
-#     
-#     def save_set(namex, datax, namey, datay):
-#         with open(namex, 'w') as f:
-#             for row in datax:
-#                 f.write(', '.join(map(str, list(row))) + '\n')
-#          
-#         with open(namey, 'w') as f:
-#             f.write(', '.join(map(str, list(datay))))
-# 
-#     for train_index, test_index in kf.split(X):
-#         save_set('x_train_f' + str(index) + '.txt', X[train_index], 'y_train_f' + str(index) + '.txt', Y[train_index])
-#         save_set('x_test_f' + str(index) + '.txt', X[test_index], 'y_test_f' + str(index) + '.txt', Y[test_index])
-#         index += 1
 
     if not mock:
         with open('test_set.txt', 'w') as f:
@@ -93,54 +76,6 @@ def main():
     results['ALL_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('ALL', x_train, opposite=False)), 
                                  x_test=pca.fit_transform(enc.pick_semantic_features('ALL', x_test, opposite=False)), 
                                  y_train=y_train, y_test=y_test, tag='ALL', njobs=-1)
-    
-    log.write_message('Running COLOR', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['COLOR_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('COLOR', x_train, opposite=False)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('COLOR', x_test, opposite=False)), 
-                                 y_train=y_train, y_test=y_test, tag='COLOR', njobs=-1)
-    
-    log.write_message('Running PARTS', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['PARTS_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('PARTS', x_train, opposite=False)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('PARTS', x_test, opposite=False)), 
-                                 y_train=y_train, y_test=y_test, tag='PARTS', njobs=-1)
-     
-    log.write_message('Running SHAPE', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['SHAPE_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('SHAPE', x_train, opposite=False)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('SHAPE', x_test, opposite=False)), 
-                                 y_train=y_train, y_test=y_test, tag='SHAPE', njobs=-1)
-     
-    log.write_message('Running TEXTURE', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['TEXTURE_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('TEXTURE', x_train, opposite=False)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('TEXTURE', x_test, opposite=False)), 
-                                 y_train=y_train, y_test=y_test, tag='TEXTURE', njobs=-1)
-     
-    log.write_message('Running not COLOR', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['_COLOR_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('COLOR', x_train, opposite=True)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('COLOR', x_test, opposite=True)), 
-                                 y_train=y_train, y_test=y_test, tag='not_COLOR', njobs=-1)
-     
-    log.write_message('Running not PARTS', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['_PARTS_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('PARTS', x_train, opposite=True)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('PARTS', x_test, opposite=True)), 
-                                 y_train=y_train, y_test=y_test, tag='not_PARTS', njobs=-1)
-     
-    log.write_message('Running not SHAPE', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['_SHAPE_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('SHAPE', x_train, opposite=True)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('SHAPE', x_test, opposite=True)), 
-                                 y_train=y_train, y_test=y_test, tag='not_SHAPE', njobs=-1)
-     
-    log.write_message('Running not TEXTURE', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['_TEXTURE_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('TEXTURE', x_train, opposite=True)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('TEXTURE', x_test, opposite=True)), 
-                                 y_train=y_train, y_test=y_test, tag='not_TEXTURE', njobs=-1)
      
     enc.save_results(results)
     elapsed = time.time() - init_time
