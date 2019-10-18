@@ -11,6 +11,7 @@ Model to encode visual and semantic features of images
 '''
 import os
 import gc
+import random
 import numpy as np
 from xml.dom import minidom
 from tensorflow.keras import backend as K
@@ -98,7 +99,7 @@ class SemanticEncoder:
         self.clear_memmory()
         return ae.svm_history
     
-    def pick_semantic_features(self, key, dataset, opposite=False):
+    def pick_semantic_features(self, key, dataset, opposite=False, noise_rate=0):
         '''
         Builds a data set only with the features indicated by the key. Key is string that determines
         a list of features under a category.
@@ -119,13 +120,37 @@ class SemanticEncoder:
         
         for idx, fts in enumerate(att_fts):
             self.logger.write_message('Getting attribute: %s' % str(fts), MessageType.INF)
-            try:
-                new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
-            except IndexError:
-                pass
+            new_dataset[:, 2048 + idx] = dataset[:, 2048 + fts[0] - 1]
+            
+        if noise_rate != 0:
+            self.remove_random(new_dataset, start=2048, end=new_dataset.shape[1]-1, noise_level=noise_rate)
         
         return new_dataset
         
+    def remove_random(self, features, start, end, noise_level, seed=None):
+        '''
+        Sets to zero N values in the array in random indexes based on the seed provided.
+        N is determined based on the given noise level. The noise level must be greater than
+        0 and less than 1.
+        
+        @param features: 2D numpy array of features
+        @param start: index to start
+        @param end: index to end
+        @param noise_level: noise level rate
+        @param seed: seed to use in random function
+        '''
+        if not 0 < noise_level < 1:
+            raise ValueError('Noise level should be greater than 0 and less than 1')
+        if seed:
+            random.seed(seed)
+            
+        length = end - start + 1
+        n = round(length * noise_level)
+        
+        for i in range(features.shape[0]):
+            for j in random.sample(range(length), n):
+                features[i, start + j] = 0
+    
     def save_results(self, res_dict):
         '''
         Saves results to XML

@@ -14,7 +14,6 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from tensorflow.compat.v1.keras.backend import set_session
 
@@ -31,8 +30,9 @@ def main():
     
     epochs = 50
     enc_dim = 128
-    simple = False
     batch_norm = False
+    noise_rate = 0.13
+    indexed = True
     
     if mock:
         log = LogWritter(console=True)
@@ -43,11 +43,13 @@ def main():
         parser = FeaturesParser()
     
     log.write_message('Mock %s' % str(mock), MessageType.INF)
-    log.write_message('Simple %s' % str(simple), MessageType.INF)
+    log.write_message('Noise rate %s' % str(noise_rate), MessageType.INF)
     log.write_message('Batch Norm %s' % str(batch_norm), MessageType.INF)
     
-    sem_fts = parser.get_semantic_features()
-    sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
+    sem_fts = parser.get_semantic_features(subset=False)
+    if indexed:
+        sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
+    sem_fts *= (1.0/sem_fts.max())
     
     Y = parser.get_labels()
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
@@ -67,15 +69,13 @@ def main():
     
     results = dict()
     
-    # classifying visual features
-    svm = SVMClassifier()
     enc = SemanticEncoder(epochs, enc_dim)
     
     log.write_message('Running ALL', MessageType.INF)
-    pca = PCA(n_components=enc_dim)
-    results['ALL_pca'] = svm.run_svm(x_train=pca.fit_transform(enc.pick_semantic_features('ALL', x_train, opposite=False)), 
-                                 x_test=pca.fit_transform(enc.pick_semantic_features('ALL', x_test, opposite=False)), 
-                                 y_train=y_train, y_test=y_test, tag='ALL', njobs=-1)
+    results['ALL'] = enc.run_encoder('ALL', batch_norm, 
+                                     x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=noise_rate), 
+                                     x_test=enc.pick_semantic_features('ALL', x_test, opposite=False, noise_rate=noise_rate), 
+                                     y_train=y_train, y_test=y_test)
      
     enc.save_results(results)
     elapsed = time.time() - init_time

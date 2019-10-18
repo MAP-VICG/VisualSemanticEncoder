@@ -112,7 +112,7 @@ class FeaturesParser():
         if norm:
             self.logger.write_message('Normalizing semantic features.', MessageType.INF)
             return normalize(features, order=2, axis=norm_axis)
-        
+            
         return features
 
     @staticmethod
