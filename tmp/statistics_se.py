@@ -16,7 +16,7 @@ res_acc = {key: [] for key in cats}
  
 for i in range(10):
     for flag in cats:
-        with open('/Users/damaresresende/Desktop/nfold' + str(i) + '/' + flag + '/history.txt') as f:
+        with open('/Users/damaresresende/Desktop/quali_results/crossval/fold' + str(i) + '/' + flag + '/history.txt') as f:
             for row in f.readlines():
                 if row.startswith('loss'):
                     for k, v in enumerate((row.split('loss:')[1]).split(',')):

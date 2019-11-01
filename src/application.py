@@ -34,6 +34,9 @@ def main():
     noise_rate = 0.13
     indexed = True
     
+    # divdir pelo maximo - 0 1
+    # dividir pela soma do vetor - L1
+    # dividir pela soma ao quadrado - L2
     if mock:
         log = LogWritter(console=True)
         parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
@@ -46,13 +49,20 @@ def main():
     log.write_message('Noise rate %s' % str(noise_rate), MessageType.INF)
     log.write_message('Batch Norm %s' % str(batch_norm), MessageType.INF)
     
-    sem_fts = parser.get_semantic_features(subset=False)
     if indexed:
+        sem_fts = parser.get_semantic_features(subset=False, binary=True)
         sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
+    else:
+        sem_fts = parser.get_semantic_features(subset=False, binary=False)
+
     sem_fts *= (1.0/sem_fts.max())
+    vis_fts = parser.get_visual_features()
+    
+    for col in range(vis_fts.shape[1]):
+        vis_fts[:, col] *= (1.0/vis_fts[:, col].max())
     
     Y = parser.get_labels()
-    X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
+    X = parser.concatenate_features(vis_fts, sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
 
     if not mock:

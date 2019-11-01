@@ -22,7 +22,7 @@ class AnnotationsParserTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        cls.parser = AnnotationsParser(console=True)
+        cls.parser = AnnotationsParser(console=True, binary=True)
     
     def test_get_classes(self):
         '''

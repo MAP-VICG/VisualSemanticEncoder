@@ -19,20 +19,25 @@ from utils.logwriter import LogWritter, MessageType
 
 class AnnotationsParser():
     
-    def __init__(self, console=False):
+    def __init__(self, console=False, binary=False):
         '''
         Initialization
         
         @param console: if True, prints debug in console
+        @param binary: if True loads the binary predicate matrix, loads the continuous one otherwise 
         '''
         base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'base')
         
+        self.logger = LogWritter(console=console)
         self.classes = os.path.join(base_path, 'AwA2-classes.txt')
         self.predicate_set = os.path.join(base_path, 'AwA2-predicate-set.txt')
-        self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix.txt')
         self.predicate_subset = os.path.join(base_path, 'AwA2-predicate-subset.txt')
-        self.logger = LogWritter(console=console)
+        
+        if binary:
+            self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix-binary.txt')
+        else:
+            self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix-continuous.txt')
         
     def get_classes(self):
         '''

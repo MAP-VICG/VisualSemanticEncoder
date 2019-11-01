@@ -84,16 +84,17 @@ class FeaturesParser():
             self.logger.write_message('File %s could not be found.' % self.features, MessageType.ERR)
             return None
     
-    def get_semantic_features(self, subset=False, norm=False, norm_axis=1):
+    def get_semantic_features(self, subset=False, norm=False, binary=False, norm_axis=1):
         '''
         Retrieves semantic features based on annotations
         
         @param norm: normalize features
         @param subset: if True return a subset of the features with 19 attributes only
+        @param binary: if True loads the binary predicate matrix, loads the continuous one otherwise
         @return numpy array of shape (37322, X) with features for images in AwA2 data set where X
                 is the number of attributes considered
         '''
-        ann_parser = AnnotationsParser(self.console)
+        ann_parser = AnnotationsParser(self.console, binary=binary)
         
         if subset:
             self.logger.write_message('Using a subset of the semantic features', MessageType.INF)
