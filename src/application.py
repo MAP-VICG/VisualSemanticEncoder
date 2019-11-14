@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.compat.v1.keras.backend import set_session
 
 from src.core.vsencoder import SemanticEncoder
+from src.utils.normalization import Normalization
 from src.parser.featuresparser import FeaturesParser
 from src.utils.logwriter import LogWritter, MessageType
     
@@ -55,11 +56,16 @@ def main():
         log.write_message('Retrieving continuous semantic features', MessageType.INF)
         sem_fts = parser.get_semantic_features(subset=False, binary=False)
 
-    vis_fts = parser.get_visual_features()
-    
     Y = parser.get_labels()
-    X = parser.concatenate_features(vis_fts, sem_fts)
+    X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
+    
+    norm = Normalization(x_train)
+    norm.normalize_zero_one_global(x_train[:,2048:])
+    norm.normalize_zero_one_by_column(x_train[:,:2048])
+    
+    norm.normalize_zero_one_global(x_test[:,2048:])
+    norm.normalize_zero_one_by_column(x_test[:,:2048])
 
     if not mock:
         with open('test_set.txt', 'w') as f:

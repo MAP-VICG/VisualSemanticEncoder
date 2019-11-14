@@ -43,6 +43,14 @@ class Plotter:
         '''
         fig = plt.figure()
         plt.rcParams.update({'font.size': 10})
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_loss.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_loss.png')
             
         try:
             plt.plot(history['loss'])
@@ -52,14 +60,6 @@ class Plotter:
             plt.xlabel('Epochs')
             plt.ylabel('Loss (MSE)')
             plt.legend(['train', 'test'], loc='upper right')
-            
-            if tag and isinstance(tag, str):
-                root = os.path.join(self.results_path, tag)
-                file_name = os.path.join(root, 'ae_loss.png')
-                if not os.path.isdir(root):
-                    os.mkdir(root)
-            else:
-                file_name = os.path.join(self.results_path, 'ae_loss.png')
             
             plt.savefig(file_name)
             plt.close(fig)
@@ -86,6 +86,14 @@ class Plotter:
         fig = plt.figure()
         plt.rcParams.update({'font.size': 6})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_encoding.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_encoding.png')
             
         try:
             for i, idx in enumerate(ex_idx):
@@ -109,14 +117,6 @@ class Plotter:
                 ax.set_title('Error')
                 ax.axes.get_xaxis().set_visible(False)
             
-            if tag and isinstance(tag, str):
-                root = os.path.join(self.results_path, tag)
-                file_name = os.path.join(root, 'ae_encoding.png')
-                if not os.path.isdir(root):
-                    os.mkdir(root)
-            else:
-                file_name = os.path.join(self.results_path, 'ae_encoding.png')
-            
             plt.savefig(file_name)
         except OSError:
             self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
@@ -134,6 +134,14 @@ class Plotter:
         '''
         fig = plt.figure()
         plt.rcParams.update({'font.size': 8})
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_distribution.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_distribution.png')
              
         try:    
             plt.subplots_adjust(wspace=0.5, hspace=0.5)
@@ -196,15 +204,7 @@ class Plotter:
         except ValueError:
             self.logger.write_message('LDA could not be computed.', MessageType.ERR)
             
-        try:
-            if tag and isinstance(tag, str):
-                root = os.path.join(self.results_path, tag)
-                file_name = os.path.join(root, 'ae_distribution.png')
-                if not os.path.isdir(root):
-                    os.mkdir(root)
-            else:
-                file_name = os.path.join(self.results_path, 'ae_distribution.png')
-                
+        try:    
             if not os.path.isdir(self.results_path):
                 os.mkdir(self.results_path)
                 
@@ -232,6 +232,14 @@ class Plotter:
         fig = plt.figure()
         plt.rcParams.update({'font.size': 6})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_components.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_components.png')
             
         try:        
             for i, idx in enumerate(ex_idx):
@@ -245,16 +253,80 @@ class Plotter:
                 ax.set_title('%d - Encoding' % idx)
                 ax.axes.get_xaxis().set_visible(False)
             
-            if tag and isinstance(tag, str):
-                root = os.path.join(self.results_path, tag)
-                file_name = os.path.join(root, 'ae_components.png')
-                if not os.path.isdir(root):
-                    os.mkdir(root)
-            else:
-                file_name = os.path.join(self.results_path, 'ae_components.png')
-            
             plt.savefig(file_name)
         except (OSError, ValueError):
             self.logger.write_message('PCA vs Encoding image could not be saved under %s.' 
+                                      % file_name, MessageType.ERR)
+        plt.close(fig)
+        
+    def plot_statistics(self, encoding, tag):
+        '''
+        Plots mean and standard deviation of attributes
+        
+        @param encoding: autoencoder encoded features
+        @param tag: string with folder name to saver results under
+        '''
+        fig = plt.figure(figsize=(14, 12))
+        plt.rcParams.update({'font.size': 12})
+        plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_statistics.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_statistics.png')
+            
+        try:
+            count = 0
+            for value in np.mean(encoding, axis=0):
+                if -0.01 < abs(value) < 0.01:
+                    count += 1
+                
+            print(np.mean(encoding, axis=0))
+            plt.errorbar([x for x in range(128)], encoding[0], encoding[1], fmt='o')
+            plt.legend(['Number of zeros: %d' % count], loc='upper right')
+            
+            plt.title('Std and mean of encodding', fontsize=18)
+            plt.xlabel('Encoding Dimension', fontsize=12)
+            plt.ylabel('Amplitude', fontsize=12)
+
+            plt.savefig(file_name)
+        except (OSError, ValueError):
+            self.logger.write_message('Statistics image could not be saved under %s.' 
+                                      % file_name, MessageType.ERR)
+        plt.close(fig)
+        
+    def plot_covariance_matrix(self, encoding, tag):
+        '''
+        Plots covariance matrix of attributes
+        
+        @param encoding: autoencoder encoded features
+        @param tag: string with folder name to saver results under
+        '''
+        fig = plt.figure(figsize=(14, 12))
+        plt.rcParams.update({'font.size': 12})
+        plt.subplots_adjust(wspace=0.4, hspace=0.9)
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_covariance.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_covariance.png')
+            
+        try:
+            code_cov = np.cov(np.array(encoding).transpose())
+            ax = plt.matshow(code_cov, fignum=1, cmap='plasma')
+            cb = plt.colorbar()
+            cb.ax.tick_params(labelsize=14)
+            ax.axes.get_xaxis().set_visible(False)
+            plt.title('Covariance Matrix', fontsize=14)
+
+            plt.savefig(file_name)
+        except (OSError, ValueError):
+            self.logger.write_message('Statistics image could not be saved under %s.' 
                                       % file_name, MessageType.ERR)
         plt.close(fig)
