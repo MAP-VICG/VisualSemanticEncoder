@@ -14,7 +14,7 @@ import os
 import numpy as np
 
 from src.utils.logwriter import LogWritter, MessageType
-from src.core.annotationsparser import AnnotationsParser
+from src.parser.annotationsparser import AnnotationsParser
 
 
 class FeaturesParser():

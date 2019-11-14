@@ -18,7 +18,7 @@ from tensorflow.keras import backend as K
 from tensorflow.python.framework import ops
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-from src.core.annotationsparser import AnnotationsParser
+from src.parser.annotationsparser import AnnotationsParser
 from src.core.vsclassifier import SVMClassifier
 from src.utils.logwriter import LogWritter, MessageType
 from src.core.vsautoencoder import VSAutoencoder

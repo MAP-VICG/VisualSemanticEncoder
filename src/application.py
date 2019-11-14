@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.compat.v1.keras.backend import set_session
 
 from src.core.vsencoder import SemanticEncoder
-from src.core.featuresparser import FeaturesParser
+from src.parser.featuresparser import FeaturesParser
 from src.utils.logwriter import LogWritter, MessageType
     
 

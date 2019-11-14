@@ -15,7 +15,7 @@ from math import floor
 from sklearn.model_selection import train_test_split
 
 from src.core.vsautoencoder import VSAutoencoder
-from src.core.featuresparser import FeaturesParser
+from src.parser.featuresparser import FeaturesParser
 
 
 class VSAutoencoderTests(unittest.TestCase):

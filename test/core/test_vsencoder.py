@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from src.core.vsencoder import SemanticEncoder
 from src.core.vsclassifier import SVMClassifier
-from src.core.featuresparser import FeaturesParser
+from src.parser.featuresparser import FeaturesParser
 
 
 class VSEncoderTests(unittest.TestCase):
