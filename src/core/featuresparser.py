@@ -12,10 +12,9 @@ Retrieves features of 37322 images extracted with ResNet101. Each feature vector
 '''
 import os
 import numpy as np
-from tensorflow.keras.utils import normalize
 
-from utils.logwriter import LogWritter, MessageType
-from core.annotationsparser import AnnotationsParser
+from src.utils.logwriter import LogWritter, MessageType
+from src.core.annotationsparser import AnnotationsParser
 
 
 class FeaturesParser():
@@ -59,7 +58,7 @@ class FeaturesParser():
             self.logger.write_message('File %s could not be found.' % self.labels, MessageType.ERR)
             return None
         
-    def get_visual_features(self, norm=False, norm_axis=1):
+    def get_visual_features(self):
         '''
         Retrieves features extracted by ResNet101
         
@@ -74,21 +73,16 @@ class FeaturesParser():
                 for i, line in enumerate(lines):
                     for j, value in enumerate(line.split()):
                         features[i, j] = float(value)
-                
-            if norm:
-                self.logger.write_message('Normalizing visual features.', MessageType.INF)
-                return normalize(features, order=2, axis=norm_axis)
-        
+
             return features
         except FileNotFoundError:
             self.logger.write_message('File %s could not be found.' % self.features, MessageType.ERR)
             return None
     
-    def get_semantic_features(self, subset=False, norm=False, binary=False, norm_axis=1):
+    def get_semantic_features(self, subset=False, binary=False):
         '''
         Retrieves semantic features based on annotations
         
-        @param norm: normalize features
         @param subset: if True return a subset of the features with 19 attributes only
         @param binary: if True loads the binary predicate matrix, loads the continuous one otherwise
         @return numpy array of shape (37322, X) with features for images in AwA2 data set where X
@@ -109,10 +103,6 @@ class FeaturesParser():
         
         for idx, label in enumerate(labels):
             features[idx, :] = att_map.loc[classes[label-1]].values
-        
-        if norm:
-            self.logger.write_message('Normalizing semantic features.', MessageType.INF)
-            return normalize(features, order=2, axis=norm_axis)
             
         return features
 

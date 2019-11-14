@@ -17,11 +17,10 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.compat.v1.keras.backend import set_session
 
-from core.vsclassifier import SVMClassifier
-from core.vsencoder import SemanticEncoder
-from core.featuresparser import FeaturesParser
-from utils.logwriter import LogWritter, MessageType
-
+from src.core.vsencoder import SemanticEncoder
+from src.core.featuresparser import FeaturesParser
+from src.utils.logwriter import LogWritter, MessageType
+    
 
 def main():
     init_time = time.time()
@@ -32,17 +31,16 @@ def main():
     enc_dim = 128
     batch_norm = False
     noise_rate = 0.13
-    indexed = True
+    indexed = False
     
-    # divdir pelo maximo - 0 1
-    # dividir pela soma do vetor - L1
-    # dividir pela soma ao quadrado - L2
+
     if mock:
         log = LogWritter(console=True)
         parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
         epochs = 5
     else:
-        log = LogWritter(console=False)
+        logpath = os.path.join(os.path.join(os.getcwd().split('src')[0], '_files'), 'results')
+        log = LogWritter(logpath=logpath, console=False)
         parser = FeaturesParser()
     
     log.write_message('Mock %s' % str(mock), MessageType.INF)
@@ -50,16 +48,14 @@ def main():
     log.write_message('Batch Norm %s' % str(batch_norm), MessageType.INF)
     
     if indexed:
+        log.write_message('Computing indexed semantic features', MessageType.INF)
         sem_fts = parser.get_semantic_features(subset=False, binary=True)
         sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
     else:
+        log.write_message('Retrieving continuous semantic features', MessageType.INF)
         sem_fts = parser.get_semantic_features(subset=False, binary=False)
 
-    sem_fts *= (1.0/sem_fts.max())
     vis_fts = parser.get_visual_features()
-    
-    for col in range(vis_fts.shape[1]):
-        vis_fts[:, col] *= (1.0/vis_fts[:, col].max())
     
     Y = parser.get_labels()
     X = parser.concatenate_features(vis_fts, sem_fts)
@@ -78,7 +74,6 @@ def main():
     log.write_message('The model will be trained for %d epochs' % epochs, MessageType.INF)
     
     results = dict()
-    
     enc = SemanticEncoder(epochs, enc_dim)
     
     log.write_message('Running ALL', MessageType.INF)

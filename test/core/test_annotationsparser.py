@@ -12,7 +12,7 @@ Tests for module annotationsparser
 import unittest
 import pandas as pd
 
-from core.annotationsparser import AnnotationsParser
+from src.core.annotationsparser import AnnotationsParser
 
 
 class AnnotationsParserTests(unittest.TestCase):

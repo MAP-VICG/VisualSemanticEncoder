@@ -18,7 +18,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 
-from utils.logwriter import LogWritter, MessageType
+from src.utils.logwriter import LogWritter, MessageType
 
 
 class Plotter:

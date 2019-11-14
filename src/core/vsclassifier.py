@@ -14,7 +14,7 @@ from sklearn.svm import LinearSVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 
-from utils.logwriter import LogWritter, MessageType
+from src.utils.logwriter import LogWritter, MessageType
 
 
 class SVMClassifier:

@@ -14,8 +14,8 @@ import unittest
 
 from sklearn.model_selection import train_test_split
 
-from core.vsclassifier import SVMClassifier
-from core.featuresparser import FeaturesParser
+from src.core.vsclassifier import SVMClassifier
+from src.core.featuresparser import FeaturesParser
 
 
 class SVMClassifierTests(unittest.TestCase):

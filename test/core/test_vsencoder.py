@@ -13,9 +13,9 @@ import unittest
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from core.vsencoder import SemanticEncoder
-from core.vsclassifier import SVMClassifier
-from core.featuresparser import FeaturesParser
+from src.core.vsencoder import SemanticEncoder
+from src.core.vsclassifier import SVMClassifier
+from src.core.featuresparser import FeaturesParser
 
 
 class VSEncoderTests(unittest.TestCase):

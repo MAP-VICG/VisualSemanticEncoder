@@ -14,16 +14,7 @@ import inspect
 from enum import Enum
 from datetime import datetime
 
-
-class Singleton(type):
-    '''
-    Singleton base class to be used as a meta class
-    '''
-    _instances = {}
-    def __call__(self, *args, **kwargs):
-        if self not in self._instances:
-            self._instances[self] = super(Singleton, self).__call__(*args, **kwargs)
-        return self._instances[self]
+from src.utils.singletonbase import Singleton
 
 
 class MessageType(Enum):

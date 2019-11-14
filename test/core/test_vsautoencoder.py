@@ -14,8 +14,8 @@ import unittest
 from math import floor
 from sklearn.model_selection import train_test_split
 
-from core.vsautoencoder import VSAutoencoder
-from core.featuresparser import FeaturesParser
+from src.core.vsautoencoder import VSAutoencoder
+from src.core.featuresparser import FeaturesParser
 
 
 class VSAutoencoderTests(unittest.TestCase):

@@ -17,8 +17,8 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import LambdaCallback
 from tensorflow.keras.layers import Input, Dense, BatchNormalization
 
-from core.vsclassifier import SVMClassifier
-from utils.logwriter import LogWritter, MessageType
+from src.core.vsclassifier import SVMClassifier
+from src.utils.logwriter import LogWritter, MessageType
 
 
 class VSAutoencoder:

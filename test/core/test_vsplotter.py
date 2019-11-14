@@ -12,9 +12,9 @@ import os
 import unittest
 from sklearn.model_selection import train_test_split
 
-from utils.vsplotter import Plotter
-from core.vsautoencoder import VSAutoencoder
-from core.featuresparser import FeaturesParser
+from src.core.vsplotter import Plotter
+from src.core.vsautoencoder import VSAutoencoder
+from src.core.featuresparser import FeaturesParser
 
 
 class VSAutoencoderTests(unittest.TestCase):

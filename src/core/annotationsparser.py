@@ -14,7 +14,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from utils.logwriter import LogWritter, MessageType
+from src.utils.logwriter import LogWritter, MessageType
 
 
 class AnnotationsParser():

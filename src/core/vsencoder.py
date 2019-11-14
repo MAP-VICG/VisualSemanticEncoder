@@ -18,11 +18,11 @@ from tensorflow.keras import backend as K
 from tensorflow.python.framework import ops
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-from core.annotationsparser import AnnotationsParser
-from core.vsclassifier import SVMClassifier
-from utils.logwriter import LogWritter, MessageType
-from core.vsautoencoder import VSAutoencoder
-from utils.vsplotter import Plotter
+from src.core.annotationsparser import AnnotationsParser
+from src.core.vsclassifier import SVMClassifier
+from src.utils.logwriter import LogWritter, MessageType
+from src.core.vsautoencoder import VSAutoencoder
+from src.core.vsplotter import Plotter
 
 
 class SemanticEncoder:

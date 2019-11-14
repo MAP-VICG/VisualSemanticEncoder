@@ -13,7 +13,7 @@ import os
 import unittest
 import numpy as np
 
-from core.featuresparser import FeaturesParser
+from src.core.featuresparser import FeaturesParser
 
 
 class FeaturesParserTests(unittest.TestCase):
