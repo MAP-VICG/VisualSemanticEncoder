@@ -36,6 +36,7 @@ class VSAutoencoder:
         self.decoder = None
         self.autoencoder = None
         self.svm_history = []
+        self.svm_history_train = []
     
         self.x_train = kwargs.get('x_train')
         self.y_train = kwargs.get('y_train')
@@ -70,6 +71,9 @@ class VSAutoencoder:
             
             sys.stderr = old_stderr
             self.logger.write_message('Epoch %d SVM\n%s' % (epoch, buffer.getvalue()), MessageType.INF)
+            
+            pred_dict, _ = self.svm.predict(self.encoder.predict(self.x_train), self.y_train)
+            self.svm_history_train.append(pred_dict)
             
             pred_dict, prediction = self.svm.predict(self.encoder.predict(self.x_test), self.y_test)
             self.svm_history.append(pred_dict)

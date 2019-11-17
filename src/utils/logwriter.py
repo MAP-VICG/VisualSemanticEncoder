@@ -39,6 +39,9 @@ class LogWritter(metaclass=Singleton):
         else:
             self.logpath = os.getcwd()
             
+        if not os.path.exists(self.logpath):
+            os.makedirs(self.logpath)
+    
         self.console = console
         self.ref_date = datetime.now().strftime('%Y%m%d_%H%M')
     

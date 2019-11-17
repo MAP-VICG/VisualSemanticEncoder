@@ -34,7 +34,7 @@ class Plotter:
         if not os.path.isdir(self.results_path):
             os.mkdir(self.results_path)
         
-    def plot_loss(self, history, tag=''):
+    def plot_error(self, history, tag=''):
         '''
         Plots loss and validation loss along training
         
@@ -46,25 +46,62 @@ class Plotter:
         
         if tag and isinstance(tag, str):
             root = os.path.join(self.results_path, tag)
-            file_name = os.path.join(root, 'ae_loss.png')
+            file_name = os.path.join(root, 'ae_error.png')
             if not os.path.isdir(root):
                 os.mkdir(root)
         else:
-            file_name = os.path.join(self.results_path, 'ae_loss.png')
+            file_name = os.path.join(self.results_path, 'ae_error.png')
             
         try:
             plt.plot(history['loss'])
             plt.plot(history['val_loss'])
+            plt.plot(history['mae'])
+            plt.plot(history['val_mae'])
             plt.title('Autoencoder Loss')
             
             plt.xlabel('Epochs')
-            plt.ylabel('Loss (MSE)')
-            plt.legend(['train', 'test'], loc='upper right')
+            plt.ylabel('Error')
+            plt.legend(['mse_train', 'mse_val', 'mae_train', 'mae_val'], loc='upper right')
             
             plt.savefig(file_name)
             plt.close(fig)
         except OSError:
-            self.logger.write_message('Loss image could not be saved under %s.' % file_name, MessageType.ERR)
+            self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
+        plt.close(fig)
+        
+    def plot_acc(self, history, svm_history, svm_history_train, tag=''):
+        '''
+        Plots loss and validation loss along training
+        
+        @param tag: string with folder name to saver results under
+        @param history: dictionary with training history
+        '''
+        fig = plt.figure()
+        plt.rcParams.update({'font.size': 10})
+        
+        if tag and isinstance(tag, str):
+            root = os.path.join(self.results_path, tag)
+            file_name = os.path.join(root, 'ae_acc.png')
+            if not os.path.isdir(root):
+                os.mkdir(root)
+        else:
+            file_name = os.path.join(self.results_path, 'ae_acc.png')
+            
+        try:
+            plt.plot(history['acc'])
+            plt.plot(history['val_acc'])
+            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history])
+            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history_train])
+            plt.title('Autoencoder Loss')
+            
+            plt.xlabel('Epochs')
+            plt.ylabel('Accuracy')
+            plt.legend(['ae_acc_train', 'ae_acc_val', 'svm_f1s_train', 'svm_f1s_test'], loc='upper right')
+            
+            plt.savefig(file_name)
+            plt.close(fig)
+        except OSError:
+            self.logger.write_message('Accuracy image could not be saved under %s.' % file_name, MessageType.ERR)
         plt.close(fig)
     
     def plot_encoding(self, input_set, encoding, output_set, tag=None):
