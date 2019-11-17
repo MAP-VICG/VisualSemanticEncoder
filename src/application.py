@@ -60,12 +60,14 @@ def main():
     X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
     
-    norm = Normalization(x_train)
-    norm.normalize_zero_one_global(x_train[:,2048:])
-    norm.normalize_zero_one_by_column(x_train[:,:2048])
+    norm_sem = Normalization(x_train[:,2048:])
+    norm_sem.normalize_zero_one_by_column(x_train[:,2048:])
+    norm_sem.normalize_zero_one_by_column(x_test[:,2048:])
     
-    norm.normalize_zero_one_global(x_test[:,2048:])
-    norm.normalize_zero_one_by_column(x_test[:,:2048])
+    norm_vis = Normalization(x_train[:,:2048])
+    norm_vis.normalize_zero_one_by_column(x_train[:,:2048])
+    norm_vis.normalize_zero_one_by_column(x_test[:,:2048])
+
 
     if not mock:
         with open('test_set.txt', 'w') as f:

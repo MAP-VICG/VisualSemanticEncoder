@@ -281,10 +281,9 @@ class Plotter:
         try:
             count = 0
             for value in np.mean(encoding, axis=0):
-                if -0.01 < abs(value) < 0.01:
+                if abs(value) <= 0.05:
                     count += 1
                 
-            print(np.mean(encoding, axis=0))
             plt.errorbar([x for x in range(128)], encoding[0], encoding[1], fmt='o')
             plt.legend(['Number of zeros: %d' % count], loc='upper right')
             
