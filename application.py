@@ -57,7 +57,7 @@ def main():
         sem_fts = parser.get_semantic_features(subset=False, binary=False)
 
     Y = parser.get_labels()
-    X = parser.concatenate_features(parser.get_visual_features(), sem_fts)
+    X = parser.concatenate_features(parser.get_visual_features(), sem_fts + abs(sem_fts.min()))
     x_train, x_test, y_train, y_test = train_test_split(X, Y, stratify=Y, random_state=42, test_size=0.2)
     
     norm_sem = Normalization(x_train[:,2048:])
