@@ -39,16 +39,16 @@ class VSAutoencoderTests(unittest.TestCase):
                                x_test=cls.x_test, y_test=cls.y_test)
         cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, batch_norm=False)
          
-    def test_plot_loss(self):
+    def test_plot_error(self):
         '''
         Tests if loss and validation loss are plot and saved to ae_loss.png
         '''
-        file_name = os.path.join(self.plotter.results_path, 'ae_loss.png')
+        file_name = os.path.join(self.plotter.results_path, 'ae_error.png')
              
         if os.path.isfile(file_name):
             os.remove(file_name)
              
-        self.plotter.plot_loss(self.history.history)
+        self.plotter.plot_error(self.history.history)
         self.assertTrue(os.path.isfile(file_name))
           
     def test_plot_encoding(self):
