@@ -21,34 +21,28 @@ from src.core.vsencoder import SemanticEncoder
 from src.utils.normalization import Normalization
 from src.parser.featuresparser import FeaturesParser
 from src.utils.logwriter import LogWritter, MessageType
-    
+from src.parser.configparser import ConfigParser, AttributesType
+
 
 def main():
     init_time = time.time()
-    
-    mock = True
-    
-    epochs = 50
-    enc_dim = 128
-    batch_norm = False
-    noise_rate = 0.13
-    indexed = False
-    
 
-    if mock:
+    config = ConfigParser(os.sep.join([os.getcwd().split('SemanticEncoder')[0], 
+                                       'SemanticEncoder', '_files', 'config.xml']))
+    config.read_configuration()
+        
+    if config.mock:
         log = LogWritter(console=True)
         parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
-        epochs = 5
     else:
         logpath = os.path.join(os.path.join(os.getcwd().split('src')[0], '_files'), 'results')
         log = LogWritter(logpath=logpath, console=False)
         parser = FeaturesParser()
     
-    log.write_message('Mock %s' % str(mock), MessageType.INF)
-    log.write_message('Noise rate %s' % str(noise_rate), MessageType.INF)
-    log.write_message('Batch Norm %s' % str(batch_norm), MessageType.INF)
+    log.write_message('Mock %s' % str(config.mock), MessageType.INF)
+    log.write_message('Noise rate %s' % str(config.noise_rate), MessageType.INF)
     
-    if indexed:
+    if config.attributes_type == AttributesType.IND:
         log.write_message('Computing indexed semantic features', MessageType.INF)
         sem_fts = parser.get_semantic_features(subset=False, binary=True)
         sem_fts = np.multiply(sem_fts, np.array([v for v in range(1, sem_fts.shape[1] + 1)]))
@@ -69,7 +63,7 @@ def main():
     norm_vis.normalize_zero_one_by_column(x_test[:,:2048])
 
 
-    if not mock:
+    if not config.mock:
         with open('test_set.txt', 'w') as f:
             for row in x_test:
                 f.write(', '.join(map(str, list(row))) + '\n')
@@ -78,16 +72,16 @@ def main():
             f.write(', '.join(map(str, list(y_test))))
     
     log.write_message('Starting Semantic Encoder Application', MessageType.INF)
-    log.write_message('Autoencoder encoding dimension is %d' % enc_dim, MessageType.INF)
-    log.write_message('The model will be trained for %d epochs' % epochs, MessageType.INF)
+    log.write_message('Autoencoder encoding dimension is %d' % config.encoding_size, MessageType.INF)
+    log.write_message('The model will be trained for %d epochs' % config.epochs, MessageType.INF)
     
     results = dict()
-    enc = SemanticEncoder(epochs, enc_dim)
+    enc = SemanticEncoder(config.epochs, config.encoding_size)
     
     log.write_message('Running ALL', MessageType.INF)
-    results['ALL'] = enc.run_encoder('ALL', batch_norm, 
-                                     x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=noise_rate), 
-                                     x_test=enc.pick_semantic_features('ALL', x_test, opposite=False, noise_rate=noise_rate), 
+    results['ALL'] = enc.run_encoder('ALL', batch_norm=False, 
+                                     x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=config.noise_rate), 
+                                     x_test=enc.pick_semantic_features('ALL', x_test, opposite=False, noise_rate=config.noise_rate), 
                                      y_train=y_train, y_test=y_test)
      
     enc.save_results(results)

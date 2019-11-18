@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SemanticEncoder>
+	<config>
+		<epochs>5</epochs>
+		<encoding_size>128</encoding_size>
+		<noise_rate>1.1</noise_rate>
+		<attributes_type>continuous</attributes_type>
+	</config>
+</SemanticEncoder>
