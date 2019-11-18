@@ -32,11 +32,11 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         self.assertRaises(ValueError, ConfigParser, os.getcwd())
         
-    def test_mock_flag(self):
+    def test_console_flag(self):
         '''
-        Tests if the correct mock value was found
+        Tests if the correct console value was found
         '''
-        self.assertTrue(self.parser.mock)
+        self.assertTrue(self.parser.console)
         
     def test_num_epochs(self):
         '''
@@ -62,39 +62,51 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         self.assertEqual(AttributesType.CON, self.parser.attributes_type)
         
+    def test_results_path(self):
+        '''
+        Tests if the correct results path value was found
+        '''
+        self.assertEqual('_files/results/', self.parser.results_path)
+        
+    def test_save_test_set(self):
+        '''
+        Tests if the correct save_test_set value was found
+        '''
+        self.assertFalse(self.parser.save_test_set)
+        
     def test_node_not_found(self):
         '''
         Tests if AttributeError exception is raised when node was not found in XML
         '''
         configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_node_err.xml'])
         parser = ConfigParser(configfile)
-        
+         
         self.assertRaises(AttributeError, parser.read_configuration)
-            
+             
     def test_invalid_noise_rate_less(self):
         '''
         Tests if ValueError exception is raised when noise rate is less than 0
         '''
         configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_rate_le.xml'])
         parser = ConfigParser(configfile)
-        
+         
         self.assertRaises(ValueError, parser.read_configuration)
-
+ 
     def test_invalid_noise_rate_greater(self):
         '''
         Tests if ValueError exception is raised when noise rate is greater than 1
         '''
         configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_rate_gt.xml'])
         parser = ConfigParser(configfile)
-        
+         
         self.assertRaises(ValueError, parser.read_configuration)
-
+ 
     def test_invalid_attribute_type(self):
         '''
         Tests if ValueError exception is raised when attribute type is not continuous, binary or indexed
         '''
         configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_att.xml'])
         parser = ConfigParser(configfile)
-        
+         
         self.assertRaises(ValueError, parser.read_configuration)
         

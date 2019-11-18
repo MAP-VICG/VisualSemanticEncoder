@@ -1,9 +1,17 @@
 <?xml version="1.0" ?>
 <SemanticEncoder>
-	<config>
+	<general>
+		<save_test_set>False</save_test_set>
+	</general>
+	<auto_encoder>
 		<epochs>5</epochs>
 		<encoding_size>128</encoding_size>
-		<noise_rate>1.1</noise_rate>
+	</auto_encoder>
+	<semantic_features>
+		<noise_rate>0.15</noise_rate>
 		<attributes_type>continuous</attributes_type>
-	</config>
+	</semantic_features>
+	<paths>
+		<results_path>_files/results/</results_path>
+	</paths>
 </SemanticEncoder>

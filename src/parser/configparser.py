@@ -9,6 +9,7 @@ Reads attributes in config.xml file to set configuration parameters
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
+import os
 from enum import Enum
 import xml.etree.ElementTree as ET
 
@@ -32,24 +33,32 @@ class ConfigParser:
         if not configfile.endswith('.xml'):
             raise ValueError('Configuration file must be in XML format.')
         
-        self.configfile = configfile
-        self.mock = False
         self.epochs = 0
-        self.encoding_size = 0
         self.noise_rate = 0
-        self.attributes_type = ''
+        self.console = False
+        self.results_path = ''
+        self.encoding_size = 0
+        self.save_test_set = True
+        self.attributes_type = None
+        self.configfile = configfile
         
-    def set_mock_value(self, root):
+    def set_console_value(self, root):
         '''
-        Reads XML looking for mock node and sets its value
+        Reads XML looking for console node and sets its value
         
         @param root: XML root node
         @return None
         '''
         try:
-            self.mock = bool(root.find('config/mock').text)
+            flag = root.find('general/console').text
+            if flag == 'False':
+                self.console = False
+            elif flag == 'True':
+                self.console = True
+            else:
+                raise ValueError('Invalid value for console. Please choose True or False')
         except AttributeError:
-            raise AttributeError('Could not find "mock" node')
+            raise AttributeError('Could not find "console" node')
         
     def set_num_epocks(self, root):
         '''
@@ -59,7 +68,7 @@ class ConfigParser:
         @return None
         '''    
         try:
-            self.epochs = int(root.find('config/epochs').text)
+            self.epochs = int(root.find('auto_encoder/epochs').text)
         except AttributeError:
             raise AttributeError('Could not find "epochs" node')
         
@@ -71,7 +80,7 @@ class ConfigParser:
         @return None
         '''    
         try:
-            self.encoding_size = int(root.find('config/encoding_size').text)
+            self.encoding_size = int(root.find('auto_encoder/encoding_size').text)
         except AttributeError:
             raise AttributeError('Could not find "encoding_size" node')
         
@@ -83,11 +92,43 @@ class ConfigParser:
         @return None
         '''      
         try:
-            self.noise_rate = float(root.find('config/noise_rate').text)
+            self.noise_rate = float(root.find('semantic_features/noise_rate').text)
             if not 0 <= self.noise_rate <= 1:
                 raise ValueError('Invalid value for noise rate. Rate should be between 0 and 1')
         except AttributeError:
             raise AttributeError('Could not find "noise_rate" node')
+        
+    def set_results_path(self, root): 
+        '''
+        Reads XML looking for results_path node and sets its value
+        
+        @param root: XML root node
+        @return None
+        '''      
+        try:
+            self.results_path = root.find('paths/results_path').text
+            self.results_path.replace('/', os.sep)
+            self.results_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "results_path" node')
+        
+    def set_save_test_set(self, root): 
+        '''
+        Reads XML looking for save_test_set node and sets its value
+        
+        @param root: XML root node
+        @return None
+        '''      
+        try:
+            flag = root.find('general/save_test_set').text
+            if flag == 'False':
+                self.save_test_set = False
+            elif flag == 'True':
+                self.save_test_set = True
+            else:
+                raise ValueError('Invalid value for save_test_set. Please choose True or False')
+        except AttributeError:
+            raise AttributeError('Could not find "save_test_set" node')
         
     def set_attributes_type(self, root):
         '''
@@ -97,7 +138,7 @@ class ConfigParser:
         @return None
         '''      
         try:
-            att_type = root.find('config/attributes_type').text
+            att_type = root.find('semantic_features/attributes_type').text
         except AttributeError:
             raise AttributeError('Could not find "attributes_type" node')
         
@@ -120,10 +161,12 @@ class ConfigParser:
         tree = ET.parse(self.configfile)
         root = tree.getroot()
         
-        self.set_mock_value(root)
+        self.set_console_value(root)
         self.set_num_epocks(root)
         self.set_encoding_size(root)
         self.set_noise_rate(root)
         self.set_attributes_type(root)
+        self.set_results_path(root)
+        self.set_save_test_set(root)
     
             

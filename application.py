@@ -11,6 +11,7 @@ Model to encode visual and semantic features of images
 '''
 
 import os
+import sys
 import time
 import numpy as np
 import tensorflow as tf
@@ -26,20 +27,18 @@ from src.parser.configparser import ConfigParser, AttributesType
 
 def main():
     init_time = time.time()
-
-    config = ConfigParser(os.sep.join([os.getcwd().split('SemanticEncoder')[0], 
-                                       'SemanticEncoder', '_files', 'config.xml']))
-    config.read_configuration()
-        
-    if config.mock:
-        log = LogWritter(console=True)
-        parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
-    else:
-        logpath = os.path.join(os.path.join(os.getcwd().split('src')[0], '_files'), 'results')
-        log = LogWritter(logpath=logpath, console=False)
-        parser = FeaturesParser()
     
-    log.write_message('Mock %s' % str(config.mock), MessageType.INF)
+    if len(sys.argv) > 1 and sys.argv[1] == '--config':
+        configpath = sys.argv[2]
+    else:
+        configpath = os.path.join(os.path.join(os.getcwd(), '_files'), 'config.xml')
+        
+    config = ConfigParser(configpath)
+    config.read_configuration()
+    
+    log = LogWritter(logpath=config.results_path, console=config.console)
+    parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
+        
     log.write_message('Noise rate %s' % str(config.noise_rate), MessageType.INF)
     
     if config.attributes_type == AttributesType.IND:
@@ -62,8 +61,7 @@ def main():
     norm_vis.normalize_zero_one_by_column(x_train[:,:2048])
     norm_vis.normalize_zero_one_by_column(x_test[:,:2048])
 
-
-    if not config.mock:
+    if config.save_test_set:
         with open('test_set.txt', 'w') as f:
             for row in x_test:
                 f.write(', '.join(map(str, list(row))) + '\n')
