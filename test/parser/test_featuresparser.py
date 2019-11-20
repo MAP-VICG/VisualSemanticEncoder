@@ -13,6 +13,7 @@ import os
 import unittest
 import numpy as np
 
+from src.parser.configparser import ConfigParser
 from src.parser.featuresparser import FeaturesParser
 
 
@@ -23,7 +24,11 @@ class FeaturesParserTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        cls.parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'), console=True)
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
+        
+        config = ConfigParser(configfile)
+        config.read_configuration()
+        cls.parser = FeaturesParser(fts_dir=config.features_path, console=config.console)
         
     def test_get_labels(self):
         '''

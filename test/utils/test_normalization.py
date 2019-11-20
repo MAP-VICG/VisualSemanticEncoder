@@ -9,12 +9,12 @@ Unit tests for normalization module
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 '''
-
 import os
 import unittest
 
-from src.core.featuresparser import FeaturesParser
+from src.parser.configparser import ConfigParser
 from src.utils.normalization import Normalization
+from src.parser.featuresparser import FeaturesParser
 
 
 class NormalizationTests(unittest.TestCase):
@@ -23,7 +23,12 @@ class NormalizationTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        cls.parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'), console=True)
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
+        
+        config = ConfigParser(configfile)
+        config.read_configuration()
+        cls.parser = FeaturesParser(fts_dir=config.features_path, console=config.console)
+        
         
     def test_norm_zero_one(self):
         '''
