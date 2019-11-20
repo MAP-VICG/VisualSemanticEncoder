@@ -38,6 +38,7 @@ class ConfigParser:
         self.console = False
         self.results_path = ''
         self.encoding_size = 0
+        self.features_path = ''
         self.save_test_set = True
         self.attributes_type = None
         self.configfile = configfile
@@ -112,6 +113,20 @@ class ConfigParser:
         except AttributeError:
             raise AttributeError('Could not find "results_path" node')
         
+    def set_features_path(self, root): 
+        '''
+        Reads XML looking for features_path node and sets its value
+        
+        @param root: XML root node
+        @return None
+        '''      
+        try:
+            self.features_path = root.find('paths/features_path').text
+            self.features_path.replace('/', os.sep)
+            self.features_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "features_path" node')
+        
     def set_save_test_set(self, root): 
         '''
         Reads XML looking for save_test_set node and sets its value
@@ -161,12 +176,13 @@ class ConfigParser:
         tree = ET.parse(self.configfile)
         root = tree.getroot()
         
-        self.set_console_value(root)
         self.set_num_epocks(root)
-        self.set_encoding_size(root)
         self.set_noise_rate(root)
-        self.set_attributes_type(root)
         self.set_results_path(root)
+        self.set_console_value(root)
+        self.set_encoding_size(root)
+        self.set_features_path(root)
         self.set_save_test_set(root)
+        self.set_attributes_type(root)
     
             

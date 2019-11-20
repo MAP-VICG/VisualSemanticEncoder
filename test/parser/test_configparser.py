@@ -22,7 +22,7 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         Initializes parser for all tests
         '''
-        configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config.xml'])
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
         cls.parser = ConfigParser(configfile)
         cls.parser.read_configuration()
         
@@ -68,6 +68,12 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         self.assertEqual('_files/results/', self.parser.results_path)
         
+    def test_features_path(self):
+        '''
+        Tests if the correct features path value was found
+        '''
+        self.assertEqual('_files/mockfiles/awa2features/', self.parser.features_path)
+        
     def test_save_test_set(self):
         '''
         Tests if the correct save_test_set value was found
@@ -78,7 +84,7 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         Tests if AttributeError exception is raised when node was not found in XML
         '''
-        configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_node_err.xml'])
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config_node_err.xml'])
         parser = ConfigParser(configfile)
          
         self.assertRaises(AttributeError, parser.read_configuration)
@@ -87,7 +93,7 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         Tests if ValueError exception is raised when noise rate is less than 0
         '''
-        configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_rate_le.xml'])
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config_inv_rate_le.xml'])
         parser = ConfigParser(configfile)
          
         self.assertRaises(ValueError, parser.read_configuration)
@@ -96,7 +102,7 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         Tests if ValueError exception is raised when noise rate is greater than 1
         '''
-        configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_rate_gt.xml'])
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config_inv_rate_gt.xml'])
         parser = ConfigParser(configfile)
          
         self.assertRaises(ValueError, parser.read_configuration)
@@ -105,7 +111,7 @@ class ConfigParsertTests(unittest.TestCase):
         '''
         Tests if ValueError exception is raised when attribute type is not continuous, binary or indexed
         '''
-        configfile = os.sep.join([os.getcwd().split('test')[0], 'test', '_mockfiles', 'config_inv_att.xml'])
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config_inv_att.xml'])
         parser = ConfigParser(configfile)
          
         self.assertRaises(ValueError, parser.read_configuration)

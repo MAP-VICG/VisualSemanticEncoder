@@ -27,11 +27,9 @@ class FeaturesParser():
         @param console: if True, prints debug in console
         '''
         if fts_dir and isinstance(fts_dir, str):
-            base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
-                                                           'SemanticEncoder'), '_files'), fts_dir)
+            base_path = os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 'SemanticEncoder'), fts_dir)
         else:
-            base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
-                                                           'SemanticEncoder'), '_files'), 'features')
+            base_path = os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 'SemanticEncoder'), 'features')
         
         self.features = os.path.join(base_path, 'AwA2-features.txt')
         self.filenames = os.path.join(base_path, 'AwA2-filenames.txt')
