@@ -37,7 +37,7 @@ def main():
     config.read_configuration()
     
     log = LogWritter(logpath=config.results_path, console=config.console)
-    parser = FeaturesParser()#fts_dir=os.path.join('features', 'mock'))
+    parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'))
         
     log.write_message('Noise rate %s' % str(config.noise_rate), MessageType.INF)
     
