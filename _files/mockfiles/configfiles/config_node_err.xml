@@ -13,5 +13,6 @@
 	</semantic_features>
 	<paths>
 		<results_path>_files/results/</results_path>
+		<features_path>_files/mockfiles/awa2features/</features_path>
 	</paths>
 </SemanticEncoder>
