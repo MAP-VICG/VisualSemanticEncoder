@@ -14,6 +14,7 @@ import unittest
 from math import floor
 from sklearn.model_selection import train_test_split
 
+from src.parser.configparser import ConfigParser
 from src.core.vsautoencoder import VSAutoencoder
 from src.parser.featuresparser import FeaturesParser
 
@@ -25,7 +26,11 @@ class VSAutoencoderTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'), console=True)
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
+        
+        config = ConfigParser(configfile)
+        config.read_configuration()
+        parser = FeaturesParser(fts_dir=config.features_path, console=config.console)
         
         X = parser.concatenate_features(parser.get_visual_features(), parser.get_semantic_features())
         Y = parser.get_labels()

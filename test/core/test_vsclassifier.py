@@ -11,10 +11,10 @@ Tests for module vsautoencoder
 '''
 import os
 import unittest
-
 from sklearn.model_selection import train_test_split
 
 from src.core.vsclassifier import SVMClassifier
+from src.parser.configparser import ConfigParser
 from src.parser.featuresparser import FeaturesParser
 
 
@@ -25,7 +25,11 @@ class SVMClassifierTests(unittest.TestCase):
         '''
         Initializes model for all tests
         '''
-        parser = FeaturesParser(fts_dir=os.path.join('features', 'mock'), console=True)
+        configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
+        
+        config = ConfigParser(configfile)
+        config.read_configuration()
+        parser = FeaturesParser(fts_dir=config.features_path, console=config.console)
         
         Y = parser.get_labels()
         X = parser.concatenate_features(parser.get_visual_features(), parser.get_semantic_features())
