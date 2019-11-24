@@ -38,23 +38,25 @@ class VSAutoencoderTests(unittest.TestCase):
         
         x_train, cls.x_test, y_train, cls.y_test = train_test_split(X, Y, stratify=Y, test_size=0.2)
         
-        cls.enc_dim = 32
+        cls.enc_dim = 128
         cls.nexamples = x_train.shape[0]
         
         cls.ae = VSAutoencoder(cv=2, njobs=2, x_train=x_train, y_train=y_train, 
                                x_test=cls.x_test, y_test=cls.y_test)
         cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, batch_norm=False)
          
-    def test_plot_error(self):
+    def test_plot_evaluation(self):
         '''
-        Tests if loss and validation loss are plot and saved to ae_loss.png
+        Tests if evaluation charts are plot and saved to ae_evaluation.png
         '''
-        file_name = os.path.join(self.plotter.results_path, 'ae_error.png')
+        file_name = os.path.join(self.plotter.results_path, 'ae_evaluation.png')
              
         if os.path.isfile(file_name):
             os.remove(file_name)
+            
+        encoded_fts = self.ae.encoder.predict(self.x_test)
              
-        self.plotter.plot_error(self.history.history)
+        self.plotter.plot_evaluation(self.history.history, self.ae.svm_history, encoded_fts)
         self.assertTrue(os.path.isfile(file_name))
           
     def test_plot_encoding(self):

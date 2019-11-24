@@ -33,76 +33,6 @@ class Plotter:
                                                            'SemanticEncoder'), '_files'), 'results')
         if not os.path.isdir(self.results_path):
             os.mkdir(self.results_path)
-        
-    def plot_error(self, history, tag=''):
-        '''
-        Plots loss and validation loss along training
-        
-        @param tag: string with folder name to saver results under
-        @param history: dictionary with training history
-        '''
-        fig = plt.figure()
-        plt.rcParams.update({'font.size': 10})
-        
-        if tag and isinstance(tag, str):
-            root = os.path.join(self.results_path, tag)
-            file_name = os.path.join(root, 'ae_error.png')
-            if not os.path.isdir(root):
-                os.mkdir(root)
-        else:
-            file_name = os.path.join(self.results_path, 'ae_error.png')
-            
-        try:
-            plt.plot(history['loss'])
-            plt.plot(history['val_loss'])
-            plt.plot(history['mae'])
-            plt.plot(history['val_mae'])
-            plt.title('Autoencoder Loss')
-            
-            plt.xlabel('Epochs')
-            plt.ylabel('Error')
-            plt.legend(['mse_train', 'mse_val', 'mae_train', 'mae_val'], loc='upper right')
-            
-            plt.savefig(file_name)
-            plt.close(fig)
-        except OSError:
-            self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
-        plt.close(fig)
-        
-    def plot_acc(self, history, svm_history, svm_history_train, tag=''):
-        '''
-        Plots loss and validation loss along training
-        
-        @param tag: string with folder name to saver results under
-        @param history: dictionary with training history
-        '''
-        fig = plt.figure()
-        plt.rcParams.update({'font.size': 10})
-        
-        if tag and isinstance(tag, str):
-            root = os.path.join(self.results_path, tag)
-            file_name = os.path.join(root, 'ae_acc.png')
-            if not os.path.isdir(root):
-                os.mkdir(root)
-        else:
-            file_name = os.path.join(self.results_path, 'ae_acc.png')
-            
-        try:
-            plt.plot(history['acc'])
-            plt.plot(history['val_acc'])
-            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history])
-            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history_train])
-            plt.title('Autoencoder Loss')
-            
-            plt.xlabel('Epochs')
-            plt.ylabel('Accuracy')
-            plt.legend(['ae_acc_train', 'ae_acc_val', 'svm_f1s_train', 'svm_f1s_test'], loc='upper right')
-            
-            plt.savefig(file_name)
-            plt.close(fig)
-        except OSError:
-            self.logger.write_message('Accuracy image could not be saved under %s.' % file_name, MessageType.ERR)
-        plt.close(fig)
     
     def plot_encoding(self, input_set, encoding, output_set, tag=None):
         '''
@@ -295,13 +225,13 @@ class Plotter:
             self.logger.write_message('PCA vs Encoding image could not be saved under %s.' 
                                       % file_name, MessageType.ERR)
         plt.close(fig)
-        
-    def plot_statistics(self, encoding, tag):
+
+    def plot_evaluation(self, history, svm_history, encoding, tag=''):
         '''
-        Plots mean and standard deviation of attributes
+        Plots classification accuracy, training error, and code covariance matrix, 
+        standard deviation and mean
         
-        @param encoding: autoencoder encoded features
-        @param tag: string with folder name to saver results under
+        @return None
         '''
         fig = plt.figure(figsize=(14, 12))
         plt.rcParams.update({'font.size': 12})
@@ -309,13 +239,42 @@ class Plotter:
         
         if tag and isinstance(tag, str):
             root = os.path.join(self.results_path, tag)
-            file_name = os.path.join(root, 'ae_statistics.png')
+            file_name = os.path.join(root, 'ae_evaluation.png')
             if not os.path.isdir(root):
                 os.mkdir(root)
         else:
-            file_name = os.path.join(self.results_path, 'ae_statistics.png')
+            file_name = os.path.join(self.results_path, 'ae_evaluation.png')
             
         try:
+            ax = plt.subplot(221)
+            ax.set_title('SVM Accuracy')
+            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history['train']])
+            plt.plot([acc['accuracy']['f1-score'] for acc in svm_history['test']])
+            
+            plt.xlabel('Epochs')
+            plt.ylabel('F1-Score')
+            plt.legend(['train', 'test'])
+            
+            ax = plt.subplot(222)
+            ax.set_title('AE Loss')
+            plt.plot(history['loss'])
+            plt.plot(history['val_loss'])
+            
+            plt.xlabel('Epochs')
+            plt.ylabel('MSE')
+            plt.legend(['train', 'val'])
+            
+            ax = plt.subplot(223)
+            ax.set_title('Covariance Matrix')
+            code_cov = np.cov(np.array(encoding).transpose())
+            ax = plt.matshow(code_cov, fignum=False, cmap='plasma')
+            cb = plt.colorbar()
+            cb.ax.tick_params(labelsize=14)
+            ax.axes.get_xaxis().set_visible(False)
+            
+            ax = plt.subplot(224)
+            ax.set_title('Code mean and std')
+            
             count = 0
             for value in np.mean(encoding, axis=0):
                 if abs(value) <= 0.05:
@@ -323,46 +282,12 @@ class Plotter:
                 
             plt.errorbar([x for x in range(128)], encoding[0], encoding[1], fmt='o')
             plt.legend(['Number of zeros: %d' % count], loc='upper right')
-            
-            plt.title('Std and mean of encodding', fontsize=18)
             plt.xlabel('Encoding Dimension', fontsize=12)
             plt.ylabel('Amplitude', fontsize=12)
-
-            plt.savefig(file_name)
-        except (OSError, ValueError):
-            self.logger.write_message('Statistics image could not be saved under %s.' 
-                                      % file_name, MessageType.ERR)
-        plt.close(fig)
-        
-    def plot_covariance_matrix(self, encoding, tag):
-        '''
-        Plots covariance matrix of attributes
-        
-        @param encoding: autoencoder encoded features
-        @param tag: string with folder name to saver results under
-        '''
-        fig = plt.figure(figsize=(14, 12))
-        plt.rcParams.update({'font.size': 12})
-        plt.subplots_adjust(wspace=0.4, hspace=0.9)
-        
-        if tag and isinstance(tag, str):
-            root = os.path.join(self.results_path, tag)
-            file_name = os.path.join(root, 'ae_covariance.png')
-            if not os.path.isdir(root):
-                os.mkdir(root)
-        else:
-            file_name = os.path.join(self.results_path, 'ae_covariance.png')
             
-        try:
-            code_cov = np.cov(np.array(encoding).transpose())
-            ax = plt.matshow(code_cov, fignum=1, cmap='plasma')
-            cb = plt.colorbar()
-            cb.ax.tick_params(labelsize=14)
-            ax.axes.get_xaxis().set_visible(False)
-            plt.title('Covariance Matrix', fontsize=14)
-
+            plt.tight_layout()
             plt.savefig(file_name)
-        except (OSError, ValueError):
-            self.logger.write_message('Statistics image could not be saved under %s.' 
-                                      % file_name, MessageType.ERR)
+            plt.close(fig)
+        except OSError:
+            self.logger.write_message('Evaluation image could not be saved under %s.' % file_name, MessageType.ERR)
         plt.close(fig)

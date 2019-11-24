@@ -87,20 +87,17 @@ class SemanticEncoder:
         encoded_fts = ae.encoder.predict(x_test)    
         decoded_fts = ae.decoder.predict(encoded_fts)
         
-        self.plotter.plot_covariance_matrix(encoded_fts, tag)
-        self.plotter.plot_error(history.history, tag)
-        self.plotter.plot_acc(history.history, ae.svm_history, ae.svm_history_train, tag)
         self.plotter.plot_encoding(x_test, encoded_fts, decoded_fts, tag)
         self.plotter.plot_pca_vs_encoding(x_test, encoded_fts, tag)
         self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, tag)
-        self.plotter.plot_statistics(encoded_fts, tag)
+        self.plotter.plot_evaluation(history.history, ae.svm_history, encoded_fts, tag)
         
         ae.autoencoder.save(os.path.join(os.path.join(self.results_path, tag), 'autoencoder.h5'))
         ae.encoder.save(os.path.join(os.path.join(self.results_path, tag), 'encoder.h5'))
         ae.decoder.save(os.path.join(os.path.join(self.results_path, tag), 'decoder.h5'))
         
         self.clear_memmory()
-        return ae.svm_history
+        return ae.svm_history['test']
     
     def pick_semantic_features(self, key, dataset, opposite=False, noise_rate=0):
         '''
