@@ -80,7 +80,7 @@ def main():
     results['ALL'] = enc.run_encoder('ALL', batch_norm=False, 
                                      x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=config.noise_rate), 
                                      x_test=enc.pick_semantic_features('ALL', x_test, opposite=False, noise_rate=config.noise_rate), 
-                                     y_train=y_train, y_test=y_test)
+                                     y_train=y_train, y_test=y_test, baseline=0.92)
      
     enc.save_results(results)
     elapsed = time.time() - init_time

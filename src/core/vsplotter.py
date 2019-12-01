@@ -89,19 +89,40 @@ class Plotter:
             self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
             plt.close(fig)
             
-    def plot_spatial_distribution(self, input_set, encoding, output_set, labels, tag=None):
+            
+    def plot_spatial_distribution(self, input_set, encoding, output_set, classes, tag=None):
         '''
         Plots the spatial distribution of input, encoding and output using PCA and TSNE
         
         @param input_set: autoencoder input
         @param encoding: autoencoder encoded features
         @param output_set: autoencoder output
-        @param labels: data set labels
+        @param classes: data set classes
         @param tag: string with folder name to saver results under
         '''
+        def plot_labels(plt, ax, features):
+            for k, label in enumerate(chosen_classes):
+                    plot_mask = [False] * len(labels)
+                    for i in range(len(labels)):
+                        if labels[i] == label:
+                            plot_mask[i] = True
+                
+                    plt.scatter(features[plot_mask,0], features[plot_mask,1], c=colors[k], 
+                                s=np.ones(labels[plot_mask].shape), label=classes_names[k])
+            ax.legend(prop={'size': 3})
+            
         fig = plt.figure()
         plt.rcParams.update({'font.size': 8})
+        chosen_classes = [50, 9, 7, 31, 38]
+        colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:pink']
+        classes_names = ['dolphin', 'blue+whale', 'horse', 'giraffe', 'zebra']
         
+        mask = [False] * len(classes)
+        for i in range(len(classes)):
+            if  classes[i] in chosen_classes:
+                mask[i] = True
+        
+        labels = classes[mask]        
         if tag and isinstance(tag, str):
             root = os.path.join(self.results_path, tag)
             file_name = os.path.join(root, 'ae_distribution.png')
@@ -116,18 +137,18 @@ class Plotter:
              
             ax = plt.subplot(331)
             ax.set_title('PCA - Input')
-            input_fts = pca.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            input_fts = pca.fit_transform(input_set[mask, :])
+            plot_labels(plt, ax, input_fts)
             
             ax = plt.subplot(332)
             ax.set_title('PCA - Encoding')
-            encoding_fts = pca.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            encoding_fts = pca.fit_transform(encoding[mask, :])
+            plot_labels(plt, ax, encoding_fts)
              
             ax = plt.subplot(333)
             ax.set_title('PCA - Output')
-            output_fts = pca.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            output_fts = pca.fit_transform(output_set[mask, :])
+            plot_labels(plt, ax, output_fts)
         except ValueError:
             self.logger.write_message('PCA could not be computed.', MessageType.ERR)
             
@@ -136,18 +157,18 @@ class Plotter:
              
             ax = plt.subplot(334)
             ax.set_title('TSNE - Input')
-            input_fts = tsne.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            input_fts = tsne.fit_transform(input_set[mask, :])
+            plot_labels(plt, ax, input_fts)
 
             ax = plt.subplot(335)
             ax.set_title('TSNE - Encoding')
-            encoding_fts = tsne.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            encoding_fts = tsne.fit_transform(encoding[mask, :])
+            plot_labels(plt, ax, encoding_fts)
                          
             ax = plt.subplot(336)
             ax.set_title('TSNE - Output')
-            output_fts = tsne.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))  
+            output_fts = tsne.fit_transform(output_set[mask, :])
+            plot_labels(plt, ax, output_fts)  
         except ValueError:
             self.logger.write_message('TSNE could not be computed.', MessageType.ERR)
         
@@ -156,18 +177,18 @@ class Plotter:
 
             ax = plt.subplot(337)
             ax.set_title('LDA - Input')
-            input_fts = lda.fit_transform(input_set)
-            plt.scatter(input_fts[:,0], input_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            input_fts = lda.fit_transform(input_set[mask, :])
+            plot_labels(plt, ax, input_fts)
 
             ax = plt.subplot(338)
             ax.set_title('LDA - Encoding')
-            encoding_fts = lda.fit_transform(encoding)
-            plt.scatter(encoding_fts[:,0], encoding_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            encoding_fts = lda.fit_transform(encoding[mask, :])
+            plot_labels(plt, ax, encoding_fts)
 
             ax = plt.subplot(339)
             ax.set_title('LDA - Output')
-            output_fts = lda.fit_transform(output_set)
-            plt.scatter(output_fts[:,0], output_fts[:,1], c=labels, cmap='hsv', s=np.ones(labels.shape))
+            output_fts = lda.fit_transform(output_set[mask, :])
+            plot_labels(plt, ax, output_fts)
         except ValueError:
             self.logger.write_message('LDA could not be computed.', MessageType.ERR)
             
@@ -226,7 +247,7 @@ class Plotter:
                                       % file_name, MessageType.ERR)
         plt.close(fig)
 
-    def plot_evaluation(self, history, svm_history, encoding, tag=''):
+    def plot_evaluation(self, history, svm_history, encoding, tag='', baseline=0):
         '''
         Plots classification accuracy, training error, and code covariance matrix, 
         standard deviation and mean
@@ -251,9 +272,13 @@ class Plotter:
             plt.plot([acc['accuracy']['f1-score'] for acc in svm_history['train']])
             plt.plot([acc['accuracy']['f1-score'] for acc in svm_history['test']])
             
+            if baseline != 0:
+                plt.plot([baseline for _ in range(len(svm_history['train']))], linestyle='dashed', 
+                         linewidth=2, color='k')
+            
             plt.xlabel('Epochs')
             plt.ylabel('F1-Score')
-            plt.legend(['train', 'test'])
+            plt.legend(['train', 'test', 'baseline'])
             
             ax = plt.subplot(222)
             ax.set_title('AE Loss')

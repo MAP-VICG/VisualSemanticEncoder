@@ -71,6 +71,7 @@ class SemanticEncoder:
         y_train = kwargs.get('y_train')
         x_test = kwargs.get('x_test')
         y_test = kwargs.get('y_test')
+        baseline = kwargs.get('baseline')
         
         ae = VSAutoencoder(cv=5, njobs=-1, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
         
@@ -90,7 +91,7 @@ class SemanticEncoder:
         self.plotter.plot_encoding(x_test, encoded_fts, decoded_fts, tag)
         self.plotter.plot_pca_vs_encoding(x_test, encoded_fts, tag)
         self.plotter.plot_spatial_distribution(x_test, encoded_fts, decoded_fts, y_test, tag)
-        self.plotter.plot_evaluation(history.history, ae.svm_history, encoded_fts, tag)
+        self.plotter.plot_evaluation(history.history, ae.svm_history, encoded_fts, tag, baseline)
         
         ae.autoencoder.save(os.path.join(os.path.join(self.results_path, tag), 'autoencoder.h5'))
         ae.encoder.save(os.path.join(os.path.join(self.results_path, tag), 'encoder.h5'))
