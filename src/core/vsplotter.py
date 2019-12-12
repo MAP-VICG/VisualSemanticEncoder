@@ -115,7 +115,8 @@ class Plotter:
         plt.rcParams.update({'font.size': 8})
         chosen_classes = [50, 9, 7, 31, 38]
         colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:pink']
-        classes_names = ['dolphin', 'blue+whale', 'horse', 'giraffe', 'zebra']
+        # classes_names = ['dolphin', 'blue+whale', 'horse', 'giraffe', 'zebra']
+        classes_names = ['Eared_Grebe', 'Brewer_Blackbird', 'Parakeet_Auklet', 'Black_billed_Cuckoo', 'Great_Crested_Flycatcher']
         
         mask = [False] * len(classes)
         for i in range(len(classes)):

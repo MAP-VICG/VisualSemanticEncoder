@@ -20,7 +20,7 @@ class Normalization:
         
     def _normalize_zero_one(self, fts, maximum, minimum):    
         fts -= minimum
-        fts /= (maximum-minimum)
+        fts /= (maximum-minimum) + 1
         
     def normalize_zero_one_global(self, fts):
         self._normalize_zero_one(fts, self.max_global, self.min_global)
