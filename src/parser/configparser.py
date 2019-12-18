@@ -42,6 +42,7 @@ class ConfigParser:
         self.save_test_set = True
         self.attributes_type = None
         self.configfile = configfile
+        self.ae_noise_factor = 0
         
     def set_console_value(self, root):
         '''
@@ -61,7 +62,7 @@ class ConfigParser:
         except AttributeError:
             raise AttributeError('Could not find "console" node')
         
-    def set_num_epocks(self, root):
+    def set_num_epochs(self, root):
         '''
         Reads XML looking for epochs node and sets its value
         
@@ -72,6 +73,18 @@ class ConfigParser:
             self.epochs = int(root.find('auto_encoder/epochs').text)
         except AttributeError:
             raise AttributeError('Could not find "epochs" node')
+
+    def set_noise_factor(self, root):
+        '''
+        Reads XML looking for AE noise factor node and sets its value
+
+        @param root: XML root node
+        @return None
+        '''
+        try:
+            self.ae_noise_factor = float(root.find('auto_encoder/noise_factor').text)
+        except AttributeError:
+            raise AttributeError('Could not find "noise_factor" node')
         
     def set_encoding_size(self, root):
         '''
@@ -175,9 +188,10 @@ class ConfigParser:
         '''
         tree = ET.parse(self.configfile)
         root = tree.getroot()
-        
-        self.set_num_epocks(root)
+
+        self.set_num_epochs(root)
         self.set_noise_rate(root)
+        self.set_noise_factor(root)
         self.set_results_path(root)
         self.set_console_value(root)
         self.set_encoding_size(root)
