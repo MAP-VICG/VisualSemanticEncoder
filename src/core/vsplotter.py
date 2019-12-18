@@ -12,6 +12,8 @@ Contains methods to plot results
 import os
 import numpy as np
 from random import randint
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 from sklearn.manifold import TSNE
@@ -22,12 +24,14 @@ from src.utils.logwriter import LogWritter, MessageType
 
 
 class Plotter:
-    def __init__(self, console=False):
+    def __init__(self, enc_dim, console=False):
         '''
         Initializes logger and string for results path
-        
+
+        @param enc_dim: autoencoder encoding size
         @param console: if True, prints debug in console
         '''
+        self.enc_dim = enc_dim
         self.logger = LogWritter(console=console)
         self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
                                                            'SemanticEncoder'), '_files'), 'results')
@@ -306,7 +310,7 @@ class Plotter:
                 if abs(value) <= 0.05:
                     count += 1
                 
-            plt.errorbar([x for x in range(128)], encoding[0], encoding[1], fmt='o')
+            plt.errorbar([x for x in range(self.enc_dim)], encoding[0], encoding[1], fmt='o')
             plt.legend(['Number of zeros: %d' % count], loc='upper right')
             plt.xlabel('Encoding Dimension', fontsize=12)
             plt.ylabel('Amplitude', fontsize=12)

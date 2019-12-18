@@ -46,14 +46,14 @@ class VSAutoencoder:
         self.svm.run_classifier(self.x_train, self.y_train, cv, njobs)
         self.logger = LogWritter(console=console)
         
-    def run_autoencoder(self, enc_dim, nepochs, batch_norm, tag=None):
+    def run_autoencoder(self, enc_dim, nepochs, noise_factor, tag=None):
         '''
         Builds and trains a simple autoencoder model
         
         @param enc_dim: encoding size
         @param nepochs: number of epochs
+        @param noise_factor: noise function regularization factor
         @param tag: string with folder name to saver results under
-        @param batch_norm: if True enables batch normalization layers in AE
         @return object with training details and history
         '''
         def svm_callback(epoch, logs):
@@ -85,15 +85,9 @@ class VSAutoencoder:
         encoded = Dense(1426, activation='relu')(input_fts)
         encoded = Dense(732, activation='relu')(encoded)
         encoded = Dense(328, activation='relu')(encoded)
-        
-        if batch_norm:
-            encoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(encoded)
-            code = Dense(enc_dim, activation='relu')(encoded)
-            decoded = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(code)
-            decoded = Dense(328, activation='relu')(decoded)
-        else:
-            code = Dense(enc_dim, activation='relu')(encoded)
-            decoded = Dense(328, activation='relu')(code)
+
+        code = Dense(enc_dim, activation='relu')(encoded)
+        decoded = Dense(328, activation='relu')(code)
         
         decoded = Dense(732, activation='relu')(decoded)
         decoded = Dense(1426, activation='relu')(decoded)
@@ -104,12 +98,8 @@ class VSAutoencoder:
         self.autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
 
         encoded_input = Input(shape=(enc_dim,))
-        if batch_norm:
-            decoder_layer = self.autoencoder.layers[-5](encoded_input)
-            decoder_layer = self.autoencoder.layers[-4](decoder_layer)
-        else:
-            decoder_layer = self.autoencoder.layers[-4](encoded_input)
 
+        decoder_layer = self.autoencoder.layers[-4](encoded_input)
         decoder_layer = self.autoencoder.layers[-3](decoder_layer)
         decoder_layer = self.autoencoder.layers[-2](decoder_layer)
         decoder_layer = self.autoencoder.layers[-1](decoder_layer)
@@ -132,7 +122,7 @@ class VSAutoencoder:
         sys.stdout = old_stdout
         
         svm = LambdaCallback(on_epoch_end=svm_callback)
-        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) / 10
+        noise = (np.random.normal(loc=0.5, scale=0.5, size=self.x_train.shape)) * noise_factor
         
         history = self.autoencoder.fit(self.x_train + noise, 
                                        self.x_train,

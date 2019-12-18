@@ -37,7 +37,7 @@ class SemanticEncoder:
         self.epochs = epochs
         self.enc_dim = encoding_dim
         
-        self.plotter = Plotter()
+        self.plotter = Plotter(self.enc_dim)
         self.svm = SVMClassifier()
         
         self.logger = LogWritter(console=console)
@@ -58,7 +58,7 @@ class SemanticEncoder:
         K.clear_session()
         gc.collect()
     
-    def run_encoder(self, tag, batch_norm, **kwargs):
+    def run_encoder(self, tag, **kwargs):
         '''
         Runs autoencoder and plots results. It automatically splits the data set into 
         training and test sets
@@ -72,10 +72,12 @@ class SemanticEncoder:
         x_test = kwargs.get('x_test')
         y_test = kwargs.get('y_test')
         baseline = kwargs.get('baseline')
+        noise_factor = kwargs.get('noise_factor')
         
         ae = VSAutoencoder(cv=5, njobs=-1, x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test)
         
-        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs, batch_norm=batch_norm, tag=tag)
+        history = ae.run_autoencoder(enc_dim=min(self.enc_dim, x_train.shape[1]), nepochs=self.epochs,
+                                     noise_factor=noise_factor, tag=tag)
                 
         with open(os.path.join(os.path.join(self.results_path, tag), 'history.txt'),'w') as f:
             f.write('loss: ' + ','.join([str(v) for v in history.history['loss']]) + '\n')
@@ -108,6 +110,7 @@ class SemanticEncoder:
         @param key: string with features category
         @param dataset: numpy array with data set to be filtered
         @param opposite: if True instead of getting the features in key, get all features but it
+        @param noise_rate: rate of attributes to be randomly set to zero
         @return numpy array with filtered features
         '''
         self.logger.write_message('Considering dataset of shape: %s' % str(dataset.shape), MessageType.INF)
