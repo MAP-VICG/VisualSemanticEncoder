@@ -5,11 +5,12 @@
 		<save_test_set>False</save_test_set>
 	</general>
 	<auto_encoder>
-		<epochs>50</epochs>
+		<epochs>100</epochs>
+		<noise_factor>0.05</noise_factor>
 		<encoding_size>128</encoding_size>
 	</auto_encoder>
 	<semantic_features>
-		<noise_rate>0.15</noise_rate>
+		<noise_rate>0.00</noise_rate>
 		<attributes_type>continuous</attributes_type>
 	</semantic_features>
 	<paths>

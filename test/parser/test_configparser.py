@@ -43,6 +43,12 @@ class ConfigParsertTests(unittest.TestCase):
         Tests if the correct number of epochs value was found
         '''
         self.assertEqual(5, self.parser.epochs)
+
+    def test_noise_factor(self):
+        '''
+        Tests if the correct noise factor value was found
+        '''
+        self.assertEqual(0.1, self.parser.ae_noise_factor)
         
     def test_encoding_size(self):
         '''

@@ -120,10 +120,9 @@ def main():
     enc = SemanticEncoder(config.epochs, config.encoding_size)
 
     log.write_message('Running ALL', MessageType.INF)
-    results['ALL'] = enc.run_encoder('ALL', batch_norm=False,
-                                     x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=config.noise_rate),
+    results['ALL'] = enc.run_encoder('ALL', x_train=enc.pick_semantic_features('ALL', x_train, opposite=False, noise_rate=config.noise_rate),
                                      x_test=enc.pick_semantic_features('ALL', x_test, opposite=False, noise_rate=config.noise_rate),
-                                     y_train=y_train, y_test=y_test, baseline=0.02)
+                                     y_train=y_train, y_test=y_test, baseline=0.02, noise_factor=config.ae_noise_factor)
 
     enc.save_results(results)
     elapsed = time.time() - init_time

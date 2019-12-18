@@ -5,6 +5,7 @@
 	</general>
 	<auto_encoder>
 		<epochs>5</epochs>
+		<noise_factor>0.1</noise_factor>
 		<encoding_size>128</encoding_size>
 	</auto_encoder>
 	<semantic_features>
