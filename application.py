@@ -74,7 +74,7 @@ def main():
     x_test = []
     y_test = []
     for i, value in enumerate(mask):
-        if value == 0:
+        if value == 1:
             a = vis_fts[i][:]
             b = sem_fts[i][:]
             a.extend(b)
@@ -86,6 +86,20 @@ def main():
             a.extend(b)
             x_test.append(a)
             y_test.append(Y[i])
+
+    with open(os.sep.join(['_files', 'base', 'Birds-predicate-set.txt'])) as f:
+        aug_sem_fts = f.readlines()
+
+    with open(os.sep.join(['_files', 'features', 'Birds-labels.txt'])) as f:
+        Y_aug = list(map(int, f.readlines()))
+
+    with open(os.sep.join(['_files', 'features', 'Birds-features-augmented.txt'])) as f:
+        for i, line in enumerate(f.readlines()):
+            a = list(map(float, line.split(',')))
+            b = list(map(float, aug_sem_fts[i].split(',')))
+            a.extend(b)
+            x_train.append(a)
+            y_train.append(Y_aug[i])
 
     x_train = np.array(x_train)
     x_test = np.array(x_test)
