@@ -1,4 +1,4 @@
-'''
+"""
 Module for normalizing datasets and saving the maximum and minimum values 
 of it before normalization
 
@@ -9,7 +9,7 @@ of it before normalization
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 
 class Normalization:
     def __init__(self, fts):
