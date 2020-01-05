@@ -1,4 +1,4 @@
-'''
+"""
 Model to encode visual and semantic features of images
 
 @author: Damares Resende
@@ -8,22 +8,22 @@ Model to encode visual and semantic features of images
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
-
+"""
 import os
 import sys
 import time
 import numpy as np
 import tensorflow as tf
+import tensorflow.python.keras.backend as K
 from sklearn.model_selection import train_test_split
-from tensorflow.compat.v1.keras.backend import set_session
 
-from src.core.vsencoder import SemanticEncoder
+from src.core.encoder import SemanticEncoder
+from src.core.classifier import SVMClassifier
 from src.utils.normalization import Normalization
 from src.parser.featuresparser import FeaturesParser
 from src.utils.logwriter import LogWritter, MessageType
 from src.parser.configparser import ConfigParser, AttributesType
-from src.core.vsclassifier import SVMClassifier
+
 
 def main():
     init_time = time.time()
@@ -106,13 +106,13 @@ def main():
     y_train = np.array(y_train)
     y_test = np.array(y_test)
 
-    norm_sem = Normalization(x_train[:,2048:])
-    norm_sem.normalize_zero_one_by_column(x_train[:,2048:])
-    norm_sem.normalize_zero_one_by_column(x_test[:,2048:])
+    norm_sem = Normalization(x_train[:, 2048:])
+    norm_sem.normalize_zero_one_by_column(x_train[:, 2048:])
+    norm_sem.normalize_zero_one_by_column(x_test[:, 2048:])
 
-    norm_vis = Normalization(x_train[:,:2048])
-    norm_vis.normalize_zero_one_by_column(x_train[:,:2048])
-    norm_vis.normalize_zero_one_by_column(x_test[:,:2048])
+    norm_vis = Normalization(x_train[:, :2048])
+    norm_vis.normalize_zero_one_by_column(x_train[:, :2048])
+    norm_vis.normalize_zero_one_by_column(x_test[:, :2048])
 
     if config.save_test_set:
         with open('test_set.txt', 'w') as f:
@@ -151,6 +151,6 @@ def main():
 if __name__ == '__main__':
     config = tf.compat.v1.ConfigProto(log_device_placement=True)
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    set_session(tf.compat.v1.Session(config=config))
+    K.set_session(tf.compat.v1.Session(config=config))
     
     main()
