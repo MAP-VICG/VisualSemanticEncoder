@@ -1,4 +1,4 @@
-'''
+"""
 Contains methods to plot results
 
 @author: Damares Resende
@@ -8,38 +8,38 @@ Contains methods to plot results
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import os
+import matplotlib
 import numpy as np
 from random import randint
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-
 from sklearn.manifold import TSNE
+from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 
 from src.utils.logwriter import LogWritter, MessageType
 
+matplotlib.use('Agg')
+
 
 class Plotter:
     def __init__(self, enc_dim, console=False):
-        '''
+        """
         Initializes logger and string for results path
 
         @param enc_dim: autoencoder encoding size
         @param console: if True, prints debug in console
-        '''
+        """
         self.enc_dim = enc_dim
         self.logger = LogWritter(console=console)
-        self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
-                                                           'SemanticEncoder'), '_files'), 'results')
+        self.results_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0],
+                                                                   'SemanticEncoder'), '_files'), 'results')
         if not os.path.isdir(self.results_path):
             os.mkdir(self.results_path)
     
     def plot_encoding(self, input_set, encoding, output_set, tag=None):
-        '''
+        """
         Plots input example vs encoded example vs decoded example of 5 random examples
         in test set
         
@@ -47,7 +47,7 @@ class Plotter:
         @param encoding: autoencoder encoded features
         @param output_set: autoencoder output
         @param tag: string with folder name to saver results under
-        '''
+        """
         ex_idx = set()
         while len(ex_idx) < 5:
             ex_idx.add(randint(0, input_set.shape[0] - 1))
@@ -93,9 +93,8 @@ class Plotter:
             self.logger.write_message('Error image could not be saved under %s.' % file_name, MessageType.ERR)
             plt.close(fig)
             
-            
     def plot_spatial_distribution(self, input_set, encoding, output_set, classes, tag=None):
-        '''
+        """
         Plots the spatial distribution of input, encoding and output using PCA and TSNE
         
         @param input_set: autoencoder input
@@ -103,7 +102,7 @@ class Plotter:
         @param output_set: autoencoder output
         @param classes: data set classes
         @param tag: string with folder name to saver results under
-        '''
+        """
         def plot_labels(plt, ax, features):
             for k, label in enumerate(chosen_classes):
                     plot_mask = [False] * len(labels)
@@ -124,7 +123,7 @@ class Plotter:
         
         mask = [False] * len(classes)
         for i in range(len(classes)):
-            if  classes[i] in chosen_classes:
+            if classes[i] in chosen_classes:
                 mask[i] = True
         
         labels = classes[mask]        
@@ -208,13 +207,13 @@ class Plotter:
         plt.close(fig)
             
     def plot_pca_vs_encoding(self, input_set, encoding, tag=None):
-        '''
+        """
         Plots PCA against encoding components
         
         @param input_set: autoencoder input
         @param encoding: autoencoder encoded features
         @param tag: string with folder name to saver results under
-        ''' 
+        """
         ex_idx = set()
         while len(ex_idx) < 5:
             ex_idx.add(randint(0, input_set.shape[0] - 1))
@@ -248,17 +247,16 @@ class Plotter:
             
             plt.savefig(file_name)
         except (OSError, ValueError):
-            self.logger.write_message('PCA vs Encoding image could not be saved under %s.' 
-                                      % file_name, MessageType.ERR)
+            self.logger.write_message('PCA vs Encoding image could not be saved under %s.' % file_name, MessageType.ERR)
         plt.close(fig)
 
     def plot_evaluation(self, history, svm_history, encoding, tag='', baseline=0):
-        '''
+        """
         Plots classification accuracy, training error, and code covariance matrix, 
         standard deviation and mean
         
         @return None
-        '''
+        """
         fig = plt.figure(figsize=(14, 12))
         plt.rcParams.update({'font.size': 12})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)

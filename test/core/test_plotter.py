@@ -1,5 +1,5 @@
-'''
-Tests for module vsplotter
+"""
+Tests for module plotter
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -7,31 +7,30 @@ Tests for module vsplotter
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import os
 import unittest
 from sklearn.model_selection import train_test_split
 
-from src.core.vsplotter import Plotter
+from src.core.plotter import Plotter
+from src.core.autoencoder import Autoencoder
 from src.parser.configparser import ConfigParser
-from src.core.vsautoencoder import VSAutoencoder
 from src.parser.featuresparser import FeaturesParser
 
 
-class VSAutoencoderTests(unittest.TestCase):
-    
+class AutoencoderTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        '''
+        """
         Initializes model for all tests
-        '''
+        """
         configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
         
         config = ConfigParser(configfile)
         config.read_configuration()
         parser = FeaturesParser(fts_dir=config.features_path, console=config.console)
         
-        cls.plotter = Plotter(console=True)
+        cls.plotter = Plotter(console=True, enc_dim=128)
         
         X = parser.concatenate_features(parser.get_visual_features(), parser.get_semantic_features())
         Y = parser.get_labels()
@@ -41,14 +40,13 @@ class VSAutoencoderTests(unittest.TestCase):
         cls.enc_dim = 128
         cls.nexamples = x_train.shape[0]
         
-        cls.ae = VSAutoencoder(cv=2, njobs=2, x_train=x_train, y_train=y_train, 
-                               x_test=cls.x_test, y_test=cls.y_test)
-        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, batch_norm=False)
+        cls.ae = Autoencoder(cv=2, njobs=2, x_train=x_train, y_train=y_train, x_test=cls.x_test, y_test=cls.y_test)
+        cls.history = cls.ae.run_autoencoder(cls.enc_dim, 5, 0.1)
          
     def test_plot_evaluation(self):
-        '''
+        """
         Tests if evaluation charts are plot and saved to ae_evaluation.png
-        '''
+        """
         file_name = os.path.join(self.plotter.results_path, 'ae_evaluation.png')
              
         if os.path.isfile(file_name):
@@ -60,9 +58,9 @@ class VSAutoencoderTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(file_name))
           
     def test_plot_encoding(self):
-        '''
+        """
         Tests if encoding results is plot to ae_encoding.png
-        '''
+        """
         file_name = os.path.join(self.plotter.results_path, 'ae_encoding.png')
               
         if os.path.isfile(file_name):
@@ -75,9 +73,9 @@ class VSAutoencoderTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(file_name))
            
     def test_plot_spatial_distribution(self):
-        '''
+        """
         Tests if LDA, TSNE and PCA results are plot to ae_distribution.png
-        '''
+        """
         file_name = os.path.join(self.plotter.results_path, 'ae_distribution.png')
               
         if os.path.isfile(file_name):
@@ -90,9 +88,9 @@ class VSAutoencoderTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(file_name))
            
     def test_plot_pca_vs_encoding(self):
-        '''
+        """
         Tests if PCA components and encoding components are plot to ae_components.png
-        '''
+        """
         file_name = os.path.join(self.plotter.results_path, 'ae_components.png')
               
         if os.path.isfile(file_name):

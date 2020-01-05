@@ -1,4 +1,4 @@
-'''
+"""
 Autoencoder for visual and semantic features of images
 
 @author: Damares Resende
@@ -8,29 +8,28 @@ Autoencoder for visual and semantic features of images
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import io
 import sys
 import numpy as np
 
 from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.callbacks import LambdaCallback
-from tensorflow.keras.layers import Input, Dense, BatchNormalization
 
-from src.core.vsclassifier import SVMClassifier
+from src.core.classifier import SVMClassifier
 from src.utils.logwriter import LogWritter, MessageType
 
 
-class VSAutoencoder:
-    
+class Autoencoder:
     def __init__(self, cv=5, njobs=1, console=False, **kwargs):
-        '''
+        """
         Initialize all models and runs grid search on SVM
         
         @param kwargs: dictionary with training and testing data
         @param cv: grid search number of folds in cross validation
         @param njobs: grid search number of jobs to run in parallel
-        '''
+        """
         self.svm = None
         self.encoder = None
         self.decoder = None
@@ -47,7 +46,7 @@ class VSAutoencoder:
         self.logger = LogWritter(console=console)
         
     def run_autoencoder(self, enc_dim, nepochs, noise_factor, tag=None):
-        '''
+        """
         Builds and trains a simple autoencoder model
         
         @param enc_dim: encoding size
@@ -55,14 +54,14 @@ class VSAutoencoder:
         @param noise_factor: noise function regularization factor
         @param tag: string with folder name to saver results under
         @return object with training details and history
-        '''
+        """
         def svm_callback(epoch, logs):
-            '''
+            """
             Runs SVM and saves prediction results
             
             @param epoch: default callback parameter. Epoch index
             @param logs:default callback parameter. Loss result
-            '''
+            """
             old_stderr = sys.stderr
             sys.stderr = buffer = io.StringIO()
             

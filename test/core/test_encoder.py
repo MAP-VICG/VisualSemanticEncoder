@@ -1,5 +1,5 @@
-''''
-Tests for module vsencoder
+"""
+Tests for module encoder
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -7,25 +7,24 @@ Tests for module vsencoder
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import os
 import unittest
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from src.core.vsencoder import SemanticEncoder
-from src.core.vsclassifier import SVMClassifier
+from src.core.encoder import SemanticEncoder
+from src.core.classifier import SVMClassifier
 from src.parser.configparser import ConfigParser
 from src.parser.featuresparser import FeaturesParser
 
 
-class VSEncoderTests(unittest.TestCase):
-    
+class EncoderTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        '''
+        """
         Initializes model for all tests
-        '''
+        """
         configfile = os.sep.join([os.getcwd().split('test')[0], '_files', 'mockfiles', 'configfiles', 'config.xml'])
         
         config = ConfigParser(configfile)
@@ -41,19 +40,18 @@ class VSEncoderTests(unittest.TestCase):
         cls.encoder = SemanticEncoder(cls.nepochs, 128)
         
     def test_run_encoder(self):
-        '''
+        """
         Tests if history for all epochs is returned and if results are saved
-        '''     
-        files = ['ae_loss.png', 'ae_encoding.png', 'ae_components.png', 'ae_distribution.png']
+        """
+        files = ['ae_evaluation.png', 'ae_encoding.png', 'ae_components.png', 'ae_distribution.png']
              
         for f in files:
             file_name = os.path.join(os.path.join(self.encoder.plotter.results_path, 'mock'), f)
-                       
             if os.path.isfile(file_name):
                 os.remove(file_name)
          
         hist = self.encoder.run_encoder(tag='mock', x_train=self.x_train, y_train=self.y_train, x_test=self.x_test, 
-                                        y_test=self.y_test, simple=True, batch_norm=False)
+                                        y_test=self.y_test, simple=True, noise_factor=0.1)
               
         self.assertEqual(self.nepochs, len(hist))
         for res in hist:
@@ -61,12 +59,13 @@ class VSEncoderTests(unittest.TestCase):
             self.assertIsNotNone(res.get('macro avg', None))
             self.assertIsNotNone(res.get('weighted avg', None))
         for f in files:
+            file_name = os.path.join(os.path.join(self.encoder.plotter.results_path, 'mock'), f)
             self.assertTrue(os.path.isfile(file_name))
                    
     def test_pick_semantic_features(self):
-        '''
+        """
         Tests if features selection retrieves the correct features
-        '''
+        """
         dataset = self.encoder.pick_semantic_features('SHAPE', self.x_test)
            
         self.assertEqual((200, 2053), dataset.shape)
@@ -77,9 +76,9 @@ class VSEncoderTests(unittest.TestCase):
         self.assertTrue((dataset[:, 2052] == self.x_test[:, 2048 + 25 - 1]).all())
           
     def test_pick_semantic_features_opposite(self):
-        '''
+        """
         Tests if features selection retrieves the correct features with opposite option enabled
-        '''
+        """
         dataset = self.encoder.pick_semantic_features('TEXTURE', self.x_test, opposite=True)
           
         self.assertEqual((200, 2066), dataset.shape)
@@ -103,17 +102,17 @@ class VSEncoderTests(unittest.TestCase):
         self.assertTrue((dataset[:, 2065] == self.x_test[:, 2048 + 31 - 1]).all())
  
     def test_save_results(self):
-        '''
+        """
         Tests if results are correctly saved to XML
-        '''
+        """
         results = dict()
         svm = SVMClassifier()
-        results['REF'] = svm.run_svm(x_train=self.x_train[:,:2048], x_test=self.x_test[:,:2048], 
-                             y_train=self.y_train, y_test=self.y_test)
+        results['REF'] = svm.run_svm(x_train=self.x_train[:,:2048], x_test=self.x_test[:, :2048],
+                                     y_train=self.y_train, y_test=self.y_test)
          
         enc = SemanticEncoder(5, 32)
         results['ALL'] = enc.run_encoder('ALL', x_train=self.x_train, x_test=self.x_test, y_train=self.y_train, 
-                                         y_test=self.y_test, simple=True, batch_norm=False)
+                                         y_test=self.y_test, simple=True, noise_factor=0.1)
      
         file_name = os.path.join(svm.results_path, 'ae_results.xml')
                
@@ -124,9 +123,9 @@ class VSEncoderTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(file_name))
         
     def test_remove_random_30(self):
-        '''
+        """
         Tests if values are removed from the array based on the noise level provided
-        '''
+        """
         features = np.array([[9, 2, 10, 9, 6, 2, 5, 8, 1, 2, 5, 3, 0, 5, 4, 4, 8, 3, 1, 10, 1, 7],
                              [10, 6, 9, 9, 7, 10, 0, 3, 7, 9, 2, 10, 3, 3, 6, 1, 9, 4, 9, 4, 1, 5],
                              [2, 1, 10, 7, 3, 8, 1, 1, 6, 0, 10, 7, 1, 4, 4, 9, 0, 5, 7, 10, 10, 7]])
@@ -138,9 +137,9 @@ class VSEncoderTests(unittest.TestCase):
         self.assertTrue((features == noisy_fts).all())
         
     def test_remove_random_50(self):
-        '''
+        """
         Tests if values are removed from the array based on the noise level provided
-        '''
+        """
         features = np.array([[9, 2, 10, 9, 6, 2, 5, 8, 1, 2, 5, 3, 0, 5, 4, 4, 8, 3, 1, 10, 1, 7],
                              [10, 6, 9, 9, 7, 10, 0, 3, 7, 9, 2, 10, 3, 3, 6, 1, 9, 4, 9, 4, 1, 5],
                              [2, 1, 10, 7, 3, 8, 1, 1, 6, 0, 10, 7, 1, 4, 4, 9, 0, 5, 7, 10, 10, 7]])
@@ -152,9 +151,9 @@ class VSEncoderTests(unittest.TestCase):
         self.assertTrue((features == noisy_fts).all())
         
     def test_remove_random_80(self):
-        '''
+        """
         Tests if values are removed from the array based on the noise level provided
-        '''
+        """
         features = np.array([[9, 2, 10, 9, 6, 2, 5, 8, 1, 2, 5, 3, 0, 5, 4, 4, 8, 3, 1, 10, 1, 7],
                              [10, 6, 9, 9, 7, 10, 0, 3, 7, 9, 2, 10, 3, 3, 6, 1, 9, 4, 9, 4, 1, 5],
                              [2, 1, 10, 7, 3, 8, 1, 1, 6, 0, 10, 7, 1, 4, 4, 9, 0, 5, 7, 10, 10, 7]])
