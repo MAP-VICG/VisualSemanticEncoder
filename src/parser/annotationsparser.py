@@ -1,4 +1,4 @@
-'''
+"""
 Retrieves basic information about the Animals With Attributes 2 dataset. The
 data retrieved includes all possible classes and attributes.
 
@@ -9,7 +9,7 @@ data retrieved includes all possible classes and attributes.
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import os
 import numpy as np
 import pandas as pd
@@ -17,16 +17,15 @@ import pandas as pd
 from src.utils.logwriter import LogWritter, MessageType
 
 
-class AnnotationsParser():
-    
+class AnnotationsParser:
     def __init__(self, console=False, binary=False):
-        '''
+        """
         Initialization
         
         @param console: if True, prints debug in console
         @param binary: if True loads the binary predicate matrix, loads the continuous one otherwise 
-        '''
-        base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 
+        """
+        base_path = os.path.join(os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0],
                                                            'SemanticEncoder'), '_files'), 'base')
         
         self.logger = LogWritter(console=console)
@@ -40,11 +39,11 @@ class AnnotationsParser():
             self.predicate_matrix = os.path.join(base_path, 'AwA2-predicate-matrix-continuous.txt')
         
     def get_classes(self):
-        '''
+        """
         Retrieves the labels available for objects in Animals with Attributes 2 data set
         
         @return list of strings with available labels
-        '''
+        """
         try:
             with open(self.classes) as f:
                 labels = [line.strip().split()[1] for line in f.readlines()]
@@ -55,11 +54,11 @@ class AnnotationsParser():
             return []
         
     def get_predicate_matrix(self, subset=False):
-        '''
+        """
         Retrieves data frame with object labels and corresponding attributes
         
         @return pandas data frame with 50 labels and 85 corresponding attributes
-        '''
+        """
         try:
             with open(self.predicate_matrix) as f:
                 matrix = np.zeros((50, 85), dtype=np.float32)
@@ -83,11 +82,11 @@ class AnnotationsParser():
             return None
         
     def get_attributes_set(self):
-        '''
+        """
         Retrieves the attributes available for objects in Animals with Attributes 2 data set
         
         @return list of strings with available predicates
-        '''
+        """
         try:
             with open(self.predicate_set) as f:
                 predicates = [line.strip().split()[1] for line in f.readlines()]
@@ -98,12 +97,12 @@ class AnnotationsParser():
             return []
         
     def get_attributes_subset(self, as_dict=False):
-        '''
+        """
         Retrieves the attributes to be considered for objects in Animals with Attributes 2 data set
         
         @param as_dict: if True, returns a dictionary with features category as key
         @return list of strings with predicates to be considered
-        '''
+        """
         try:
             with open(self.predicate_subset) as f:
                 if as_dict:

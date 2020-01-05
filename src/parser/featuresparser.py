@@ -1,4 +1,4 @@
-'''
+"""
 Retrieves features of 37322 images extracted with ResNet101. Each feature vector has
 2048 features.
 
@@ -9,7 +9,7 @@ Retrieves features of 37322 images extracted with ResNet101. Each feature vector
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-'''
+"""
 import os
 import numpy as np
 
@@ -17,15 +17,14 @@ from src.utils.logwriter import LogWritter, MessageType
 from src.parser.annotationsparser import AnnotationsParser
 
 
-class FeaturesParser():
-    
+class FeaturesParser:
     def __init__(self, fts_dir=None, console=False):
-        '''
+        """
         Initialization
         
         @param fts_dir: string that points to folder where the features data files are
         @param console: if True, prints debug in console
-        '''
+        """
         if fts_dir and isinstance(fts_dir, str):
             base_path = os.path.join(os.path.join(os.getcwd().split('SemanticEncoder')[0], 'SemanticEncoder'), fts_dir)
         else:
@@ -38,11 +37,11 @@ class FeaturesParser():
         self.console = console
         
     def get_labels(self):
-        '''
+        """
         Retrieves the labels of each image in Animals with Attributes 2 data set
         
         @return numpy array of integers with labels
-        '''
+        """
         try:
             with open(self.labels) as f:
                 lines = f.readlines()
@@ -57,12 +56,12 @@ class FeaturesParser():
             return None
         
     def get_visual_features(self):
-        '''
+        """
         Retrieves features extracted by ResNet101
         
         @param norm: normalize features
         @return numpy array of shape (37322, 2048) with features for images in AwA2 data set
-        '''
+        """
         try:
             with open(self.features) as f:
                 lines = f.readlines()
@@ -78,14 +77,14 @@ class FeaturesParser():
             return None
     
     def get_semantic_features(self, subset=False, binary=False):
-        '''
+        """
         Retrieves semantic features based on annotations
         
         @param subset: if True return a subset of the features with 19 attributes only
         @param binary: if True loads the binary predicate matrix, loads the continuous one otherwise
         @return numpy array of shape (37322, X) with features for images in AwA2 data set where X
                 is the number of attributes considered
-        '''
+        """
         ann_parser = AnnotationsParser(self.console, binary=binary)
         
         if subset:
@@ -106,18 +105,18 @@ class FeaturesParser():
 
     @staticmethod
     def concatenate_features(vis_fts, sem_fts):
-        '''
+        """
         Concatenates semantic and visual features along x axis
         
         @param vis_fts: visual features
         @param sem_fts: semantic features
         @return: numpy array of shape (37322, 2048 + X) with all features, where X is the number of
             semantic features
-        '''
+        """
         features = np.zeros((vis_fts.shape[0], vis_fts.shape[1] + sem_fts.shape[1]), dtype=np.float32)
          
         for ft in range(features.shape[0]):
-            features[ft,:vis_fts.shape[1]] = vis_fts[ft]
-            features[ft,vis_fts.shape[1]:] = sem_fts[ft] 
+            features[ft, :vis_fts.shape[1]] = vis_fts[ft]
+            features[ft, vis_fts.shape[1]:] = sem_fts[ft]
   
         return features
