@@ -50,6 +50,29 @@ class BirdsDataTests(unittest.TestCase):
                 elif i == 3032:
                     self.assertEqual('200', line.strip())
 
+    def test_map_evaluation_certainty(self):
+        """
+        Tests if values calculated considering the certainty factor are the expected ones
+        """
+        self.assertEqual(0.75, self.data.map_evaluation_certainty(1, 0))
+        self.assertEqual(0.25, self.data.map_evaluation_certainty(0, 0))
+        self.assertEqual(1, self.data.map_evaluation_certainty(1, 1))
+        self.assertEqual(0, self.data.map_evaluation_certainty(0, 1))
+        self.assertEqual(0.5, self.data.map_evaluation_certainty(1, 2))
+        self.assertEqual(0.5, self.data.map_evaluation_certainty(0, 2))
+
+    def test_get_semantic_attributes(self):
+        """
+        Tests if shape of returned array is correct and if all values lie in between 0 and 1
+        @return:
+        """
+        features = self.data.get_semantic_attributes()
+        self.assertEqual((6033, 288), features.shape)
+
+        for i in range(6033):
+            for j in range(288):
+                self.assertTrue(0 <= features[i, j] <= 1)
+
     @classmethod
     def tearDownClass(cls):
         """
