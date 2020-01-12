@@ -21,7 +21,6 @@ class BirdsDataTests(unittest.TestCase):
         """
         Initializes variables to be used in the tests
         """
-        cls.class_file = 'birds_test_classes.txt'
         cls.base_path = cls.base_path = sep.join(['..', '..', '_files', 'mockfiles', 'birds'])
         cls.data = BirdsData(cls.base_path)
         cls.train_list = cls.data.get_images_list(sep.join([cls.base_path, 'lists', 'train.txt']))
@@ -35,22 +34,6 @@ class BirdsDataTests(unittest.TestCase):
         self.assertEqual('033.Yellow_billed_Cuckoo/Yellow_billed_Cuckoo_0013_1244195077.jpg', self.test_list[0])
         self.assertEqual('121.Grasshopper_Sparrow/Grasshopper_Sparrow_0018_2691901557.jpg', self.test_list[4])
         self.assertEqual('200.Common_Yellowthroat/Common_Yellowthroat_0002_2679007659.jpg', self.test_list[9])
-
-    def test_save_class_file(self):
-        """
-        Tests if file with list of classes is saved and if it contains the expected values in the expected order
-        """
-        self.data.save_class_file(self.class_file, self.test_list)
-        self.assertTrue(path.isfile(self.class_file))
-
-        with open(self.class_file) as f:
-            for i, line in enumerate(f.readlines()):
-                if i == 0:
-                    self.assertEqual('033', line.strip())
-                elif i == 4:
-                    self.assertEqual('121', line.strip())
-                elif i == 9:
-                    self.assertEqual('200', line.strip())
 
     def test_map_evaluation_certainty(self):
         """
@@ -113,10 +96,31 @@ class BirdsDataTests(unittest.TestCase):
         self.assertEqual(10, len(train_class))
         self.assertEqual(10, len(test_fts))
 
+    def test_save_files(self):
+        """
+        Tests if files with data set data are saved
+        """
+        train_fts, train_class, test_fts, test_class = self.data.build_birds_data(20)
+        self.data.save_files(self.base_path, train_fts, train_class, test_fts, test_class)
+
+        self.assertTrue(path.isfile(path.join(self.base_path, 'birds_x_train.txt')))
+        self.assertTrue(path.isfile(path.join(self.base_path, 'birds_y_train.txt')))
+        self.assertTrue(path.isfile(path.join(self.base_path, 'birds_x_test.txt')))
+        self.assertTrue(path.isfile(path.join(self.base_path, 'birds_y_test.txt')))
+
     @classmethod
     def tearDownClass(cls):
         """
         Deletes files that were written by the tests
         """
-        if path.isfile(cls.class_file):
-            remove(cls.class_file)
+        if path.isfile(path.join(cls.base_path, 'birds_x_train.txt')):
+            remove(path.join(cls.base_path, 'birds_x_train.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_y_train.txt')):
+            remove(path.join(cls.base_path, 'birds_y_train.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_x_test.txt')):
+            remove(path.join(cls.base_path, 'birds_x_test.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_y_test.txt')):
+            remove(path.join(cls.base_path, 'birds_y_test.txt'))

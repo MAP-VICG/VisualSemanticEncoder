@@ -148,14 +148,27 @@ class BirdsData:
                np.hstack((test_vis_fts, test_sem_fts)), self.get_images_class(test_list)
 
     @staticmethod
-    def save_class_file(file_name, images_list):
+    def save_files(base_path, x_train, y_train, x_test, y_test):
         """
-        From the list of images retrieved it gets the class of each image and saves it into a file
+        Saves sets data into files
 
-        @param file_name: string indicating the full path to the file to save the data class list
-        @param images_list: list of strings with images's paths
+        @param base_path: string with base path to save files
+        @param x_train: numpy array with training set
+        @param y_train: list of classes
+        @param x_test: numpy array with test set
+        @param y_test: list of classes
         @return: None
         """
-        with open(file_name, 'w+') as f:
-            for img_path in images_list:
-                f.write(str(img_path.split('.')[0]) + '\n')
+        with open(path.join(base_path, 'birds_x_train.txt'), 'w+') as f:
+            for instance in x_train:
+                f.write(' '.join(list(map(str, instance))) + '\n')
+
+        with open(path.join(base_path, 'birds_x_test.txt'), 'w+') as f:
+            for instance in x_test:
+                f.write(' '.join(list(map(str, instance))) + '\n')
+
+        with open(path.join(base_path, 'birds_y_train.txt'), 'w+') as f:
+            f.write('\n'.join(list(map(str, y_train))))
+
+        with open(path.join(base_path, 'birds_y_test.txt'), 'w+') as f:
+            f.write('\n'.join(list(map(str, y_test))))
