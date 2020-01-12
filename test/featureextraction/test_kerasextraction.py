@@ -10,7 +10,6 @@ Tests for module kerasextraction
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import unittest
-from pathlib import Path
 from os import path, sep, remove
 
 from src.featureextraction.extractor import BirdsData
@@ -23,11 +22,11 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         """
         Initializes variables to be used in the tests
         """
-        cls.base_path = path.join(str(Path.home()), sep.join(['Projects', 'Datasets', 'Birds']))
+        cls.base_path = sep.join(['..', '..', '_files', 'mockfiles', 'birds'])
         cls.data = BirdsData(cls.base_path)
-        cls.data.get_images_list('train.txt')
+        cls.images_list = cls.data.get_images_list(sep.join([cls.base_path, 'lists', 'train.txt']))
         cls.fts_file = 'birds_features.txt'
-        cls.extractor = ResNet50FeatureExtractor(cls.data.images_list, path.join(cls.base_path, 'images'))
+        cls.extractor = ResNet50FeatureExtractor(cls.images_list, path.join(cls.base_path, 'images'))
 
     def test_extract_image_features(self):
         """
@@ -43,10 +42,6 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         Tests if a numpy array is formed from the feature extraction based on a list. The expected array shape is
         (X, 2048) where X is the number of images listed
         """
-        def join_path(img):
-            return sep.join([self.base_path, 'images', img])
-
-        self.extractor.images_list = list(map(join_path, self.extractor.images_list[0:10]))
         self.extractor.extract_images_list_features()
         self.assertEqual((10, 2048), self.extractor.features_set.shape)
 
