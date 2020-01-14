@@ -172,3 +172,31 @@ class BirdsData:
 
         with open(path.join(base_path, 'birds_y_test.txt'), 'w+') as f:
             f.write('\n'.join(list(map(str, y_test))))
+
+
+class DataParser:
+    @staticmethod
+    def get_features(data_file):
+        """
+        Builds a 2D numpy array with data found in file
+
+        @param data_file: string with full path to data file
+        @return: float numpy array of shape (X, Y) where X is the number of images and Y the number of attributes
+        """
+        data = []
+        with open(data_file) as f:
+            for line in f.readlines():
+                data.append(list(map(float, line.split())))
+        return np.array(data)
+
+    @staticmethod
+    def get_labels(labels_file):
+        """
+        Builds a 1D numpy array with data found in file
+
+        @param labels_file: string with full path to labels file
+        @return: integer numpy array of shape (X, ) where X is the number of images
+        """
+        with open(labels_file) as f:
+            labels = list(map(int, f.readlines()))
+        return np.array(labels)

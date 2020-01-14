@@ -33,6 +33,10 @@ class ConfigParser:
         self.attributes_type = None
         self.configfile = configfile
         self.ae_noise_factor = 0
+        self.x_train_path = ''
+        self.y_train_path = ''
+        self.x_test_path = ''
+        self.y_test_path = ''
         
     def set_console_value(self, root):
         """
@@ -129,7 +133,63 @@ class ConfigParser:
             self.features_path.replace('\\', os.sep)
         except AttributeError:
             raise AttributeError('Could not find "features_path" node')
-        
+
+    def set_x_train_path(self, root):
+        """
+        Reads XML looking for x_train_path node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.x_train_path = root.find('paths/x_train_path').text
+            self.x_train_path.replace('/', os.sep)
+            self.x_train_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "x_train_path" node')
+
+    def set_y_train_path(self, root):
+        """
+        Reads XML looking for y_train_path node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.y_train_path = root.find('paths/y_train_path').text
+            self.y_train_path.replace('/', os.sep)
+            self.y_train_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "y_train_path" node')
+
+    def set_x_test_path(self, root):
+        """
+        Reads XML looking for x_test_path node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.x_test_path = root.find('paths/x_test_path').text
+            self.x_test_path.replace('/', os.sep)
+            self.x_test_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "x_test_path" node')
+
+    def set_y_test_path(self, root):
+        """
+        Reads XML looking for y_test_path node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.y_test_path = root.find('paths/y_test_path').text
+            self.y_test_path.replace('/', os.sep)
+            self.y_test_path.replace('\\', os.sep)
+        except AttributeError:
+            raise AttributeError('Could not find "y_test_path" node')
+
     def read_configuration(self):
         """
         Reads XML looking for the configuration nodes to set their respective values
@@ -146,3 +206,7 @@ class ConfigParser:
         self.set_console_value(root)
         self.set_encoding_size(root)
         self.set_features_path(root)
+        self.set_x_train_path(root)
+        self.set_y_train_path(root)
+        self.set_x_test_path(root)
+        self.set_y_test_path(root)

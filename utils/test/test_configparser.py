@@ -72,6 +72,30 @@ class ConfigParserTests(unittest.TestCase):
         Tests if the correct features path value was found
         """
         self.assertEqual('_files/mockfiles/awa2features/', self.parser.features_path)
+
+    def test_x_train_path(self):
+        """
+        Tests if the correct features path value was found
+        """
+        self.assertEqual('../Datasets/Birds/features/birds_x_train.txt', self.parser.x_train_path)
+
+    def test_y_train_path(self):
+        """
+        Tests if the correct features path value was found
+        """
+        self.assertEqual('../Datasets/Birds/features/birds_y_train.txt', self.parser.y_train_path)
+
+    def test_x_test_path(self):
+        """
+        Tests if the correct features path value was found
+        """
+        self.assertEqual('../Datasets/Birds/features/birds_x_test.txt', self.parser.x_test_path)
+
+    def test_y_test_path(self):
+        """
+        Tests if the correct features path value was found
+        """
+        self.assertEqual('../Datasets/Birds/features/birds_y_test.txt', self.parser.y_test_path)
         
     def test_node_not_found(self):
         """

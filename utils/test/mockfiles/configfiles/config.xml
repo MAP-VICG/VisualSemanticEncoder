@@ -16,5 +16,9 @@
 	<paths>
 		<results_path>_files/results/</results_path>
 		<features_path>_files/mockfiles/awa2features/</features_path>
+		<x_train_path>../Datasets/Birds/features/birds_x_train.txt</x_train_path>
+		<y_train_path>../Datasets/Birds/features/birds_y_train.txt</y_train_path>
+		<x_test_path>../Datasets/Birds/features/birds_x_test.txt</x_test_path>
+		<y_test_path>../Datasets/Birds/features/birds_y_test.txt</y_test_path>
 	</paths>
 </SemanticEncoder>

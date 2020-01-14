@@ -17,6 +17,7 @@ import tensorflow.python.keras.backend as K
 
 from utils.src.configparser import ConfigParser
 from utils.src.logwriter import LogWriter, MessageType
+from featureextraction.src.dataparsing import DataParser
 
 
 def main():
@@ -39,6 +40,23 @@ def main():
     log.write_message('Autoencoder noise rate %s' % str(config.ae_noise_factor), MessageType.INF)
     log.write_message('Number of epochs %s' % str(config.epochs), MessageType.INF)
     log.write_message('Encoding size %s' % str(config.encoding_size), MessageType.INF)
+
+    # Read features
+    try:
+        x_train = DataParser.get_features(config.x_train_path)
+        y_train = DataParser.get_features(config.y_train_path)
+
+        x_test = DataParser.get_features(config.x_test_path)
+        y_test = DataParser.get_features(config.y_test_path)
+    except (IOError, FileNotFoundError) as e:
+        log.write_message('Could not read data set. %s' % str(e), MessageType.ERR)
+        exit(-1)
+    except ValueError as e:
+        log.write_message('There are invalid values in the data. %s' % str(e), MessageType.ERR)
+
+    # Encode features
+
+    # Save results
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
