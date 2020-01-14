@@ -16,6 +16,7 @@ import tensorflow as tf
 import tensorflow.python.keras.backend as K
 
 from utils.src.configparser import ConfigParser
+from utils.src.normalization import Normalization
 from utils.src.logwriter import LogWriter, MessageType
 from featureextraction.src.dataparsing import DataParser
 
@@ -53,6 +54,11 @@ def main():
         exit(-1)
     except ValueError as e:
         log.write_message('There are invalid values in the data. %s' % str(e), MessageType.ERR)
+        exit(-1)
+
+    # Normalize data
+    Normalization.normalize_zero_one_by_column(x_train)
+    Normalization.normalize_zero_one_by_column(x_test)
 
     # Encode features
 
