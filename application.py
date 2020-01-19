@@ -19,6 +19,7 @@ from utils.src.configparser import ConfigParser
 from utils.src.normalization import Normalization
 from utils.src.logwriter import LogWriter, MessageType
 from featureextraction.src.dataparsing import DataParser
+from encoding.src.encoder import ModelType, Autoencoder
 
 
 def main():
@@ -45,10 +46,10 @@ def main():
     # Read features
     try:
         x_train = DataParser.get_features(config.x_train_path)
-        y_train = DataParser.get_features(config.y_train_path)
+        y_train = DataParser.get_labels(config.y_train_path)
 
         x_test = DataParser.get_features(config.x_test_path)
-        y_test = DataParser.get_features(config.y_test_path)
+        y_test = DataParser.get_labels(config.y_test_path)
     except (IOError, FileNotFoundError) as e:
         log.write_message('Could not read data set. %s' % str(e), MessageType.ERR)
         exit(-1)
@@ -61,8 +62,11 @@ def main():
     Normalization.normalize_zero_one_by_column(x_test)
 
     # Encode features
+    ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], 128, x_train.shape[1])
+    ae.run_ae_model(x_train, y_train, x_test, y_test, 50)
 
     # Save results
+    log.write_message('Accuracies %s' % str(ae.accuracies), MessageType.INF)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)

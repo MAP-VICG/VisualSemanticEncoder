@@ -98,7 +98,7 @@ class Autoencoder:
             of threads available
         @return: object with Grid Search best model
         """
-        svm_model = GridSearchCV(SVC(verbose=0, max_iter=10000, gamma='scale'), self.tuning_params, cv=nfolds,
+        svm_model = GridSearchCV(SVC(verbose=0, max_iter=1000, gamma='scale'), self.tuning_params, cv=nfolds,
                                  iid=False, scoring='recall_macro', n_jobs=njobs)
 
         svm_model.fit(x_train, y_train)
