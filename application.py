@@ -64,7 +64,7 @@ def main():
 
     # Encode features
     ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1])
-    ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs)
+    ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
     # Save results
     log.write_message('Accuracies %s' % str(ae.accuracies), MessageType.INF)
