@@ -99,7 +99,7 @@ class Autoencoder:
         @return: object with Grid Search best model
         """
         svm_model = GridSearchCV(SVC(verbose=0, max_iter=1000, gamma='scale'), self.tuning_params, cv=nfolds,
-                                 iid=False, scoring='recall_macro', n_jobs=njobs)
+                                 scoring='recall_macro', n_jobs=njobs)
 
         svm_model.fit(x_train, y_train)
         self.svm_best_parameters = svm_model.best_params_
@@ -127,15 +127,18 @@ class Autoencoder:
             @param logs: default callback parameter. Loss result.
             """
             svm_model.fit(encoder.predict(x_train), y_train)
+            prediction = svm_model.predict(encoder.predict(x_train))
+            self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
+
             prediction = svm_model.predict(encoder.predict(x_test))
-            self.accuracies[epoch] = balanced_accuracy_score(prediction, y_test)
+            self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
             self.confusion_matrices[epoch] = confusion_matrix(prediction, y_test)
 
-            if self.accuracies[epoch] > self.best_accuracy[0]:
-                self.best_accuracy = (self.accuracies[epoch], epoch)
-                self.best_model_weights = self.autoencoder.weights
+            if self.accuracies['test'][epoch] > self.best_accuracy[0]:
+                self.best_accuracy = (self.accuracies['test'][epoch], epoch)
+                self.best_model_weights = self.autoencoder.get_weights()
 
-        self.accuracies = [None] * nepochs
+        self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs}
         self.confusion_matrices = [None] * nepochs
 
         svm_model = self.define_classifier(x_train, y_train, nfolds, njobs)

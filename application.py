@@ -20,6 +20,7 @@ from utils.src.normalization import Normalization
 from utils.src.logwriter import LogWriter, MessageType
 from featureextraction.src.dataparsing import DataParser
 from encoding.src.encoder import ModelType, Autoencoder
+from encoding.src.plotter import Plotter
 
 
 def main():
@@ -62,11 +63,18 @@ def main():
     Normalization.normalize_zero_one_by_column(x_test)
 
     # Encode features
-    ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], 128, x_train.shape[1])
-    ae.run_ae_model(x_train, y_train, x_test, y_test, 50)
+    ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1])
+    ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs)
 
     # Save results
     log.write_message('Accuracies %s' % str(ae.accuracies), MessageType.INF)
+    ae.autoencoder.set_weights(ae.best_model_weights)
+    ae.autoencoder.save_weights(os.path.join(config.results_path, 'autoencoder_weights.h5'))
+
+    pt = Plotter(config.results_path)
+    log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
+    log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
+    pt.plot_evaluation(ae.history.history, ae.accuracies, ae.confusion_matrices[ae.best_accuracy[1]], 0.92)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
