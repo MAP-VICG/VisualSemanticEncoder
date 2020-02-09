@@ -4,7 +4,6 @@ from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.callbacks import LambdaCallback
 
 from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import balanced_accuracy_score
 
@@ -79,10 +78,10 @@ class Autoencoder:
         self.noise = 0
         self.history = None
         self.accuracies = None
+        self.svm_model = None
         self.best_accuracy = (0, -1)
         self.best_model_weights = None
         self.svm_best_parameters = None
-        self.confusion_matrices = None
         self.tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
         self.autoencoder = ModelFactory(input_length, encoding_length, output_length)(ae_type)
 
@@ -104,7 +103,13 @@ class Autoencoder:
         svm_model.fit(x_train, y_train)
         self.svm_best_parameters = svm_model.best_params_
 
-        return svm_model.best_estimator_
+        self.svm_model = svm_model.best_estimator_
+
+    def define_best_models(self, x_train, y_train, weights_path):
+        self.autoencoder.set_weights(self.best_model_weights)
+        encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
+        self.svm_model.fit(encoder.predict(x_train), y_train)
+        self.autoencoder.save_weights(weights_path)
 
     def run_ae_model(self, x_train, y_train, x_test, y_test, nepochs, nfolds=5, njobs=None):
         """
@@ -126,22 +131,20 @@ class Autoencoder:
             @param epoch: default callback parameter. Epoch index.
             @param logs: default callback parameter. Loss result.
             """
-            svm_model.fit(encoder.predict(x_train), y_train)
-            prediction = svm_model.predict(encoder.predict(x_train))
+            self.svm_model.fit(encoder.predict(x_train), y_train)
+            prediction = self.svm_model.predict(encoder.predict(x_train))
             self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
 
-            prediction = svm_model.predict(encoder.predict(x_test))
+            prediction = self.svm_model.predict(encoder.predict(x_test))
             self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
-            self.confusion_matrices[epoch] = confusion_matrix(prediction, y_test)
 
             if self.accuracies['test'][epoch] > self.best_accuracy[0]:
                 self.best_accuracy = (self.accuracies['test'][epoch], epoch)
                 self.best_model_weights = self.autoencoder.get_weights()
 
         self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs}
-        self.confusion_matrices = [None] * nepochs
 
-        svm_model = self.define_classifier(x_train, y_train, nfolds, njobs)
+        self.define_classifier(x_train, y_train, nfolds, njobs)
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 

@@ -123,3 +123,15 @@ class ConfigParserTests(unittest.TestCase):
         parser = ConfigParser(configfile)
          
         self.assertRaises(ValueError, parser.read_configuration)
+
+    def test_chosen_classes(self):
+        """
+        Tests if the correct chosen_classes value was found
+        """
+        self.assertEqual([50, 9, 7, 31, 38], self.parser.chosen_classes)
+
+    def test_classes_names(self):
+        """
+        Tests if the correct classes_names value was found
+        """
+        self.assertEqual(['dolphin', 'blue+whale', 'horse', 'giraffe', 'zebra'], self.parser.classes_names)

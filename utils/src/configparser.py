@@ -29,14 +29,14 @@ class ConfigParser:
         self.results_path = ''
         self.encoding_size = 0
         self.features_path = ''
-        self.save_test_set = True
-        self.attributes_type = None
         self.configfile = configfile
         self.ae_noise_factor = 0
         self.x_train_path = ''
         self.y_train_path = ''
         self.x_test_path = ''
         self.y_test_path = ''
+        self.classes_names = None
+        self.chosen_classes = None
         
     def set_console_value(self, root):
         """
@@ -55,11 +55,11 @@ class ConfigParser:
                 raise ValueError('Invalid value for console. Please choose True or False')
         except AttributeError:
             raise AttributeError('Could not find "console" node')
-        
+
     def set_num_epochs(self, root):
         """
         Reads XML looking for epochs node and sets its value
-        
+
         @param root: XML root node
         @return None
         """
@@ -67,6 +67,31 @@ class ConfigParser:
             self.epochs = int(root.find('auto_encoder/epochs').text)
         except AttributeError:
             raise AttributeError('Could not find "epochs" node')
+
+    def set_chosen_classes(self, root):
+        """
+        Reads XML looking for chosen_classes node and sets its value
+        
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.chosen_classes = list(map(int, root.find('semantic_features/chosen_classes').text.split(',')))
+        except AttributeError:
+            raise AttributeError('Could not find "chosen_classes" node')
+
+    def set_classes_names(self, root):
+        """
+        Reads XML looking for classes_names node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.classes_names = list(map(str, root.find('semantic_features/classes_names').text.split(',')))
+            self.classes_names = [name.strip() for name in self.classes_names]
+        except AttributeError:
+            raise AttributeError('Could not find "classes_names" node')
 
     def set_noise_factor(self, root):
         """
@@ -210,3 +235,5 @@ class ConfigParser:
         self.set_y_train_path(root)
         self.set_x_test_path(root)
         self.set_y_test_path(root)
+        self.set_chosen_classes(root)
+        self.set_classes_names(root)

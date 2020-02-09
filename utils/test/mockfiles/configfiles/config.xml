@@ -2,7 +2,6 @@
 <SemanticEncoder>
 	<general>
 		<console>True</console>
-		<save_test_set>False</save_test_set>
 	</general>
 	<auto_encoder>
 		<epochs>5</epochs>
@@ -11,7 +10,8 @@
 	</auto_encoder>
 	<semantic_features>
 		<noise_rate>0.15</noise_rate>
-		<attributes_type>continuous</attributes_type>
+		<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
+		<classes_names>dolphin, blue+whale, horse, giraffe, zebra</classes_names>
 	</semantic_features>
 	<paths>
 		<results_path>_files/results/</results_path>

@@ -67,14 +67,14 @@ def main():
     ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
     # Save results
-    log.write_message('Accuracies %s' % str(ae.accuracies), MessageType.INF)
-    ae.autoencoder.set_weights(ae.best_model_weights)
-    ae.autoencoder.save_weights(os.path.join(config.results_path, 'autoencoder_weights.h5'))
-
-    pt = Plotter(config.results_path)
+    log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
     log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
     log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
-    pt.plot_evaluation(ae.history.history, ae.accuracies, ae.confusion_matrices[ae.best_accuracy[1]], 0.92)
+
+    ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
+
+    pt = Plotter(ae, config.results_path, config.chosen_classes, config.classes_names)
+    pt.plot_evaluation(x_test, y_test, 0.92)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
