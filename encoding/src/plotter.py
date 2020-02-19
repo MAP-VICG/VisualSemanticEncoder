@@ -15,7 +15,7 @@ class Plotter:
         Initialize main variables.
 
         @param encoder: encoder model
-        @param base_path: string with base path to save results
+        @param base_path: string with base path to save allresults
         @param chosen_classes: array of numbers with id of classes to plot PCA
         @param classes_names: array of strings with classes names to plot PCA
         """
@@ -28,7 +28,7 @@ class Plotter:
 
     def plot_evaluation(self, x_test, y_test, baseline=0):
         """
-        Plots statistics related to the training results of the autoencoder model including error and accuracy
+        Plots statistics related to the training allresults of the autoencoder model including error and accuracy
         charts, covariance and confusion matrices, variation of encoding values and PCA distribution for chosen classes.
 
         @param x_test: 2D numpy array for test set
@@ -71,7 +71,6 @@ class Plotter:
         plt.plot([0.05 for _ in range(encoding.shape[1])], linestyle='dashed', color='k')
         plt.plot([-0.05 for _ in range(encoding.shape[1])], linestyle='dashed', color='k')
         plt.errorbar([x for x in range(encoding.shape[1])], encoding[0], encoding[1], fmt='.')
-
 
         ax.set_title('Encoding Variation')
         plt.xlabel('Encoding Dimension')

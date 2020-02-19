@@ -62,7 +62,7 @@ class AutoencoderTests(unittest.TestCase):
         self.assertIsNotNone(ae.best_model_weights)
 
         for i in range(5):
-            self.assertTrue(0 <= ae.accuracies[i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['train'][i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['test'][i] <= 1)
             self.assertTrue(0 <= ae.history.history['val_loss'][i] <= 1)
             self.assertTrue(0 <= ae.history.history['loss'][i] <= 1)
-            self.assertEqual((3, 3), ae.confusion_matrices[i].shape)
