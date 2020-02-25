@@ -33,6 +33,7 @@ def main():
         
     config = ConfigParser(config_path)
     config.read_configuration()
+    baseline = 0.49341077462987504
     
     log = LogWriter(log_path=config.results_path, console=config.console)
     log.write_message('Configuration file %s' % str(config.configfile), MessageType.INF)
@@ -44,44 +45,43 @@ def main():
     log.write_message('Number of epochs %s' % str(config.epochs), MessageType.INF)
     log.write_message('Encoding size %s' % str(config.encoding_size), MessageType.INF)
 
-    # Read features
     try:
+        # Read features
         x_train = DataParser.get_features(config.x_train_path)
         y_train = DataParser.get_labels(config.y_train_path)
 
         x_test = DataParser.get_features(config.x_test_path)
         y_test = DataParser.get_labels(config.y_test_path)
+
+        # Normalize data
+        Normalization.normalize_zero_one_by_column(x_train)
+        Normalization.normalize_zero_one_by_column(x_test)
+
+        # Encode features
+        ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], baseline)
+        ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
+
+        # Save all results
+        log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
+        log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
+        log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
+
+        ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
+
+        pt = Plotter(ae, config.results_path, config.chosen_classes, config.classes_names)
+        pt.plot_evaluation(x_test, y_test, ae.baseline)
+
+        log.write_message('Execution has finished successfully', MessageType.INF)
     except (IOError, FileNotFoundError) as e:
         log.write_message('Could not read data set. %s' % str(e), MessageType.ERR)
-        exit(-1)
     except ValueError as e:
         log.write_message('There are invalid values in the data. %s' % str(e), MessageType.ERR)
-        exit(-1)
-
-    # Normalize data
-    Normalization.normalize_zero_one_by_column(x_train)
-    Normalization.normalize_zero_one_by_column(x_test)
-
-    # Encode features
-    ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], 0.49341077462987504)
-    ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
-
-    # Save all results
-    log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
-    log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
-    log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
-
-    ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
-
-    pt = Plotter(ae, config.results_path, config.chosen_classes, config.classes_names)
-    pt.plot_evaluation(x_test, y_test, 0.92)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
     time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
 
-    log.write_message('Execution has finished successfully', MessageType.INF)
     log.write_message('Elapsed time is %s' % time_elapsed, MessageType.INF)
     
     
