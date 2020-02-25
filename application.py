@@ -66,7 +66,7 @@ def main():
     ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], 0.49341077462987504)
     ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
-    # Save allresults
+    # Save all results
     log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
     log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
     log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)

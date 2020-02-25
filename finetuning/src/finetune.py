@@ -17,9 +17,9 @@ def plot_training(H, N, plot_path):
 	plt.style.use("ggplot")
 	plt.figure()
 	plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
-	plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
+	# plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
 	plt.plot(np.arange(0, N), H.history["acc"], label="train_acc")
-	plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
+	# plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
 	plt.title("Training Loss and Accuracy")
 	plt.xlabel("Epoch #")
 	plt.ylabel("Loss/Accuracy")
@@ -66,12 +66,11 @@ test_gen = test_aug.flow_from_directory(
 	shuffle=False,
 	batch_size=batch_size)
 
-base_model = ResNet50(weights="imagenet", include_top=False,
-					  input_tensor=Input(shape=(224, 224, 3)))
+base_model = ResNet50(weights="imagenet", include_top=False, input_tensor=Input(shape=(224, 224, 3)))
 
 head_model = base_model.output
 head_model = Flatten(name="flatten")(head_model)
-head_model = Dense(512, activation="relu")(head_model)
+head_model = Dense(2048, activation="relu")(head_model)
 head_model = Dropout(0.5)(head_model)
 head_model = Dense(nclasses, activation="softmax")(head_model)
 
@@ -92,7 +91,7 @@ test_gen.reset()
 pred_idxs = model.predict_generator(test_gen, steps=(total_test // batch_size) + 1)
 pred_idxs = np.argmax(pred_idxs, axis=1)
 print(classification_report(test_gen.classes, pred_idxs, target_names=test_gen.class_indices.keys()))
-plot_training(H, 50, 'results_frozen.png')
+plot_training(H, 500, 'results_frozen.png')
 
 train_gen.reset()
 for layer in base_model.layers[15:]:
@@ -112,7 +111,7 @@ test_gen.reset()
 pred_idxs = model.predict_generator(test_gen, steps=(total_test // batch_size) + 1)
 pred_idxs = np.argmax(pred_idxs, axis=1)
 print(classification_report(test_gen.classes, pred_idxs, target_names=test_gen.class_indices.keys()))
-plot_training(H, 20, 'results_unfrozen.png')
+plot_training(H, 200, 'results_unfrozen.png')
 
 print("[INFO] serializing network...")
 model.save('fn_birds_model.h5')
