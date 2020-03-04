@@ -27,8 +27,8 @@ def plot_training(H, N, plot_path):
 	plt.savefig(plot_path)
 
 
-train_path = '../../../Datasets/Birds/training'
-test_path = '../../../Datasets/Birds/test'
+train_path = '../../../../Datasets/Birds/training'
+test_path = '../../../../Datasets/Birds/test'
 batch_size = 32
 nclasses = 200
 

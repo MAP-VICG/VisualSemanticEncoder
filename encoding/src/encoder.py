@@ -1,6 +1,6 @@
 from enum import Enum
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.layers import Input, Dense, Dropout
 from tensorflow.keras.callbacks import LambdaCallback
 
 from sklearn.svm import SVC
@@ -57,6 +57,17 @@ class ModelFactory:
         decoded = Dense(732, activation='relu', name='d_dense5')(decoded)
         decoded = Dense(1426, activation='relu', name='d_dense6')(decoded)
 
+        # encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
+        # encoded = Dense(932, activation='relu', name='e_dense2')(encoded)
+        # encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
+        #
+        # # encoded = Dropout(0.05)(encoded)
+        # code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
+        #
+        # decoded = Dense(428, activation='relu', name='d_dense4')(code)
+        # decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
+        # decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
+
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
@@ -66,7 +77,7 @@ class ModelFactory:
 
 
 class Autoencoder:
-    def __init__(self, ae_type, input_length, encoding_length, output_length, baseline=0):
+    def __init__(self, ae_type, input_length, encoding_length, output_length, baseline=None):
         """
         Initializes autoencoder attributes and defines the autoencoder model
 
@@ -106,13 +117,14 @@ class Autoencoder:
         self.svm_best_parameters = svm_model.best_params_
         self.svm_model = svm_model.best_estimator_
 
-        if self.baseline == 0 and x_test is not None and y_test is not None:
+        if self.baseline is None and x_test is not None and y_test is not None:
+            self.baseline = [0, 0, 0]
             svm = GridSearchCV(SVC(verbose=0, max_iter=1000, gamma='scale'), self.tuning_params, cv=nfolds,
                                scoring='recall_macro', n_jobs=njobs)
             svm.fit(x_train[:, :2048], y_train)
 
             prediction = svm.best_estimator_.predict(x_test[:, :2048])
-            self.baseline = balanced_accuracy_score(prediction, y_test)
+            self.baseline[0] = balanced_accuracy_score(prediction, y_test)
 
     def define_best_models(self, x_train, y_train, weights_path):
         """

@@ -22,7 +22,7 @@ class LogWriterTests(unittest.TestCase):
         Initializes writer for all tests
         """
         cls.log = LogWriter()
-        cls.log_file = 'semantic_encoder_%s.log' % cls.log.ref_date
+        cls.log_file = 'application_%s.log' % cls.log.ref_date
 
     def test_write_message(self):
         self.log.write_message('Testing information messages', MessageType.INF)

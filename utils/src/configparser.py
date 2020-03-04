@@ -24,19 +24,20 @@ class ConfigParser:
             raise ValueError('Configuration file must be in XML format.')
         
         self.epochs = 0
-        self.noise_rate = 0
         self.console = False
-        self.results_path = ''
         self.encoding_size = 0
-        self.features_path = ''
-        self.configfile = configfile
-        self.ae_noise_factor = 0
+
+        self.dataset = ''
+        self.results_path = ''
         self.x_train_path = ''
         self.y_train_path = ''
         self.x_test_path = ''
         self.y_test_path = ''
+
         self.classes_names = None
         self.chosen_classes = None
+        self.configfile = configfile
+        self.baseline = {'vis': 0.0, 'stk': 0.0, 'tnn': 0.0, 'pca': 0.0}
         
     def set_console_value(self, root):
         """
@@ -56,6 +57,18 @@ class ConfigParser:
         except AttributeError:
             raise AttributeError('Could not find "console" node')
 
+    def set_dataset_name(self, root):
+        """
+        Reads XML looking for dataset node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.dataset = root.find('general/dataset').text
+        except AttributeError:
+            raise AttributeError('Could not find "dataset" node')
+
     def set_num_epochs(self, root):
         """
         Reads XML looking for epochs node and sets its value
@@ -64,7 +77,7 @@ class ConfigParser:
         @return None
         """
         try:
-            self.epochs = int(root.find('auto_encoder/epochs').text)
+            self.epochs = int(root.find('autoencoder/epochs').text)
         except AttributeError:
             raise AttributeError('Could not find "epochs" node')
 
@@ -76,7 +89,11 @@ class ConfigParser:
         @return None
         """
         try:
-            self.chosen_classes = list(map(int, root.find('semantic_features/chosen_classes').text.split(',')))
+            if not self.dataset and not isinstance(self.dataset, str):
+                raise ValueError('Data set tag must be set under general node')
+
+            path = 'semantic_features/%s/chosen_classes' % self.dataset
+            self.chosen_classes = list(map(int, root.find(path).text.split(',')))
         except AttributeError:
             raise AttributeError('Could not find "chosen_classes" node')
 
@@ -88,22 +105,36 @@ class ConfigParser:
         @return None
         """
         try:
-            self.classes_names = list(map(str, root.find('semantic_features/classes_names').text.split(',')))
+            if not self.dataset and not isinstance(self.dataset, str):
+                raise ValueError('Data set tag must be set under general node')
+
+            path = 'semantic_features/%s/classes_names' % self.dataset
+            self.classes_names = list(map(str, root.find(path).text.split(',')))
             self.classes_names = [name.strip() for name in self.classes_names]
         except AttributeError:
             raise AttributeError('Could not find "classes_names" node')
 
-    def set_noise_factor(self, root):
+    def set_baselines(self, root):
         """
-        Reads XML looking for AE noise factor node and sets its value
+        Reads XML looking for baselines node and sets its value
 
         @param root: XML root node
         @return None
         """
         try:
-            self.ae_noise_factor = float(root.find('auto_encoder/noise_factor').text)
+            if not self.dataset and not isinstance(self.dataset, str):
+                raise ValueError('Data set tag must be set under general node')
+
+            if not self.encoding_size and not isinstance(self.encoding_size, int):
+                raise ValueError('Encoding size tag must be set under autoencoder node')
+
+            path = 'baselines/%s/' % self.dataset
+            self.baseline['vis'] = float(root.find(path + 'vis').text)
+            self.baseline['stk'] = float(root.find(path + 'stk').text)
+            self.baseline['tnn'] = float(root.find(path + 'tnn').text)
+            self.baseline['pca'] = float(root.find(path + 'pca/c' + str(self.encoding_size)).text)
         except AttributeError:
-            raise AttributeError('Could not find "noise_factor" node')
+            raise AttributeError('Could not find "baselines" node')
         
     def set_encoding_size(self, root):
         """
@@ -113,23 +144,9 @@ class ConfigParser:
         @return None
         """
         try:
-            self.encoding_size = int(root.find('auto_encoder/encoding_size').text)
+            self.encoding_size = int(root.find('autoencoder/encoding_size').text)
         except AttributeError:
             raise AttributeError('Could not find "encoding_size" node')
-        
-    def set_noise_rate(self, root): 
-        """
-        Reads XML looking for noise_rate node and sets its value
-        
-        @param root: XML root node
-        @return None
-        """
-        try:
-            self.noise_rate = float(root.find('semantic_features/noise_rate').text)
-            if not 0 <= self.noise_rate <= 1:
-                raise ValueError('Invalid value for noise rate. Rate should be between 0 and 1')
-        except AttributeError:
-            raise AttributeError('Could not find "noise_rate" node')
         
     def set_results_path(self, root): 
         """
@@ -144,20 +161,6 @@ class ConfigParser:
             self.results_path.replace('\\', os.sep)
         except AttributeError:
             raise AttributeError('Could not find "results_path" node')
-        
-    def set_features_path(self, root): 
-        """
-        Reads XML looking for features_path node and sets its value
-        
-        @param root: XML root node
-        @return None
-        """
-        try:
-            self.features_path = root.find('paths/features_path').text
-            self.features_path.replace('/', os.sep)
-            self.features_path.replace('\\', os.sep)
-        except AttributeError:
-            raise AttributeError('Could not find "features_path" node')
 
     def set_x_train_path(self, root):
         """
@@ -224,16 +227,19 @@ class ConfigParser:
         tree = ET.parse(self.configfile)
         root = tree.getroot()
 
-        self.set_num_epochs(root)
-        self.set_noise_rate(root)
-        self.set_noise_factor(root)
-        self.set_results_path(root)
+        self.set_dataset_name(root)
         self.set_console_value(root)
+
+        self.set_num_epochs(root)
         self.set_encoding_size(root)
-        self.set_features_path(root)
+
+        self.set_results_path(root)
         self.set_x_train_path(root)
         self.set_y_train_path(root)
         self.set_x_test_path(root)
         self.set_y_test_path(root)
-        self.set_chosen_classes(root)
-        self.set_classes_names(root)
+
+        if self.dataset and self.encoding_size:
+            self.set_baselines(root)
+            self.set_chosen_classes(root)
+            self.set_classes_names(root)

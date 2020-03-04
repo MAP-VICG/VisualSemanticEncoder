@@ -27,7 +27,7 @@ class MessageType(Enum):
 
 
 class LogWriter(metaclass=Singleton):
-    def __init__(self, log_path=None, console=False):
+    def __init__(self, log_path=None, log_name='application', console=False):
         """
         Initializes parameters
         
@@ -41,8 +41,9 @@ class LogWriter(metaclass=Singleton):
             
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
-    
+
         self.console = console
+        self.log_name = log_name.split('.')[0]
         self.ref_date = datetime.now().strftime('%Y%m%d_%H%M')
     
     def write_message(self, message, mtype):
@@ -58,7 +59,7 @@ class LogWriter(metaclass=Singleton):
         file_details = stack[1][1] + ' (' + str(stack[1][2]) + ')'
         execution_details = stack[1][3] + '[' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ']'
         
-        log_file = os.path.join(self.log_path, 'semantic_encoder_%s.log' % self.ref_date)
+        log_file = os.path.join(self.log_path, '%s_%s.log' % (self.log_name, self.ref_date))
         full_message = '%s\n%s\n%s\n%s: %s\n\n' % ('=' * 100, file_details, execution_details, mtype.value, message)
         
         if self.console:

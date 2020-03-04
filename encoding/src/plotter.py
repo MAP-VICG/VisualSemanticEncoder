@@ -26,10 +26,10 @@ class Plotter:
         self.classes_names = classes_names
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:pink']
 
-    def plot_evaluation(self, x_test, y_test, baseline=0):
+    def plot_evaluation(self, x_test, y_test, baseline=None):
         """
-        Plots statistics related to the training allresults of the autoencoder model including error and accuracy
-        charts, covariance and confusion matrices, variation of encoding values and PCA distribution for chosen classes.
+        Plots statistics related to the training of the autoencoder model including error and accuracy charts,
+        covariance and confusion matrices, variation of encoding values and PCA distribution for chosen classes.
 
         @param x_test: 2D numpy array for test set
         @param y_test: 1D numpy array for labels
@@ -43,19 +43,27 @@ class Plotter:
         file_name = os.path.join(self.base_path, 'ae_evaluation.png')
         encoder = Model(self.encoder.autoencoder.input, outputs=[self.encoder.autoencoder.get_layer('code').output])
         encoding = encoder.predict(x_test)
+        legend = []
 
         ax = plt.subplot(231)
         ax.set_title('Classification Accuracy')
-        plt.plot([acc for acc in self.encoder.accuracies['train']])
-        plt.plot([acc for acc in self.encoder.accuracies['test']])
 
-        if baseline != 0:
-            nepochs = len(self.encoder.accuracies['test'])
-            plt.plot([baseline for _ in range(nepochs)], linestyle='dashed', linewidth=2, color='k')
+        if baseline and isinstance(baseline, dict):
+            n_epochs = len(self.encoder.accuracies['test'])
+            colors = ['k', 'r', 'p', 'g']
+
+            for i, key in enumerate(baseline.keys()):
+                if baseline[key] != 0:
+                    plt.plot([baseline[key] for _ in range(n_epochs)], linestyle='dashed', linewidth=1, color=colors[i])
+                    legend.append(key)
+
+        plt.plot([acc for acc in self.encoder.accuracies['train']], linewidth=2)
+        plt.plot([acc for acc in self.encoder.accuracies['test']], linewidth=2)
+        legend.extend(['train', 'test'])
 
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
-        plt.legend(['train', 'test', 'baseline'])
+        plt.legend(legend)
 
         ax = plt.subplot(232)
         ax.set_title('Training Loss')

@@ -1,12 +1,12 @@
 import os
 from shutil import copyfile
 
-data_path = '../../../Datasets/Birds/images'
+data_path = '../../../../Datasets/Birds/images'
 test_split = '../../../Datasets/Birds/lists/test.txt'
 train_split = '../../../Datasets/Birds/lists/train.txt'
 
-training_path = '../../../Datasets/Birds/training'
-test_path = '../../../Datasets/Birds/test'
+training_path = '../../../../Datasets/Birds/training'
+test_path = '../../../../Datasets/Birds/test'
 
 
 print('>> Copying training images')

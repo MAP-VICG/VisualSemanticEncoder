@@ -1,0 +1,75 @@
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (40)
+main[2020-03-04 07:43:33]
+INFO: Computing PCA for data set
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (41)
+main[2020-03-04 07:43:33]
+INFO: Number of components is 512
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (43)
+main[2020-03-04 07:43:33]
+INFO: x_train path is ../../../Datasets/Birds/features/birds_x_train.txt
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (44)
+main[2020-03-04 07:43:33]
+INFO: y_train path is ../../../Datasets/Birds/features/birds_y_train.txt
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (45)
+main[2020-03-04 07:43:33]
+INFO: x_test path is ../../../Datasets/Birds/features/birds_x_test.txt
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (46)
+main[2020-03-04 07:43:33]
+INFO: y_test path is ../../../Datasets/Birds/features/birds_y_test.txt
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (59)
+main[2020-03-04 07:43:42]
+INFO: x_train shape: (3000, 2048)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (60)
+main[2020-03-04 07:43:42]
+INFO: y_train shape: (3000,)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (61)
+main[2020-03-04 07:43:42]
+INFO: x_test shape: (3033, 2048)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (62)
+main[2020-03-04 07:43:42]
+INFO: y_test shape: (3033, 2048)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (73)
+main[2020-03-04 07:43:49]
+INFO: PCA x_train shape: (3000, 512)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (74)
+main[2020-03-04 07:43:49]
+INFO: PCA x_test shape: (3033, 512)
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (84)
+main[2020-03-04 07:45:01]
+INFO: SVM baseline for PCA is 0.036663
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (85)
+main[2020-03-04 07:45:01]
+INFO: Execution has finished successfully
+
+====================================================================================================
+/Users/damaresresende/Projects/SemanticEncoder/finetuning/src/computepca.py (96)
+main[2020-03-04 07:45:01]
+INFO: Elapsed time is 00:01:28.29
+

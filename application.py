@@ -29,21 +29,27 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == '--config':
         config_path = sys.argv[2]
     else:
-        config_path = os.sep.join([os.getcwd(), '_files', 'config.xml'])
+        config_path = os.path.join(os.getcwd(), 'config.xml')
         
     config = ConfigParser(config_path)
     config.read_configuration()
-    baseline = 0.49341077462987504
-    
-    log = LogWriter(log_path=config.results_path, console=config.console)
-    log.write_message('Configuration file %s' % str(config.configfile), MessageType.INF)
-    log.write_message('Features path %s' % str(config.features_path), MessageType.INF)
-    log.write_message('Results path %s' % str(config.results_path), MessageType.INF)
+    log = LogWriter(log_path=config.results_path, log_name='semantic_encoder', console=config.console)
 
-    log.write_message('Noise rate %s' % str(config.noise_rate), MessageType.INF)
-    log.write_message('Autoencoder noise rate %s' % str(config.ae_noise_factor), MessageType.INF)
-    log.write_message('Number of epochs %s' % str(config.epochs), MessageType.INF)
-    log.write_message('Encoding size %s' % str(config.encoding_size), MessageType.INF)
+    log.write_message('Configuration file: %s' % str(config.configfile), MessageType.INF)
+    log.write_message('Data set: n %s' % str(config.dataset), MessageType.INF)
+    log.write_message('Results path: %s' % str(config.results_path), MessageType.INF)
+    log.write_message('Number of epochs: %s' % str(config.epochs), MessageType.INF)
+    log.write_message('Encoding size: %s' % str(config.encoding_size), MessageType.INF)
+
+    log.write_message('x_train path is %s' % config.x_train_path, MessageType.INF)
+    log.write_message('y_train path is %s' % config.y_train_path, MessageType.INF)
+    log.write_message('x_test path is %s' % config.x_test_path, MessageType.INF)
+    log.write_message('y_test path is %s' % config.y_test_path, MessageType.INF)
+
+    log.write_message('Visual features baseline: %f' % config.baseline['vis'], MessageType.INF)
+    log.write_message('Stacked model baseline: %f' % config.baseline['stk'], MessageType.INF)
+    log.write_message('Tuning model baseline: %f' % config.baseline['tnn'], MessageType.INF)
+    log.write_message('PCA baseline: %f' % config.baseline['pca'], MessageType.INF)
 
     try:
         # Read features
@@ -58,10 +64,11 @@ def main():
         Normalization.normalize_zero_one_by_column(x_test)
 
         # Encode features
-        ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], baseline)
+        ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], config.baseline)
         ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
         # Save all results
+        log.write_message('Train Accuracies %s' % str(ae.accuracies['train']), MessageType.INF)
         log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
         log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
         log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)

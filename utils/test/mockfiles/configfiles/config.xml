@@ -2,20 +2,38 @@
 <SemanticEncoder>
 	<general>
 		<console>True</console>
+		<dataset>awa2</dataset>
 	</general>
-	<auto_encoder>
+	<autoencoder>
 		<epochs>5</epochs>
-		<noise_factor>0.1</noise_factor>
 		<encoding_size>128</encoding_size>
-	</auto_encoder>
+	</autoencoder>
 	<semantic_features>
-		<noise_rate>0.15</noise_rate>
-		<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
-		<classes_names>dolphin, blue+whale, horse, giraffe, zebra</classes_names>
+		<awa2>
+			<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
+			<classes_names>dolphin, blue+whale, horse, giraffe, zebra</classes_names>
+		</awa2>
+		<birds>
+			<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
+			<classes_names>Eared_Grebe, Brewer_Blackbird, Parakeet_Auklet, Black_billed_Cuckoo,
+				Great_Crested_Flycatcher</classes_names>
+		</birds>
 	</semantic_features>
+	<baselines>
+		<awa2>
+			<vis>0.626</vis>
+			<stk>0.745</stk>
+			<tnn>0.0</tnn>
+			<pca>
+				<c128>0.031191</c128>
+				<c256>0.039800</c256>
+				<c512>0.036663</c512>
+				<c1024>0.036216</c1024>
+			</pca>
+		</awa2>
+	</baselines>
 	<paths>
-		<results_path>_files/results/</results_path>
-		<features_path>_files/mockfiles/awa2features/</features_path>
+		<results_path>./_files/results/</results_path>
 		<x_train_path>../Datasets/Birds/features/birds_x_train.txt</x_train_path>
 		<y_train_path>../Datasets/Birds/features/birds_y_train.txt</y_train_path>
 		<x_test_path>../Datasets/Birds/features/birds_x_test.txt</x_test_path>
