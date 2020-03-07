@@ -9,6 +9,7 @@ Encodes visual and semantic features of images
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import io
 import os
 import sys
 import time
@@ -19,7 +20,7 @@ from utils.src.configparser import ConfigParser
 from utils.src.normalization import Normalization
 from utils.src.logwriter import LogWriter, MessageType
 from featureextraction.src.dataparsing import DataParser
-from encoding.src.encoder import ModelType, Autoencoder
+from encoding.src.encoder import Autoencoder
 from encoding.src.plotter import Plotter
 
 
@@ -64,19 +65,30 @@ def main():
         Normalization.normalize_zero_one_by_column(x_test)
 
         # Encode features
-        ae = Autoencoder(ModelType.SIMPLE_AE, x_train.shape[1], config.encoding_size, x_train.shape[1], config.baseline)
+        log.write_message('AE Type is set to %s' % config.ae_type, MessageType.INF)
+        ae = Autoencoder(config.ae_type, x_train.shape[1], config.encoding_size, x_train.shape[1], config.baseline)
         ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
         # Save all results
-        log.write_message('Train Accuracies %s' % str(ae.accuracies['train']), MessageType.INF)
-        log.write_message('Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
-        log.write_message('Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
-        log.write_message('Best SVM Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
+        log.write_message('AE Train Accuracies %s' % str(ae.history.history['acc']), MessageType.INF)
+        log.write_message('AE Validation Accuracies %s' % str(ae.history.history['val_acc']), MessageType.INF)
+        log.write_message('AE Best Accuracy %s' % str(max(ae.history.history['acc'])), MessageType.INF)
+
+        log.write_message('SVM Train Accuracies %s' % str(ae.accuracies['train']), MessageType.INF)
+        log.write_message('SVM Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
+        log.write_message('SVM Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
+        log.write_message('SVM Best Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
 
         ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
 
         pt = Plotter(ae, config.results_path, config.chosen_classes, config.classes_names)
         pt.plot_evaluation(x_test, y_test, ae.baseline)
+
+        old_stdout = sys.stdout
+        sys.stdout = buffer = io.StringIO()
+        ae.autoencoder.summary()
+        log.write_message('Model summary \n\n%s' % buffer.getvalue(), MessageType.INF)
+        sys.stdout = old_stdout
 
         log.write_message('Execution has finished successfully', MessageType.INF)
     except (IOError, FileNotFoundError) as e:

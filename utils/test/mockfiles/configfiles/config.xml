@@ -6,6 +6,7 @@
 	</general>
 	<autoencoder>
 		<epochs>5</epochs>
+		<ae_type>SIMPLE</ae_type>
 		<encoding_size>128</encoding_size>
 	</autoencoder>
 	<semantic_features>

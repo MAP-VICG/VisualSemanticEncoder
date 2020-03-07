@@ -15,7 +15,7 @@ class Plotter:
         Initialize main variables.
 
         @param encoder: encoder model
-        @param base_path: string with base path to save allresults
+        @param base_path: string with base path to save oldresults
         @param chosen_classes: array of numbers with id of classes to plot PCA
         @param classes_names: array of strings with classes names to plot PCA
         """
@@ -36,21 +36,22 @@ class Plotter:
         @param baseline: value that accuracy must reach
         @return: None
         """
-        fig = plt.figure(figsize=(20, 12))
+        fig = plt.figure(figsize=(20, 18))
         plt.rcParams.update({'font.size': 12})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
 
         file_name = os.path.join(self.base_path, 'ae_evaluation.png')
-        encoder = Model(self.encoder.autoencoder.input, outputs=[self.encoder.autoencoder.get_layer('code').output])
-        encoding = encoder.predict(x_test)
         legend = []
 
-        ax = plt.subplot(231)
-        ax.set_title('Classification Accuracy')
+        encoder = Model(self.encoder.autoencoder.input, outputs=[self.encoder.autoencoder.get_layer('code').output])
+        encoding = encoder.predict(x_test)
+        output = self.encoder.autoencoder.predict(x_test)
 
+        ax = plt.subplot(331)
+        ax.set_title('Classification Accuracy')
         if baseline and isinstance(baseline, dict):
             n_epochs = len(self.encoder.accuracies['test'])
-            colors = ['k', 'r', 'p', 'g']
+            colors = ['k', 'g', '#fa0f64', 'r']
 
             for i, key in enumerate(baseline.keys()):
                 if baseline[key] != 0:
@@ -65,7 +66,16 @@ class Plotter:
         plt.ylabel('Accuracy')
         plt.legend(legend)
 
-        ax = plt.subplot(232)
+        ax = plt.subplot(332)
+        ax.set_title('Reconstruction Accuracy')
+        plt.plot(self.encoder.history.history['acc'])
+        plt.plot(self.encoder.history.history['val_acc'])
+
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend(['train', 'val'])
+
+        ax = plt.subplot(333)
         ax.set_title('Training Loss')
         plt.plot(self.encoder.history.history['loss'])
         plt.plot(self.encoder.history.history['val_loss'])
@@ -74,25 +84,18 @@ class Plotter:
         plt.ylabel('MSE')
         plt.legend(['train', 'val'])
 
-        ax = plt.subplot(233)
+        ax = plt.subplot(334)
+        ax.set_title('Encoding Variation')
         zeros = [1 for value in np.mean(encoding, axis=0) if abs(value) <= 0.05]
         plt.plot([0.05 for _ in range(encoding.shape[1])], linestyle='dashed', color='k')
         plt.plot([-0.05 for _ in range(encoding.shape[1])], linestyle='dashed', color='k')
         plt.errorbar([x for x in range(encoding.shape[1])], encoding[0], encoding[1], fmt='.')
 
-        ax.set_title('Encoding Variation')
         plt.xlabel('Encoding Dimension')
         plt.ylabel('Amplitude')
         plt.legend(['%d/%d zeros' % (len(zeros), encoding.shape[1])])
 
-        ax = plt.subplot(234)
-        pca = PCA(n_components=2)
-        ax.set_title('PCA - Encoding')
-        mask = self._define_mask(y_test)
-        encoding_fts = pca.fit_transform(encoding[mask, :])
-        self._scatter_plot(ax, encoding_fts, y_test[mask])
-
-        ax = plt.subplot(235)
+        ax = plt.subplot(335)
         ax.set_title('Covariance Matrix')
         code_cov = np.cov(np.array(encoding).transpose())
         ax = plt.matshow(code_cov, fignum=False, cmap='plasma')
@@ -100,13 +103,33 @@ class Plotter:
         cb.ax.tick_params(labelsize=14)
         ax.axes.get_xaxis().set_visible(False)
 
-        ax = plt.subplot(236)
+        ax = plt.subplot(336)
         ax.set_title('Confusion Matrix')
         plot_confusion_matrix(self.encoder.svm_model, encoding, y_test, cmap=plt.cm.Blues, normalize='true',
                               include_values=False, ax=ax)
 
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_yticklabels(), visible=False)
+
+        mask = self._define_mask(y_test)
+
+        ax = plt.subplot(337)
+        pca = PCA(n_components=2)
+        ax.set_title('PCA - Input')
+        input_fts = pca.fit_transform(x_test[mask, :])
+        self._scatter_plot(ax, input_fts, y_test[mask])
+
+        ax = plt.subplot(338)
+        pca = PCA(n_components=2)
+        ax.set_title('PCA - Encoding')
+        encoding_fts = pca.fit_transform(encoding[mask, :])
+        self._scatter_plot(ax, encoding_fts, y_test[mask])
+
+        ax = plt.subplot(339)
+        pca = PCA(n_components=2)
+        ax.set_title('PCA - Output')
+        encoding_fts = pca.fit_transform(output[mask, :])
+        self._scatter_plot(ax, encoding_fts, y_test[mask])
 
         plt.tight_layout()
         plt.savefig(file_name)

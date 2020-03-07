@@ -13,6 +13,7 @@ class ModelType(Enum):
     Enum for model type
     """
     SIMPLE_AE = "SIMPLE_AE"
+    EXTENDED_AE = "EXTENDED_AE"
 
 
 class ModelFactory:
@@ -37,6 +38,8 @@ class ModelFactory:
         """
         if ae_type == ModelType.SIMPLE_AE:
             return self.simple_ae()
+        if ae_type == ModelType.EXTENDED_AE:
+            return self.extended_ae()
 
     def simple_ae(self):
         """
@@ -56,19 +59,34 @@ class ModelFactory:
 
         decoded = Dense(732, activation='relu', name='d_dense5')(decoded)
         decoded = Dense(1426, activation='relu', name='d_dense6')(decoded)
-
-        # encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
-        # encoded = Dense(932, activation='relu', name='e_dense2')(encoded)
-        # encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
-        #
-        # # encoded = Dropout(0.05)(encoded)
-        # code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        #
-        # decoded = Dense(428, activation='relu', name='d_dense4')(code)
-        # decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
-        # decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
-
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
+
+        autoencoder = Model(inputs=input_fts, outputs=output_fts)
+        autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
+
+        return autoencoder
+
+    def extended_ae(self):
+        """
+        Builds an extended version of simple autoencoder model with 3 encoding layers and 3 decoding layers
+        where all of them are dense and use relu activation function. The optimizer is defined to be adam and the
+        loss to be mse.
+
+        @return: object with autoencoder model
+        """
+        input_fts = Input(shape=(self.input_length,), name='ae_input')
+
+        encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(932, activation='relu', name='e_dense2')(encoded)
+        encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
+
+        encoded = Dropout(0.05)(encoded)
+        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
+
+        decoded = Dense(428, activation='relu', name='d_dense4')(code)
+        decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
+        decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
+        output_fts = Dense(2048, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
         autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
@@ -155,7 +173,7 @@ class Autoencoder:
         """
         def svm_callback(epoch, logs):
             """
-            Runs SVM and saves prediction allresults
+            Runs SVM and saves prediction oldresults
 
             @param epoch: default callback parameter. Epoch index.
             @param logs: default callback parameter. Loss result.
@@ -177,5 +195,5 @@ class Autoencoder:
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.autoencoder.fit(x_train, x_train, epochs=nepochs, batch_size=512, shuffle=True,
+        self.history = self.autoencoder.fit(x_train, x_train[:, :2048], epochs=nepochs, batch_size=512, shuffle=True,
                                             verbose=1, validation_split=0.2, callbacks=[classification])

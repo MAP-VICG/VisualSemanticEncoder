@@ -52,6 +52,12 @@ class ConfigParserTests(unittest.TestCase):
         """
         self.assertEqual('awa2', self.parser.dataset)
 
+    def test_autoencoder_type(self):
+        """
+        Tests if the correct auto encoder type value was found
+        """
+        self.assertEqual('SIMPLE', self.parser.ae_type)
+
     def test_baselines(self):
         """
         Tests if the correct baselines values were found

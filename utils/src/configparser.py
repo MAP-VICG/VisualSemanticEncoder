@@ -12,7 +12,9 @@ Reads attributes in config.xml file to set configuration parameters
 import os
 import xml.etree.ElementTree as ET
 
-    
+from encoding.src.encoder import ModelType
+
+
 class ConfigParser:
     def __init__(self, configfile):
         """
@@ -26,6 +28,7 @@ class ConfigParser:
         self.epochs = 0
         self.console = False
         self.encoding_size = 0
+        self.ae_type = "SIMPLE"
 
         self.dataset = ''
         self.results_path = ''
@@ -68,6 +71,24 @@ class ConfigParser:
             self.dataset = root.find('general/dataset').text
         except AttributeError:
             raise AttributeError('Could not find "dataset" node')
+
+    def set_autoencoder_type(self, root):
+        """
+        Reads XML looking for ae_type node and sets its value.
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            ae_type = root.find('autoencoder/ae_type').text
+            if ae_type == "EXTENDED":
+                self.ae_type = ModelType.EXTENDED_AE
+            elif ae_type == "SIMPLE":
+                self.ae_type = ModelType.SIMPLE_AE
+            else:
+                raise ValueError('Invalid type of model chosen.')
+        except AttributeError:
+            raise AttributeError('Could not find "ae_type" node')
 
     def set_num_epochs(self, root):
         """

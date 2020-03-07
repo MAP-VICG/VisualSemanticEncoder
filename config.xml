@@ -6,6 +6,7 @@
 	</general>
 	<autoencoder>
 		<epochs>100</epochs>
+		<ae_type>EXTENDED</ae_type>
 		<encoding_size>128</encoding_size>
 	</autoencoder>
 	<semantic_features>
@@ -23,7 +24,7 @@
 		<birds>
 			<vis>0.626</vis>
 			<stk>0.745</stk>
-			<tnn>0.0</tnn>
+			<tnn>0.465</tnn>
 			<pca>
 				<c128>0.031191</c128>
 				<c256>0.039800</c256>
