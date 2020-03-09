@@ -12,8 +12,8 @@ class ModelType(Enum):
     """
     Enum for model type
     """
-    SIMPLE_AE = "SIMPLE_AE"
-    EXTENDED_AE = "EXTENDED_AE"
+    SIMPLE_AE = "SIMPLE"
+    EXTENDED_AE = "EXTENDED"
 
 
 class ModelFactory:
@@ -36,9 +36,9 @@ class ModelFactory:
         @param ae_type: autoencoder type
         @return: object with autoencoder model
         """
-        if ae_type == ModelType.SIMPLE_AE:
+        if ae_type == ModelType.SIMPLE_AE.value:
             return self.simple_ae()
-        if ae_type == ModelType.EXTENDED_AE:
+        if ae_type == ModelType.EXTENDED_AE.value:
             return self.extended_ae()
 
     def simple_ae(self):
@@ -86,7 +86,7 @@ class ModelFactory:
         decoded = Dense(428, activation='relu', name='d_dense4')(code)
         decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
         decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(2048, activation='relu', name='ae_output')(decoded)
+        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
         autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
@@ -95,7 +95,7 @@ class ModelFactory:
 
 
 class Autoencoder:
-    def __init__(self, ae_type, input_length, encoding_length, output_length, baseline=None):
+    def __init__(self, ae_type, input_length, encoding_length, output_length, baseline):
         """
         Initializes autoencoder attributes and defines the autoencoder model
 
@@ -114,15 +114,13 @@ class Autoencoder:
         self.tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
         self.autoencoder = ModelFactory(input_length, encoding_length, output_length)(ae_type)
 
-    def define_classifier(self, x_train, y_train, x_test=None, y_test=None, nfolds=5, njobs=None):
+    def define_classifier(self, x_train, y_train, nfolds=5, njobs=None):
         """
         Runs grid search on the SVM to define its best parameter for the given training data. These parameters
         are going to define the SVM classifier used in autoencoder's training.
 
         @param x_train: 2D numpy array with training data
         @param y_train: 1D numpy array with labels
-        @param x_test: 2D numpy array with test data
-        @param y_test: 1D numpy array with test labels
         @param nfolds: number of folds. Must be greater than 2 and smaller than the number of classes.
         @param njobs: number of jobs to run in parallel on Grid Search. If None, uses 1. If -1, uses the maximum number
             of threads available
@@ -134,15 +132,6 @@ class Autoencoder:
         svm_model.fit(x_train, y_train)
         self.svm_best_parameters = svm_model.best_params_
         self.svm_model = svm_model.best_estimator_
-
-        if self.baseline is None and x_test is not None and y_test is not None:
-            self.baseline = [0, 0, 0]
-            svm = GridSearchCV(SVC(verbose=0, max_iter=1000, gamma='scale'), self.tuning_params, cv=nfolds,
-                               scoring='recall_macro', n_jobs=njobs)
-            svm.fit(x_train[:, :2048], y_train)
-
-            prediction = svm.best_estimator_.predict(x_test[:, :2048])
-            self.baseline[0] = balanced_accuracy_score(prediction, y_test)
 
     def define_best_models(self, x_train, y_train, weights_path):
         """
@@ -191,9 +180,9 @@ class Autoencoder:
 
         self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs}
 
-        self.define_classifier(x_train, y_train, x_test, y_test, nfolds, njobs)
+        self.define_classifier(x_train, y_train, nfolds, njobs)
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.autoencoder.fit(x_train, x_train[:, :2048], epochs=nepochs, batch_size=512, shuffle=True,
+        self.history = self.autoencoder.fit(x_train, x_train, epochs=nepochs, batch_size=512, shuffle=True,
                                             verbose=1, validation_split=0.2, callbacks=[classification])

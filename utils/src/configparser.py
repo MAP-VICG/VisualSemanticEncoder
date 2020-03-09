@@ -81,9 +81,9 @@ class ConfigParser:
         """
         try:
             ae_type = root.find('autoencoder/ae_type').text
-            if ae_type == "EXTENDED":
+            if ae_type == ModelType.EXTENDED_AE.value:
                 self.ae_type = ModelType.EXTENDED_AE
-            elif ae_type == "SIMPLE":
+            elif ae_type == ModelType.SIMPLE_AE.value:
                 self.ae_type = ModelType.SIMPLE_AE
             else:
                 raise ValueError('Invalid type of model chosen.')
