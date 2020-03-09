@@ -2,7 +2,7 @@
 <SemanticEncoder>
 	<general>
 		<console>False</console>
-		<dataset>birds</dataset>
+		<dataset>CUB200</dataset>
 	</general>
 	<autoencoder>
 		<epochs>100</epochs>
@@ -10,28 +10,28 @@
 		<encoding_size>128</encoding_size>
 	</autoencoder>
 	<semantic_features>
-		<awa2>
+		<AWA2>
 			<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
 			<classes_names>dolphin, blue+whale, horse, giraffe, zebra</classes_names>
-		</awa2>
-		<birds>
+		</AWA2>
+		<CUB200>
 			<chosen_classes>50, 9, 7, 31, 38</chosen_classes>
 			<classes_names>Eared_Grebe, Brewer_Blackbird, Parakeet_Auklet, Black_billed_Cuckoo,
 				Great_Crested_Flycatcher</classes_names>
-		</birds>
+		</CUB200>
 	</semantic_features>
 	<baselines>
-		<birds>
-			<vis>0.626</vis>
-			<stk>0.745</stk>
-			<tnn>0.465</tnn>
+		<CUB200>
+			<vis>0.6151</vis>
+			<stk>0.0</stk>
+			<tnn>0.0</tnn>
 			<pca>
-				<c128>0.031191</c128>
-				<c256>0.039800</c256>
-				<c512>0.036663</c512>
-				<c1024>0.036216</c1024>
+				<c128>0.0</c128>
+				<c256>0.0</c256>
+				<c512>0.0</c512>
+				<c1024>0.0</c1024>
 			</pca>
-		</birds>
+		</CUB200>
 	</baselines>
 	<paths>
 		<results_path>./_files/results/</results_path>

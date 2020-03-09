@@ -12,7 +12,7 @@ Tests for module dataparsing
 import unittest
 import numpy as np
 from os import path, remove
-from featureextraction.src.dataparsing import BirdsData
+from featureextraction.src.dataparsing import BirdsData, DataParser
 
 
 class BirdsDataTests(unittest.TestCase):
@@ -89,6 +89,51 @@ class BirdsDataTests(unittest.TestCase):
         self.assertTrue(path.isfile(path.join(self.base_path, 'birds_y_train.txt')))
         self.assertTrue(path.isfile(path.join(self.base_path, 'birds_x_test.txt')))
         self.assertTrue(path.isfile(path.join(self.base_path, 'birds_y_test.txt')))
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Deletes files that were written by the tests
+        """
+        if path.isfile(path.join(cls.base_path, 'birds_x_train.txt')):
+            remove(path.join(cls.base_path, 'birds_x_train.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_y_train.txt')):
+            remove(path.join(cls.base_path, 'birds_y_train.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_x_test.txt')):
+            remove(path.join(cls.base_path, 'birds_x_test.txt'))
+
+        if path.isfile(path.join(cls.base_path, 'birds_y_test.txt')):
+            remove(path.join(cls.base_path, 'birds_y_test.txt'))
+
+
+class DataParsingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """
+        Initializes variables to be used in the tests
+        """
+        cls.base_path = cls.base_path = path.join('mockfiles', 'CUB200')
+        cls.data = BirdsData(cls.base_path)
+        train_fts, train_class, test_fts, test_class = cls.data.build_birds_data()
+        cls.data.save_files(cls.base_path, train_fts, train_class, test_fts, test_class)
+
+    def test_get_features(self):
+        """
+        Tests if data retrieved from data file is in the correct format and shape
+        """
+        data = DataParser.get_features(path.join(self.base_path, 'birds_x_test.txt'))
+        self.assertEqual((19, 2360), data.shape)
+        self.assertTrue(isinstance(data[0, 0], float))
+
+    def test_get_labels(self):
+        """
+        Tests if data retrieved from labels file is in the correct format and shape
+        """
+        labels = DataParser.get_labels(path.join(self.base_path, 'birds_y_test.txt'))
+        self.assertEqual((19,), labels.shape)
+        self.assertTrue(isinstance(labels[0], np.int64))
 
     @classmethod
     def tearDownClass(cls):

@@ -14,7 +14,7 @@ import os
 import sys
 import time
 import tensorflow as tf
-import tensorflow.python.keras.backend as K
+import tensorflow.keras.backend as K
 
 from utils.src.configparser import ConfigParser
 from utils.src.normalization import Normalization
