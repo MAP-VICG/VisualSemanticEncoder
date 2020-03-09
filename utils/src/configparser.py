@@ -28,7 +28,7 @@ class ConfigParser:
         self.epochs = 0
         self.console = False
         self.encoding_size = 0
-        self.ae_type = "SIMPLE"
+        self.ae_type = None
 
         self.dataset = ''
         self.results_path = ''
@@ -250,6 +250,7 @@ class ConfigParser:
 
         self.set_dataset_name(root)
         self.set_console_value(root)
+        self.set_autoencoder_type(root)
 
         self.set_num_epochs(root)
         self.set_encoding_size(root)

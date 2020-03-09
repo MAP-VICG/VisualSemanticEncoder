@@ -36,9 +36,9 @@ class ModelFactory:
         @param ae_type: autoencoder type
         @return: object with autoencoder model
         """
-        if ae_type == ModelType.SIMPLE_AE.value:
+        if ae_type == ModelType.SIMPLE_AE:
             return self.simple_ae()
-        if ae_type == ModelType.EXTENDED_AE.value:
+        if ae_type == ModelType.EXTENDED_AE:
             return self.extended_ae()
 
     def simple_ae(self):

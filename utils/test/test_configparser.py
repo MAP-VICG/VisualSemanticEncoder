@@ -13,6 +13,7 @@ import os
 import unittest
 
 from utils.src.configparser import ConfigParser
+from encoding.src.encoder import ModelType
 
 
 class ConfigParserTests(unittest.TestCase):
@@ -56,7 +57,7 @@ class ConfigParserTests(unittest.TestCase):
         """
         Tests if the correct auto encoder type value was found
         """
-        self.assertEqual('SIMPLE', self.parser.ae_type)
+        self.assertEqual(ModelType.SIMPLE_AE, self.parser.ae_type)
 
     def test_baselines(self):
         """
