@@ -14,7 +14,7 @@ import os
 import sys
 import time
 import tensorflow as tf
-import tensorflow.keras.backend as K
+# import tensorflow.python.keras.backend as K
 
 from utils.src.configparser import ConfigParser
 from utils.src.normalization import Normalization
@@ -105,8 +105,8 @@ def main():
     
     
 if __name__ == '__main__':
-    config = tf.compat.v1.ConfigProto(log_device_placement=True)
-    config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    K.set_session(tf.compat.v1.Session(config=config))
+    # config = tf.compat.v1.ConfigProto(log_device_placement=True)
+    # config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    # K.set_session(tf.compat.v1.Session(config=config))
     
     main()
