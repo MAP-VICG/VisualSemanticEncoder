@@ -26,13 +26,14 @@ class Plotter:
         self.classes_names = classes_names
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:pink']
 
-    def plot_evaluation(self, x_test, y_test, baseline=None):
+    def plot_evaluation(self, x_test, y_test, output_length=2048, baseline=None):
         """
         Plots statistics related to the training of the autoencoder model including error and accuracy charts,
         covariance and confusion matrices, variation of encoding values and PCA distribution for chosen classes.
 
         @param x_test: 2D numpy array for test set
         @param y_test: 1D numpy array for labels
+        @param output_length: AE output length
         @param baseline: value that accuracy must reach
         @return: None
         """
@@ -116,7 +117,7 @@ class Plotter:
         ax = plt.subplot(337)
         pca = PCA(n_components=2)
         ax.set_title('PCA - Input')
-        input_fts = pca.fit_transform(x_test[mask, :])
+        input_fts = pca.fit_transform(x_test[mask, :output_length])
         self._scatter_plot(ax, input_fts, y_test[mask])
 
         ax = plt.subplot(338)
