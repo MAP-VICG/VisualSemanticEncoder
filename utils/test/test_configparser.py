@@ -77,6 +77,12 @@ class ConfigParserTests(unittest.TestCase):
         """
         self.assertEqual(128, self.parser.encoding_size)
 
+    def test_output_size(self):
+        """
+        Tests if the correct output size value was found
+        """
+        self.assertEqual(2048, self.parser.output_size)
+
     def test_results_path(self):
         """
         Tests if the correct results_128 path value was found

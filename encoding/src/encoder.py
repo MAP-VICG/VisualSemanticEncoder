@@ -1,9 +1,10 @@
 from enum import Enum
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Dropout
+from tensorflow.keras.layers import Input, Dense, Dropout, Lambda
 from tensorflow.keras.callbacks import LambdaCallback
 
 from sklearn.svm import SVC
+from keras import backend as K
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import balanced_accuracy_score
 
@@ -12,8 +13,10 @@ class ModelType(Enum):
     """
     Enum for model type
     """
-    SIMPLE_AE = "SIMPLE"
-    EXTENDED_AE = "EXTENDED"
+    SIMPLE_AE = "SIMPLE_AE"
+    EXTENDED_AE = "EXTENDED_AE"
+    SIMPLE_VAE = "SIMPLE_VAE"
+    EXTENDED_VAE = "EXTENDED_VAE"
 
 
 class ModelFactory:
@@ -40,6 +43,8 @@ class ModelFactory:
             return self.simple_ae()
         if ae_type == ModelType.EXTENDED_AE:
             return self.extended_ae()
+        if ae_type == ModelType.EXTENDED_VAE:
+            return self.extended_vae()
 
     def simple_ae(self):
         """
@@ -93,6 +98,46 @@ class ModelFactory:
 
         return autoencoder
 
+    @staticmethod
+    def _sampling(args):
+        """
+        Reparameterization trick by sampling from an isotropic unit Gaussian.
+
+        @param args: tensor with mean and log of variance of Q(z|X)
+        @return tensor with sampled latent vector
+        """
+        z_mean, z_log_var = args
+        batch = K.shape(z_mean)[0]
+        dim = K.int_shape(z_mean)[1]
+        # by default, random_normal has mean = 0 and std = 1.0
+        epsilon = K.random_normal(shape=(batch, dim))
+        return z_mean + K.exp(0.5 * z_log_var) * epsilon
+
+    def extended_vae(self):
+        input_fts = Input(shape=(self.input_length,), name='ae_input')
+
+        encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(932, activation='relu', name='e_dense2')(encoded)
+        encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
+
+        encoded = Dropout(0.05)(encoded)
+        z_mean = Dense(self.encoding_length, name='z_mean')(encoded)
+        z_log_var = Dense(self.encoding_length, name='z_log_var')(encoded)
+
+        # use reparameterization trick to push the sampling out as input
+        # note that "output_shape" isn't necessary with the TensorFlow backend
+        code = Lambda(ModelFactory._sampling, output_shape=(self.encoding_length,), name='code')([z_mean, z_log_var])
+
+        decoded = Dense(428, activation='relu', name='d_dense4')(code)
+        decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
+        decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
+        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
+
+        autoencoder = Model(inputs=input_fts, outputs=output_fts)
+        autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
+
+        return autoencoder
+
 
 class Autoencoder:
     def __init__(self, ae_type, input_length, encoding_length, output_length, baseline):
@@ -111,6 +156,7 @@ class Autoencoder:
         self.best_accuracy = (0, -1)
         self.best_model_weights = None
         self.svm_best_parameters = None
+        self.output_length = output_length
         self.tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
         self.autoencoder = ModelFactory(input_length, encoding_length, output_length)(ae_type)
 
@@ -184,5 +230,5 @@ class Autoencoder:
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.autoencoder.fit(x_train, x_train, epochs=nepochs, batch_size=512, shuffle=True,
-                                            verbose=1, validation_split=0.2, callbacks=[classification])
+        self.history = self.autoencoder.fit(x_train, x_train[:, :self.output_length], epochs=nepochs, batch_size=256,
+                                            shuffle=True, verbose=1, validation_split=0.2, callbacks=[classification])

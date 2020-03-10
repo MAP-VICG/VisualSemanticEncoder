@@ -41,6 +41,7 @@ def main():
     log.write_message('Results path: %s' % str(config.results_path), MessageType.INF)
     log.write_message('Number of epochs: %s' % str(config.epochs), MessageType.INF)
     log.write_message('Encoding size: %s' % str(config.encoding_size), MessageType.INF)
+    log.write_message('Output size: %s' % str(config.output_size), MessageType.INF)
 
     log.write_message('x_train path is %s' % config.x_train_path, MessageType.INF)
     log.write_message('y_train path is %s' % config.y_train_path, MessageType.INF)
@@ -66,7 +67,7 @@ def main():
 
         # Encode features
         log.write_message('AE Type is set to %s' % config.ae_type, MessageType.INF)
-        ae = Autoencoder(config.ae_type, x_train.shape[1], config.encoding_size, x_train.shape[1], config.baseline)
+        ae = Autoencoder(config.ae_type, x_train.shape[1], config.encoding_size, config.output_size, config.baseline)
         ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
         # Save all results

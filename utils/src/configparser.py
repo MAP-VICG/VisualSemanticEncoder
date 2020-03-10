@@ -28,6 +28,7 @@ class ConfigParser:
         self.epochs = 0
         self.console = False
         self.encoding_size = 0
+        self.output_size = 2048
         self.ae_type = None
 
         self.dataset = ''
@@ -85,6 +86,10 @@ class ConfigParser:
                 self.ae_type = ModelType.EXTENDED_AE
             elif ae_type == ModelType.SIMPLE_AE.value:
                 self.ae_type = ModelType.SIMPLE_AE
+            elif ae_type == ModelType.SIMPLE_VAE.value:
+                self.ae_type = ModelType.SIMPLE_VAE
+            elif ae_type == ModelType.EXTENDED_VAE.value:
+                self.ae_type = ModelType.EXTENDED_VAE
             else:
                 raise ValueError('Invalid type of model chosen.')
         except AttributeError:
@@ -168,6 +173,18 @@ class ConfigParser:
             self.encoding_size = int(root.find('autoencoder/encoding_size').text)
         except AttributeError:
             raise AttributeError('Could not find "encoding_size" node')
+
+    def set_output_size(self, root):
+        """
+        Reads XML looking for output_size node and sets its value
+
+        @param root: XML root node
+        @return None
+        """
+        try:
+            self.output_size = int(root.find('autoencoder/output_size').text)
+        except AttributeError:
+            raise AttributeError('Could not find "output_size" node')
         
     def set_results_path(self, root): 
         """
@@ -254,6 +271,7 @@ class ConfigParser:
 
         self.set_num_epochs(root)
         self.set_encoding_size(root)
+        self.set_output_size(root)
 
         self.set_results_path(root)
         self.set_x_train_path(root)
