@@ -42,7 +42,7 @@ class Plotter:
         plt.rcParams.update({'font.size': 12})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
 
-        file_name = os.path.join(self.base_path, 'ae_evaluation.png')
+        file_name = os.path.join(self.base_path, 'ae_evaluation_.png')
         legend = []
 
         encoder = Model(self.encoder.autoencoder.input, outputs=[self.encoder.autoencoder.get_layer('code').output])
@@ -79,8 +79,11 @@ class Plotter:
 
         ax = plt.subplot(3, 5, 6)
         ax.set_title('Reconstruction Accuracy')
-        plt.plot(self.encoder.history.history['acc'])
-        plt.plot(self.encoder.history.history['val_acc'])
+        try:
+            plt.plot(self.encoder.history.history['acc'])
+            plt.plot(self.encoder.history.history['val_acc'])
+        except KeyError:
+            pass
 
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')

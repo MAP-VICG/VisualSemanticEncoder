@@ -69,9 +69,12 @@ def main():
         ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
 
         # Save all results
-        log.write_message('AE Train Accuracies %s' % str(ae.history.history['acc']), MessageType.INF)
-        log.write_message('AE Validation Accuracies %s' % str(ae.history.history['val_acc']), MessageType.INF)
-        log.write_message('AE Best Accuracy %s' % str(max(ae.history.history['acc'])), MessageType.INF)
+        try:
+            log.write_message('AE Train Accuracies %s' % str(ae.history.history['acc']), MessageType.INF)
+            log.write_message('AE Validation Accuracies %s' % str(ae.history.history['val_acc']), MessageType.INF)
+            log.write_message('AE Best Accuracy %s' % str(max(ae.history.history['acc'])), MessageType.INF)
+        except KeyError:
+            pass
 
         log.write_message('SVM Train Accuracies %s' % str(ae.accuracies['train']), MessageType.INF)
         log.write_message('SVM Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)

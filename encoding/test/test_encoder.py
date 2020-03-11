@@ -43,7 +43,7 @@ class AutoencoderTests(unittest.TestCase):
         """
         Tests if best SVM parameters are defined
         """
-        ae = Autoencoder(ModelType.SIMPLE_AE, self.x_train.shape[1], 128, self.x_train.shape[1])
+        ae = Autoencoder(ModelType.SIMPLE_AE, self.x_train.shape[1], 128, self.x_train.shape[1], {'vis', 0})
         ae.define_classifier(self.x_train, self.y_train, nfolds=2)
         self.assertIsNotNone(ae.svm_best_parameters)
         self.assertTrue(ae.svm_best_parameters['kernel'] == 'linear')
@@ -53,7 +53,7 @@ class AutoencoderTests(unittest.TestCase):
         """
         Tests if best AE parameters and training history are defined
         """
-        ae = Autoencoder(ModelType.SIMPLE_AE, self.x_train.shape[1], 128, self.x_train.shape[1])
+        ae = Autoencoder(ModelType.SIMPLE_AE, self.x_train.shape[1], 128, self.x_train.shape[1], {'vis', 0})
         ae.run_ae_model(self.x_train, self.y_train, self.x_test, self.y_test, 5, nfolds=2)
 
         self.assertIsNotNone(ae.history)

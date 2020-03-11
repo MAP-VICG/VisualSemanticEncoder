@@ -5,6 +5,8 @@ from tensorflow.keras.callbacks import LambdaCallback
 
 from sklearn.svm import SVC
 from keras import backend as K
+from keras.losses import mse
+from keras.metrics import accuracy
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import balanced_accuracy_score
 
@@ -134,7 +136,16 @@ class ModelFactory:
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
-        autoencoder.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
+
+        reconstruction_loss = mse(input_fts, output_fts)
+        reconstruction_loss *= self.input_length
+        kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
+        kl_loss = K.sum(kl_loss, axis=-1)
+        kl_loss *= -0.5
+        vae_loss = K.mean(reconstruction_loss + kl_loss)
+
+        autoencoder.add_loss(vae_loss)
+        autoencoder.compile(optimizer='adam', metrics=[accuracy])
 
         return autoencoder
 
@@ -152,6 +163,7 @@ class Autoencoder:
         self.history = None
         self.accuracies = None
         self.svm_model = None
+        self.ae_type = ae_type
         self.baseline = baseline
         self.best_accuracy = (0, -1)
         self.best_model_weights = None
@@ -230,5 +242,10 @@ class Autoencoder:
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.autoencoder.fit(x_train, x_train[:, :self.output_length], epochs=nepochs, batch_size=256,
-                                            shuffle=True, verbose=1, validation_split=0.2, callbacks=[classification])
+        if self.ae_type in (ModelType.EXTENDED_VAE, ModelType.SIMPLE_VAE):
+            self.history = self.autoencoder.fit(x_train, epochs=nepochs, batch_size=256, shuffle=True, verbose=1,
+                                                validation_split=0.2, callbacks=[classification])
+        else:
+            self.history = self.autoencoder.fit(x_train, x_train[:, :self.output_length], epochs=nepochs,
+                                                batch_size=256, shuffle=True, verbose=1, validation_split=0.2,
+                                                callbacks=[classification])

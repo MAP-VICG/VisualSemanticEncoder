@@ -22,9 +22,9 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         """
         Initializes variables to be used in the tests
         """
-        cls.base_path = path.join('mockfiles', 'birds')
+        cls.base_path = path.join('mockfiles', 'CUB200')
         cls.data = BirdsData(cls.base_path)
-        cls.images_list = cls.data.get_images_list(sep.join([cls.base_path, 'lists', 'train.txt']))
+        cls.images_list = cls.data.get_images_list()
         cls.fts_file = 'birds_features.txt'
         cls.extractor = ResNet50FeatureExtractor(cls.images_list, path.join(cls.base_path, 'images'))
 
@@ -43,7 +43,7 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         (X, 2048) where X is the number of images listed
         """
         self.extractor.extract_images_list_features()
-        self.assertEqual((10, 2048), self.extractor.features_set.shape)
+        self.assertEqual((30, 2048), self.extractor.features_set.shape)
 
     def test_save_features(self):
         """
@@ -55,7 +55,7 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         with open(self.fts_file) as f:
             features = f.readlines()
 
-        self.assertEqual(10, len(features))
+        self.assertEqual(30, len(features))
         for line in features:
             self.assertEqual(2048, len(line.split()))
 
