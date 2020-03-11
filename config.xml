@@ -6,8 +6,8 @@
 	</general>
 	<autoencoder>
 		<epochs>50</epochs>
-		<ae_type>EXTENDED_VAE</ae_type>
-		<output_size>2048</output_size>
+		<ae_type>EXTENDED_AE</ae_type>
+		<output_size>2336</output_size>
 		<encoding_size>128</encoding_size>
 	</autoencoder>
 	<semantic_features>

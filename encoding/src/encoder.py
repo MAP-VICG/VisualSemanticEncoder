@@ -208,7 +208,7 @@ class Autoencoder:
         """
         def svm_callback(epoch, logs):
             """
-            Runs SVM and saves prediction oldresults
+            Runs SVM and saves prediction results
 
             @param epoch: default callback parameter. Epoch index.
             @param logs: default callback parameter. Loss result.
