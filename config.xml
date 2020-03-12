@@ -5,9 +5,9 @@
 		<dataset>CUB200</dataset>
 	</general>
 	<autoencoder>
-		<epochs>5</epochs>
+		<epochs>50</epochs>
 		<ae_type>EXTENDED_AE</ae_type>
-		<output_size>2048</output_size>
+		<output_size>2360</output_size>
 		<encoding_size>128</encoding_size>
 	</autoencoder>
 	<semantic_features>

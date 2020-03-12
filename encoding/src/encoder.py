@@ -170,7 +170,7 @@ class Autoencoder:
         self.svm_best_parameters = None
         self.output_length = output_length
         self.tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
-        self.autoencoder = ModelFactory(input_length, encoding_length, output_length)(ae_type)
+        self.autoencoder = ModelFactory(2048, encoding_length, output_length)(ae_type)
 
     def define_classifier(self, x_train, y_train, nfolds=5, njobs=None):
         """
@@ -202,7 +202,7 @@ class Autoencoder:
         """
         self.autoencoder.set_weights(self.best_model_weights)
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
-        self.svm_model.fit(encoder.predict(x_train), y_train)
+        self.svm_model.fit(encoder.predict(x_train[:, :2048]), y_train)
         self.autoencoder.save_weights(weights_path)
 
     def run_ae_model(self, x_train, y_train, x_test, y_test, nepochs, nfolds=5, njobs=None):
@@ -225,11 +225,11 @@ class Autoencoder:
             @param epoch: default callback parameter. Epoch index.
             @param logs: default callback parameter. Loss result.
             """
-            self.svm_model.fit(encoder.predict(x_train), y_train)
-            prediction = self.svm_model.predict(encoder.predict(x_train))
+            self.svm_model.fit(encoder.predict(x_train[:, :2048]), y_train)
+            prediction = self.svm_model.predict(encoder.predict(x_train[:, :2048]))
             self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
 
-            prediction = self.svm_model.predict(encoder.predict(x_test))
+            prediction = self.svm_model.predict(encoder.predict(x_test[:, :2048]))
             self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
 
             if self.accuracies['test'][epoch] > self.best_accuracy[0]:
@@ -246,6 +246,6 @@ class Autoencoder:
             self.history = self.autoencoder.fit(x_train, epochs=nepochs, batch_size=256, shuffle=True, verbose=1,
                                                 validation_split=0.2, callbacks=[classification])
         else:
-            self.history = self.autoencoder.fit(x_train, x_train[:, :self.output_length], epochs=nepochs,
+            self.history = self.autoencoder.fit(x_train[:, :2048], x_train[:, :self.output_length], epochs=nepochs,
                                                 batch_size=256, shuffle=True, verbose=1, validation_split=0.2,
                                                 callbacks=[classification])

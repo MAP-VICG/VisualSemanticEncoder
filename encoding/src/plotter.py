@@ -36,6 +36,7 @@ class Plotter:
         @param baseline: value that accuracy must reach
         @return: None
         """
+        x_test = x_test[:, :2048]
         fig = plt.figure(figsize=(33, 18))
         plt.rcParams.update({'font.size': 12})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
@@ -47,8 +48,8 @@ class Plotter:
 
         ax = plt.subplot(3, 5, 2)
         ax.set_title('Training Loss')
-        plt.plot(self.ae.history.history['loss'])
-        plt.plot(self.ae.history.history['val_loss'])
+        plt.plot(self.ae.history.history['loss'], linewidth=2)
+        plt.plot(self.ae.history.history['val_loss'], linewidth=2)
 
         plt.xlabel('Epochs')
         plt.ylabel('MSE')
@@ -60,8 +61,8 @@ class Plotter:
         ax = plt.subplot(3, 5, 6)
         ax.set_title('Reconstruction Accuracy')
         try:
-            plt.plot(self.ae.history.history['acc'])
-            plt.plot(self.ae.history.history['val_acc'])
+            plt.plot(self.ae.history.history['acc'], linewidth=2)
+            plt.plot(self.ae.history.history['val_acc'], linewidth=2)
         except KeyError:
             pass
 
@@ -106,11 +107,10 @@ class Plotter:
         ax.set_title('Classification Accuracy')
         if baseline and isinstance(baseline, dict):
             n_epochs = len(self.ae.accuracies['test'])
-            colors = ['tab:gray', 'tab:green', 'tab:red', 'tab:yellow', 'tab:pink', 'tab:purple', 'tab:cyan']
 
             for i, key in enumerate(baseline.keys()):
                 if baseline[key] != 0:
-                    plt.plot([baseline[key] for _ in range(n_epochs)], linestyle='dashed', linewidth=1, color=colors[i])
+                    plt.plot([baseline[key] for _ in range(n_epochs)], linestyle='dashed', linewidth=2)
                     legend.append(key)
 
         plt.plot([acc for acc in self.ae.accuracies['train']], linewidth=2)
