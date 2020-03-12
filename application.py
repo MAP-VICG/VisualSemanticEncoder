@@ -84,7 +84,7 @@ def main():
         ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
 
         pt = Plotter(ae, config.results_path, config.chosen_classes, config.classes_names)
-        pt.plot_evaluation(x_test, y_test, config.output_size, ae.baseline)
+        pt.plot_evaluation(x_test, y_test, ae.baseline)
 
         old_stdout = sys.stdout
         sys.stdout = buffer = io.StringIO()
