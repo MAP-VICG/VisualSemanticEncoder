@@ -147,8 +147,8 @@ class Plotter:
         else:
             raise ValueError('Unknown Type')
 
-        encoding_ = encoder.predict(x_test)
-        output_ = self.ae.autoencoder.predict(x_test)
+        encoding_ = encoder.predict(input_)
+        output_ = self.ae.autoencoder.predict(input_)
         acc = balanced_accuracy_score(self.ae.svm_model.predict(encoding_), y_test)
 
         return input_, encoding_, output_, acc
