@@ -1,6 +1,6 @@
 from enum import Enum
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Dropout, Lambda
+from tensorflow.keras.layers import Input, Dense, Dropout, Lambda, Layer, Multiply, Add
 from tensorflow.keras.callbacks import LambdaCallback
 
 from sklearn.svm import SVC
@@ -19,6 +19,29 @@ class ModelType(Enum):
     EXTENDED_AE = "EXTENDED_AE"
     SIMPLE_VAE = "SIMPLE_VAE"
     EXTENDED_VAE = "EXTENDED_VAE"
+
+
+class KLDivergenceLayer(Layer):
+
+    """ Identity transform layer that adds KL divergence
+    to the final model loss.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.is_placeholder = True
+        super(KLDivergenceLayer, self).__init__(*args, **kwargs)
+
+    def call(self, inputs):
+
+        mu, log_var = inputs
+
+        kl_batch = - .5 * K.sum(1 + log_var -
+                                K.square(mu) -
+                                K.exp(log_var), axis=-1)
+
+        self.add_loss(K.mean(kl_batch), inputs=inputs)
+
+        return inputs
 
 
 class ModelFactory:
@@ -115,7 +138,16 @@ class ModelFactory:
         epsilon = K.random_normal(shape=(batch, dim))
         return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
+    @staticmethod
+    def nll(y_true, y_pred):
+        """ Negative log likelihood (Bernoulli). """
+
+        # keras.losses.binary_crossentropy gives the mean
+        # over the last axis. we require the sum
+        return K.sum(K.binary_crossentropy(y_true, y_pred), axis=-1)
+
     def extended_vae(self):
+        epsilon_std = 1.0
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
         encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
@@ -123,31 +155,27 @@ class ModelFactory:
         encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
 
         encoded = Dropout(0.05)(encoded)
-        z_mean = Dense(self.encoding_length, name='z_mean')(encoded)
-        z_log_var = Dense(self.encoding_length, name='z_log_var')(encoded)
+        z_mu = Dense(self.encoding_length)(encoded)
+        z_log_var = Dense(self.encoding_length)(encoded)
 
-        # use reparameterization trick to push the sampling out as input
-        # note that "output_shape" isn't necessary with the TensorFlow backend
-        code = Lambda(ModelFactory._sampling, output_shape=(self.encoding_length,), name='code')([z_mean, z_log_var])
+        z_mu, z_log_var = KLDivergenceLayer()([z_mu, z_log_var])
+        z_sigma = Lambda(lambda t: K.exp(.5 * t))(z_log_var)
+
+        eps = Input(tensor=K.random_normal(stddev=epsilon_std,
+                                           shape=(K.shape(input_fts)[0], self.encoding_length)))
+
+        z_eps = Multiply()([z_sigma, eps])
+        code = Add(name='code')([z_mu, z_eps])
 
         decoded = Dense(428, activation='relu', name='d_dense4')(code)
         decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
         decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
-        autoencoder = Model(inputs=input_fts, outputs=output_fts)
+        vae = Model(inputs=[input_fts, eps], outputs=output_fts)
+        vae.compile(optimizer='rmsprop', loss=ModelFactory.nll)
 
-        reconstruction_loss = mse(input_fts, output_fts)
-        reconstruction_loss *= self.input_length
-        kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-        kl_loss = K.sum(kl_loss, axis=-1)
-        kl_loss *= -0.5
-        vae_loss = K.mean(reconstruction_loss + kl_loss)
-
-        autoencoder.add_loss(vae_loss)
-        autoencoder.compile(optimizer='adam', metrics=[accuracy])
-
-        return autoencoder
+        return vae
 
 
 class Autoencoder:
@@ -242,10 +270,10 @@ class Autoencoder:
         encoder = Model(self.autoencoder.input, outputs=[self.autoencoder.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        if self.ae_type in (ModelType.EXTENDED_VAE, ModelType.SIMPLE_VAE):
-            self.history = self.autoencoder.fit(x_train, epochs=nepochs, batch_size=256, shuffle=True, verbose=1,
-                                                validation_split=0.2, callbacks=[classification])
-        else:
-            self.history = self.autoencoder.fit(x_train[:, :2048], x_train[:, :self.output_length], epochs=nepochs,
-                                                batch_size=256, shuffle=True, verbose=1, validation_split=0.2,
-                                                callbacks=[classification])
+        # if self.ae_type in (ModelType.EXTENDED_VAE, ModelType.SIMPLE_VAE):
+        #     self.history = self.autoencoder.fit(x_train, epochs=nepochs, batch_size=256, shuffle=True, verbose=1,
+        #                                         validation_split=0.2, callbacks=[classification])
+        # else:
+        self.history = self.autoencoder.fit(x_train[:, :2048], x_train[:, :self.output_length], epochs=nepochs,
+                                            batch_size=256, shuffle=True, verbose=1, validation_split=0.2,
+                                            callbacks=[classification])
