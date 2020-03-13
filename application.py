@@ -88,7 +88,7 @@ def main():
 
         old_stdout = sys.stdout
         sys.stdout = buffer = io.StringIO()
-        ae.autoencoder.summary()
+        ae.model.summary()
         log.write_message('Model summary \n\n%s' % buffer.getvalue(), MessageType.INF)
         sys.stdout = old_stdout
 

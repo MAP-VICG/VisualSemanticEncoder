@@ -1,9 +1,9 @@
 import os
 import matplotlib
 import numpy as np
+from keras.models import Model
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
-from tensorflow.keras.models import Model
 from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import balanced_accuracy_score
 
@@ -16,7 +16,7 @@ class Plotter:
         Initialize main variables.
 
         @param ae: ae model
-        @param base_path: string with base path to save oldresults
+        @param base_path: string with base path to save results
         @param chosen_classes: array of numbers with id of classes to plot PCA
         @param classes_names: array of strings with classes names to plot PCA
         """
@@ -36,7 +36,6 @@ class Plotter:
         @param baseline: value that accuracy must reach
         @return: None
         """
-        x_test = x_test[:, :2048]
         fig = plt.figure(figsize=(33, 18))
         plt.rcParams.update({'font.size': 12})
         plt.subplots_adjust(wspace=0.4, hspace=0.9)
@@ -44,7 +43,7 @@ class Plotter:
         legend = []
         mask = self._define_mask(y_test)
         file_name = os.path.join(self.base_path, 'ae_evaluation.png')
-        encoder = Model(self.ae.autoencoder.input, outputs=[self.ae.autoencoder.get_layer('code').output])
+        encoder = Model(self.ae.model.input, outputs=[self.ae.model.get_layer('code').output])
 
         ax = plt.subplot(3, 5, 2)
         ax.set_title('Training Loss')
@@ -148,7 +147,7 @@ class Plotter:
             raise ValueError('Unknown Type')
 
         encoding_ = encoder.predict(input_)
-        output_ = self.ae.autoencoder.predict(input_)
+        output_ = self.ae.model.predict(input_)
         acc = balanced_accuracy_score(self.ae.svm_model.predict(encoding_), y_test)
 
         return input_, encoding_, output_, acc
@@ -216,6 +215,5 @@ class Plotter:
                     plot_mask[i] = True
 
             plt.scatter(features[plot_mask, 0], features[plot_mask, 1], c=self.colors[k],
-                        # s=np.ones(self.labels[plot_mask].shape)*5,
                         label=self.classes_names[k])
         ax.legend(prop={'size': 10})
