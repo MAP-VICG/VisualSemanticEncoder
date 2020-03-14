@@ -10,25 +10,27 @@ Retrieves basic information about the Birds data set
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import numpy as np
-from os import path
+from os import path, listdir, sep
+from sklearn.model_selection import train_test_split
 
 from featureextraction.src.kerasextraction import ResNet50FeatureExtractor
 
 
-class BirdsData:
+class DataParser:
     def __init__(self, base_path):
+        self.images_path = ''
+        self.images_list = None
         self.base_path = base_path
-        self.images_path = path.join(base_path, 'images')
-        self.attributes_path = path.join(base_path, 'attributes')
+        self.semantic_attributes_path = ''
 
     def get_semantic_attributes(self):
         """
         Reads the file of attributes and retrieves the semantic array for each class
 
-        @return: float numpy array of shape (200, 312) being 200 the number of classes and 312 the number of attributes
+        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
         """
         try:
-            with open(path.join(self.attributes_path, 'class_attribute_labels_continuous.txt')) as f:
+            with open(self.semantic_attributes_path) as f:
                 attributes = [list(map(float, line.split())) for line in f.readlines()]
             return np.array(attributes)
         except (IOError, FileNotFoundError):
@@ -45,7 +47,100 @@ class BirdsData:
         vis_data.extract_images_list_features()
         return vis_data.features_set
 
-    def get_train_test_mask(self):
+    def _get_images_list(self):
+        """
+        Retrieves path of each image
+
+        @return: integer 1D numpy array
+        """
+        return None
+
+    def get_images_list(self):
+        """
+        Wrapper method to retrieve path of each image
+
+        @return: integer 1D numpy array
+        """
+        if self.images_list is None:
+            self.images_list = self._get_images_list()
+        return self.images_list
+
+    def get_images_class(self):
+        """
+        Retrieves the class of each image
+
+        @return: integer 1D numpy array
+        """
+        return None
+
+    def build_data(self):
+        """
+        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
+
+        @return: data set with features, array with labels
+        """
+        images = self.get_images_list()
+        classes = self.get_images_class()
+
+        sem_fts = self.get_semantic_attributes()
+        vis_fts = self.get_visual_attributes(images)
+
+        all_fts = []
+        for i, fts in enumerate(vis_fts):
+            klass = classes[i] - 1
+            all_fts.append(np.hstack((fts, sem_fts[klass, :])))
+
+        return np.array(all_fts), classes
+
+
+class AWA2Data(DataParser):
+    def __init__(self, base_path):
+        super(AWA2Data, self).__init__(base_path)
+        self.images_path = path.join(base_path, 'JPEGImages')
+        self.semantic_attributes_path = path.join(base_path, 'predicate-matrix-continuous.txt')
+        self.images_list = None
+
+    def _get_images_list(self):
+        """
+        Retrieves path of each image
+
+        @return: integer 1D numpy array
+        """
+        images_list = [path.join(folder, img) for folder in listdir(self.images_path)
+                       if path.isdir(path.join(self.images_path, folder))
+                       for img in listdir(path.join(self.images_path, folder)) if img.endswith('.jpg')]
+        return np.array(sorted(images_list))
+
+    def get_images_class(self):
+        """
+        Retrieves the class of each image
+
+        @return: integer 1D numpy array
+        """
+        with open(path.join(self.base_path, 'classes.txt')) as f:
+            labels_dict = {label.split()[1]: int(label.split()[0]) for label in f.readlines()}
+
+        labels = [labels_dict[img.strip().split(sep)[0]] for img in self.get_images_list()]
+
+        return np.array(labels)
+
+    def build_data(self):
+        """
+        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
+
+        @return: training data, test data, training class id list, test class id list
+        """
+        all_fts, classes = super(AWA2Data, self).build_data()
+        return train_test_split(np.array(all_fts), classes, test_size=0.33, random_state=42)
+
+
+class CUB200Data(DataParser):
+    def __init__(self, base_path):
+        super(CUB200Data, self).__init__(base_path)
+        self.images_path = path.join(base_path, 'images')
+        self.semantic_attributes_path = path.join(base_path, 'attributes', 'class_attribute_labels_continuous.txt')
+
+    def _get_train_test_mask(self):
         """
         Goes through the full list of images and creates a boolean mask to split data set into training and test sets,
         where True indicates training set and False test set.
@@ -58,18 +153,7 @@ class BirdsData:
 
         return np.array(mask) == 1
 
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
-
-        @return: integer 1D numpy array
-        """
-        with open(path.join(self.base_path, 'image_class_labels.txt')) as f:
-            klass = [int(value.split()[1]) for value in f.readlines()]
-
-        return np.array(klass)
-
-    def get_images_list(self):
+    def _get_images_list(self):
         """
         Retrieves path of each image
 
@@ -80,57 +164,32 @@ class BirdsData:
 
         return np.array(images_list)
 
-    def build_birds_data(self):
+    def get_images_class(self):
+        """
+        Retrieves the class of each image
+
+        @return: integer 1D numpy array
+        """
+        with open(path.join(self.base_path, 'image_class_labels.txt')) as f:
+            labels = [int(value.split()[1]) for value in f.readlines()]
+
+        return np.array(labels)
+
+    def build_data(self):
         """
         Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
 
-        @return: training data, training class id list, test data, test class id list
+        @return: training data, test data, training class id list, test class id list
         """
-        mask = self.get_train_test_mask()
-        images = self.get_images_list()
-        classes = self.get_images_class()
-
-        sem_fts = self.get_semantic_attributes()
-        vis_fts = self.get_visual_attributes(images)
-
-        all_fts = []
-        for i, fts in enumerate(vis_fts):
-            klass = classes[i] - 1
-            all_fts.append(np.hstack((fts, sem_fts[klass, :])))
-
-        all_fts = np.array(all_fts)
+        mask = self._get_train_test_mask()
         inverse_mask = mask == False
 
-        return all_fts[mask], classes[mask], all_fts[inverse_mask], classes[inverse_mask]
+        all_fts, classes = super(CUB200Data, self).build_data()
 
-    @staticmethod
-    def save_files(base_path, x_train, y_train, x_test, y_test):
-        """
-        Saves sets data into files
-
-        @param base_path: string with base path to save files
-        @param x_train: numpy array with training set
-        @param y_train: list of classes
-        @param x_test: numpy array with test set
-        @param y_test: list of classes
-        @return: None
-        """
-        with open(path.join(base_path, 'birds_x_train.txt'), 'w+') as f:
-            for instance in x_train:
-                f.write(' '.join(list(map(str, instance))) + '\n')
-
-        with open(path.join(base_path, 'birds_x_test.txt'), 'w+') as f:
-            for instance in x_test:
-                f.write(' '.join(list(map(str, instance))) + '\n')
-
-        with open(path.join(base_path, 'birds_y_train.txt'), 'w+') as f:
-            f.write('\n'.join(list(map(str, y_train))))
-
-        with open(path.join(base_path, 'birds_y_test.txt'), 'w+') as f:
-            f.write('\n'.join(list(map(str, y_test))))
+        return all_fts[mask], all_fts[inverse_mask], classes[mask], classes[inverse_mask]
 
 
-class DataParser:
+class DataIO:
     @staticmethod
     def get_features(data_file):
         """
@@ -139,10 +198,8 @@ class DataParser:
         @param data_file: string with full path to data file
         @return: float numpy array of shape (X, Y) where X is the number of images and Y the number of attributes
         """
-        data = []
         with open(data_file) as f:
-            for line in f.readlines():
-                data.append(list(map(float, line.split())))
+            data = [list(map(float, line.split())) for line in f.readlines()]
         return np.array(data)
 
     @staticmethod
@@ -156,3 +213,30 @@ class DataParser:
         with open(labels_file) as f:
             labels = list(map(int, f.readlines()))
         return np.array(labels)
+
+    @staticmethod
+    def save_files(base_path, x_train, y_train, x_test, y_test, prefix):
+        """
+        Saves sets data into files
+
+        @param base_path: string with base path to save files
+        @param prefix: string with prefix to identify data set
+        @param x_train: numpy array with training set
+        @param y_train: list of classes
+        @param x_test: numpy array with test set
+        @param y_test: list of classes
+        @return: None
+        """
+        with open(path.join(base_path, '%s_x_train.txt' % prefix), 'w+') as f:
+            for instance in x_train:
+                f.write(' '.join(list(map(str, instance))) + '\n')
+
+        with open(path.join(base_path, '%s_x_test.txt' % prefix), 'w+') as f:
+            for instance in x_test:
+                f.write(' '.join(list(map(str, instance))) + '\n')
+
+        with open(path.join(base_path, '%s_y_train.txt' % prefix), 'w+') as f:
+            f.write('\n'.join(list(map(str, y_train))))
+
+        with open(path.join(base_path, '%s_y_test.txt' % prefix), 'w+') as f:
+            f.write('\n'.join(list(map(str, y_test))))

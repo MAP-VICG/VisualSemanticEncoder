@@ -12,7 +12,7 @@ Tests for module kerasextraction
 import unittest
 from os import path, sep, remove
 
-from featureextraction.src.dataparsing import BirdsData
+from featureextraction.src.dataparsing import CUB200Data
 from featureextraction.src.kerasextraction import ResNet50FeatureExtractor
 
 
@@ -23,7 +23,7 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         Initializes variables to be used in the tests
         """
         cls.base_path = path.join('mockfiles', 'CUB200')
-        cls.data = BirdsData(cls.base_path)
+        cls.data = CUB200Data(cls.base_path)
         cls.images_list = cls.data.get_images_list()
         cls.fts_file = 'birds_features.txt'
         cls.extractor = ResNet50FeatureExtractor(cls.images_list, path.join(cls.base_path, 'images'))

@@ -17,7 +17,7 @@ import time
 from utils.src.configparser import ConfigParser
 from utils.src.normalization import Normalization
 from utils.src.logwriter import LogWriter, MessageType
-from featureextraction.src.dataparsing import DataParser
+from featureextraction.src.dataparsing import DataIO
 from encoding.src.encoder import Autoencoder
 from encoding.src.plotter import Plotter
 
@@ -53,11 +53,11 @@ def main():
 
     try:
         # Read features
-        x_train = DataParser.get_features(config.x_train_path)
-        y_train = DataParser.get_labels(config.y_train_path)
+        x_train = DataIO.get_features(config.x_train_path)
+        y_train = DataIO.get_labels(config.y_train_path)
 
-        x_test = DataParser.get_features(config.x_test_path)
-        y_test = DataParser.get_labels(config.y_test_path)
+        x_test = DataIO.get_features(config.x_test_path)
+        y_test = DataIO.get_labels(config.y_test_path)
 
         # Normalize data
         Normalization.normalize_zero_one_by_column(x_train)
