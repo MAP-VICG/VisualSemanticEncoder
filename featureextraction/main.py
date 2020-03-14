@@ -27,13 +27,15 @@ def main():
 
     if data_type == 'CUB200':
         data = CUB200Data(src_dir)
+        print('Extracting data from CUB200')
     elif data_type == 'AWA2':
         data = AWA2Data(src_dir)
+        print('Extracting data from AWA2')
     else:
         raise ValueError('Wrong value for data set type. Please choose CUB200 or AWA2.')
 
     train_fts, train_class, test_fts, test_class = data.build_data()
-    DataIO.save_files(dst_dir, train_fts, train_class, test_fts, test_class)
+    DataIO.save_files(dst_dir, train_fts, train_class, test_fts, test_class, data_type)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
