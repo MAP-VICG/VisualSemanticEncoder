@@ -223,5 +223,5 @@ class Autoencoder:
         encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.model.fit(x_train, x_train, epochs=nepochs, batch_size=256, shuffle=True, verbose=1,
+        self.history = self.model.fit(x_train, x_train, epochs=nepochs, batch_size=128, shuffle=True, verbose=1,
                                       validation_split=0.2, callbacks=[classification])

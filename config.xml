@@ -5,8 +5,8 @@
 		<dataset>CUB200</dataset>
 	</general>
 	<autoencoder>
-		<epochs>50</epochs>
-		<ae_type>EXTENDED_VAE</ae_type>
+		<epochs>10</epochs>
+		<ae_type>EXTENDED_AE</ae_type>
 		<output_size>2360</output_size>
 		<encoding_size>128</encoding_size>
 	</autoencoder>
@@ -36,9 +36,9 @@
 	</baselines>
 	<paths>
 		<results_path>./_files/results/</results_path>
-		<x_train_path>../Datasets/CUB200/birds_x_train.txt</x_train_path>
-		<y_train_path>../Datasets/CUB200/birds_y_train.txt</y_train_path>
-		<x_test_path>../Datasets/CUB200/birds_x_test.txt</x_test_path>
-		<y_test_path>../Datasets/CUB200/birds_y_test.txt</y_test_path>
+		<x_train_path>../Datasets/CUB200/CUB200_x_train.txt</x_train_path>
+		<y_train_path>../Datasets/CUB200/CUB200_y_train.txt</y_train_path>
+		<x_test_path>../Datasets/CUB200/CUB200_x_test.txt</x_test_path>
+		<y_test_path>../Datasets/CUB200/CUB200_y_test.txt</y_test_path>
 	</paths>
 </SemanticEncoder>
