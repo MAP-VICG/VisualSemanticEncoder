@@ -215,7 +215,7 @@ class DataIO:
         return np.array(labels)
 
     @staticmethod
-    def save_files(base_path, x_train, y_train, x_test, y_test, prefix):
+    def save_files(base_path, x_train, x_test, y_train, y_test, prefix):
         """
         Saves sets data into files
 

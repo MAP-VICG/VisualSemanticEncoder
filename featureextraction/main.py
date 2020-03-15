@@ -34,8 +34,8 @@ def main():
     else:
         raise ValueError('Wrong value for data set type. Please choose CUB200 or AWA2.')
 
-    train_fts, train_class, test_fts, test_class = data.build_data()
-    DataIO.save_files(dst_dir, train_fts, train_class, test_fts, test_class, data_type)
+    train_fts, test_fts, train_class, test_class = data.build_data()
+    DataIO.save_files(dst_dir, train_fts, test_fts, train_class, test_class, data_type)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
