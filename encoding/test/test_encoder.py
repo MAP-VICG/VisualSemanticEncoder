@@ -1,7 +1,8 @@
 import unittest
+import numpy as np
 from os import path
 
-from featureextraction.src.dataparsing import DataParser
+from featureextraction.src.dataparsing import DataIO
 from encoding.src.encoder import ModelFactory, ModelType, Autoencoder
 
 
@@ -13,7 +14,7 @@ class ModelFactoryTests(unittest.TestCase):
         factory = ModelFactory(2048, 128, 2048)
         model = factory.simple_ae()
 
-        self.assertEqual([(None, 2048)], model.layers[0].input_shape)
+        self.assertEqual((None, 2048), model.layers[0].input_shape)
         self.assertEqual((None, 128), model.layers[4].output_shape)
         self.assertEqual((None, 2048), model.layers[-1].output_shape)
 
@@ -23,7 +24,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         model = ModelFactory(2048, 128, 2048)(ModelType.SIMPLE_AE)
 
-        self.assertEqual([(None, 2048)], model.get_layer('ae_input').input_shape)
+        self.assertEqual((None, 2048), model.get_layer('ae_input').input_shape)
         self.assertEqual((None, 128), model.get_layer('code').output_shape)
         self.assertEqual((None, 2048), model.get_layer('ae_output').output_shape)
 
@@ -34,10 +35,10 @@ class AutoencoderTests(unittest.TestCase):
         """
         Defines testing data
         """
-        cls.x_train = DataParser.get_features(path.join('mockfiles', 'birds_x_train.txt'))
-        cls.y_train = DataParser.get_labels(path.join('mockfiles', 'birds_y_train.txt'))
-        cls.x_test = DataParser.get_features(path.join('mockfiles', 'birds_x_test.txt'))
-        cls.y_test = DataParser.get_labels(path.join('mockfiles', 'birds_y_test.txt'))
+        cls.x_train = DataIO.get_features(path.join('mockfiles', 'CUB200_x_train.txt'))
+        cls.y_train = DataIO.get_labels(path.join('mockfiles', 'CUB200_y_train.txt'))
+        cls.x_test = DataIO.get_features(path.join('mockfiles', 'CUB200_x_test.txt'))
+        cls.y_test = DataIO.get_labels(path.join('mockfiles', 'CUB200_y_test.txt'))
 
     def test_define_classifier(self):
         """
@@ -63,6 +64,36 @@ class AutoencoderTests(unittest.TestCase):
 
         for i in range(5):
             self.assertTrue(0 <= ae.accuracies['train'][i] <= 1)
-            self.assertTrue(0 <= ae.accuracies['test'][i] <= 1)
-            self.assertTrue(0 <= ae.history.history['val_loss'][i] <= 1)
-            self.assertTrue(0 <= ae.history.history['loss'][i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['vis test'][i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['sem test'][i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['vs50 test'][i] <= 1)
+            self.assertTrue(0 <= ae.accuracies['vs100 test'][i] <= 1)
+            self.assertTrue(0 <= ae.history.history['val_loss'][i] <= 100)
+            self.assertTrue(0 <= ae.history.history['loss'][i] <= 100)
+
+    def test_kill_semantic_attributes(self):
+        """
+        Tests if semantic array is correctly destroyed
+        """
+        count = np.zeros(self.x_test.shape[0])
+        for i, example in enumerate(self.x_test):
+            for value in example:
+                if value == 0.1:
+                    count[i] += 1
+
+        new_data = Autoencoder.kill_semantic_attributes(self.x_test, 0.5)
+
+        new_data_count = np.zeros(self.x_test.shape[0])
+        for i, example in enumerate(new_data):
+            for value in example:
+                if value == 0.1:
+                    new_data_count[i] += 1
+
+        x_test_count = np.zeros(self.x_test.shape[0])
+        for i, example in enumerate(self.x_test):
+            for value in example:
+                if value == 0.1:
+                    x_test_count[i] += 1
+
+        self.assertTrue((x_test_count == count).all())
+        self.assertTrue((new_data_count == count + 156).all())

@@ -1,8 +1,10 @@
+import numpy as np
 from enum import Enum
 from keras.models import Model
 from keras.layers import Input, Dense, Dropout
 from keras.callbacks import LambdaCallback
 
+import random
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import balanced_accuracy_score
@@ -149,6 +151,26 @@ class Autoencoder:
         self.svm_model.fit(encoder.predict(x_train), y_train)
         self.model.save_weights(weights_path)
 
+    @staticmethod
+    def kill_semantic_attributes(data, rate):
+        """
+        Randomly sets to 0.1 a specific rate of the semantic attributes array
+
+        @param data: 2D numpy array with data
+        @param rate: float number from 0 to 1 specifying the rate of values to be set to 0.1
+        @return: 2D numpy array with new data set
+        """
+        num_sem_attrs = abs(data.shape[1] - 2048)
+
+        new_data = np.copy(data)
+        for ex in range(new_data.shape[0]):
+            mask = [False] * data.shape[1]
+            for idx in random.sample(range(2048, data.shape[1]), round(num_sem_attrs * rate)):
+                mask[idx] = True
+
+            new_data[ex, mask] = new_data[ex, mask] * 0 + 0.1
+        return new_data
+
     def run_ae_model(self, x_train, y_train, x_test, y_test, nepochs, nfolds=5, njobs=None):
         """
         Trains autoencoder and defines its best weights.
@@ -174,13 +196,28 @@ class Autoencoder:
             self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
 
             prediction = self.svm_model.predict(encoder.predict(x_test))
-            self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
+            self.accuracies['vs100 test'][epoch] = balanced_accuracy_score(prediction, y_test)
 
-            if self.accuracies['test'][epoch] > self.best_accuracy[0]:
-                self.best_accuracy = (self.accuracies['test'][epoch], epoch)
+            x_test_tmp = np.copy(x_test)
+            x_test_tmp[:, 2048:] = x_test_tmp[:, 2048:] * 0 + 0.1
+            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+            self.accuracies['vis test'][epoch] = balanced_accuracy_score(prediction, y_test)
+
+            x_test_tmp = np.copy(x_test)
+            x_test_tmp[:, :2048] = x_test_tmp[:, :2048] * 0 + 0.1
+            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+            self.accuracies['sem test'][epoch] = balanced_accuracy_score(prediction, y_test)
+
+            x_test_tmp = Autoencoder.kill_semantic_attributes(x_test, 0.5)
+            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+            self.accuracies['vs50 test'][epoch] = balanced_accuracy_score(prediction, y_test)
+
+            if self.accuracies['vs100 test'][epoch] > self.best_accuracy[0]:
+                self.best_accuracy = (self.accuracies['vs100 test'][epoch], epoch)
                 self.best_model_weights = self.model.get_weights()
 
-        self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs}
+        self.accuracies = {'train': [None] * nepochs, 'vs100 test': [None] * nepochs, 'vis test': [None] * nepochs,
+                           'sem test': [None] * nepochs, 'vs50 test': [None] * nepochs}
 
         self.define_classifier(x_train, y_train, nfolds, njobs)
         encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
