@@ -118,7 +118,7 @@ class Autoencoder:
         self.tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
         self.model = ModelFactory(input_length, encoding_length, output_length)(ae_type)
 
-    def define_classifier(self, x_train, y_train, nfolds=5, njobs=None):
+    def define_classifier(self, x_train, y_train, ae_type, nfolds=5, njobs=None):
         """
         Runs grid search on the SVM to define its best parameter for the given training data. These parameters
         are going to define the SVM classifier used in autoencoder's training.
@@ -133,11 +133,15 @@ class Autoencoder:
         svm_model = GridSearchCV(SVC(verbose=0, max_iter=1000, gamma='scale'), self.tuning_params, cv=nfolds,
                                  scoring='recall_macro', n_jobs=njobs)
 
-        svm_model.fit(x_train, y_train)
+        if ae_type == 'B0':
+            svm_model.fit(x_train[:, :2048], y_train)
+        else:
+            svm_model.fit(x_train, y_train)
+
         self.svm_best_parameters = svm_model.best_params_
         self.svm_model = svm_model.best_estimator_
 
-    def define_best_models(self, x_train, y_train, weights_path):
+    def define_best_models(self, x_train, y_train, weights_path, ae_type):
         """
         Saves configuration of the best model after training.
 
@@ -148,7 +152,11 @@ class Autoencoder:
         """
         self.model.set_weights(self.best_model_weights)
         encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
-        self.svm_model.fit(encoder.predict(x_train), y_train)
+
+        if ae_type == 'B0':
+            self.svm_model.fit(encoder.predict(x_train[:, :2048]), y_train)
+        else:
+            self.svm_model.fit(encoder.predict(x_train), y_train)
         self.model.save_weights(weights_path)
 
     @staticmethod
@@ -171,7 +179,7 @@ class Autoencoder:
             new_data[ex, mask] = new_data[ex, mask] * 0 + 0.1
         return new_data
 
-    def run_ae_model(self, x_train, y_train, x_test, y_test, nepochs, nfolds=5, njobs=None):
+    def run_ae_model(self, x_train, y_train, x_test, y_test, nepochs, ae_type, nfolds=5, njobs=None):
         """
         Trains autoencoder and defines its best weights.
 
@@ -180,6 +188,7 @@ class Autoencoder:
         @param x_test: 2D numpy array with test data
         @param y_test: 1D numpy array with labels
         @param nepochs: number of epochs
+        @param ae_type: type of AE
         @param nfolds: number of folds to be used in the SVM
         @param njobs: number of threads to be used in the SVM
         @return: None
@@ -191,37 +200,57 @@ class Autoencoder:
             @param epoch: default callback parameter. Epoch index.
             @param logs: default callback parameter. Loss result.
             """
-            self.svm_model.fit(encoder.predict(x_train), y_train)
-            prediction = self.svm_model.predict(encoder.predict(x_train))
-            self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
+            if ae_type == 'B0':
+                self.svm_model.fit(encoder.predict(x_train[:, :2048]), y_train)
+                prediction = self.svm_model.predict(encoder.predict(x_train[:, :2048]))
+                self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
 
-            prediction = self.svm_model.predict(encoder.predict(x_test))
-            self.accuracies['vs100 test'][epoch] = balanced_accuracy_score(prediction, y_test)
+                prediction = self.svm_model.predict(encoder.predict(x_test[:, :2048]))
+                self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
 
-            x_test_tmp = np.copy(x_test)
-            x_test_tmp[:, 2048:] = x_test_tmp[:, 2048:] * 0 + 0.1
-            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
-            self.accuracies['vis test'][epoch] = balanced_accuracy_score(prediction, y_test)
+            if ae_type in ('A1', 'A2'):
+                self.svm_model.fit(encoder.predict(x_train), y_train)
+                prediction = self.svm_model.predict(encoder.predict(x_train))
+                self.accuracies['train'][epoch] = balanced_accuracy_score(prediction, y_train)
 
-            x_test_tmp = np.copy(x_test)
-            x_test_tmp[:, :2048] = x_test_tmp[:, :2048] * 0 + 0.1
-            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
-            self.accuracies['sem test'][epoch] = balanced_accuracy_score(prediction, y_test)
+                prediction = self.svm_model.predict(encoder.predict(x_test))
+                self.accuracies['test'][epoch] = balanced_accuracy_score(prediction, y_test)
 
-            x_test_tmp = Autoencoder.kill_semantic_attributes(x_test, 0.5)
-            prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
-            self.accuracies['vs50 test'][epoch] = balanced_accuracy_score(prediction, y_test)
+                x_test_tmp = np.copy(x_test)
+                x_test_tmp[:, 2048:] = x_test_tmp[:, 2048:] * 0 + 0.1
+                prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+                self.accuracies['vis test'][epoch] = balanced_accuracy_score(prediction, y_test)
 
-            if self.accuracies['vs100 test'][epoch] > self.best_accuracy[0]:
-                self.best_accuracy = (self.accuracies['vs100 test'][epoch], epoch)
+                x_test_tmp = np.copy(x_test)
+                x_test_tmp[:, :2048] = x_test_tmp[:, :2048] * 0 + 0.1
+                prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+                self.accuracies['sem test'][epoch] = balanced_accuracy_score(prediction, y_test)
+
+            if ae_type == 'A1':
+                x_test_tmp = Autoencoder.kill_semantic_attributes(x_test, 0.5)
+                prediction = self.svm_model.predict(encoder.predict(x_test_tmp))
+                self.accuracies['vs50 test'][epoch] = balanced_accuracy_score(prediction, y_test)
+
+            if self.accuracies['test'][epoch] > self.best_accuracy[0]:
+                self.best_accuracy = (self.accuracies['test'][epoch], epoch)
                 self.best_model_weights = self.model.get_weights()
 
-        self.accuracies = {'train': [None] * nepochs, 'vs100 test': [None] * nepochs, 'vis test': [None] * nepochs,
-                           'sem test': [None] * nepochs, 'vs50 test': [None] * nepochs}
+        if ae_type == 'A1':
+            self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs, 'vis test': [None] * nepochs,
+                               'sem test': [None] * nepochs, 'vs50 test': [None] * nepochs}
+        elif ae_type == 'A2':
+            self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs, 'vis test': [None] * nepochs,
+                               'sem test': [None] * nepochs}
+        elif ae_type == 'B0':
+            self.accuracies = {'train': [None] * nepochs, 'test': [None] * nepochs}
 
-        self.define_classifier(x_train, y_train, nfolds, njobs)
+        self.define_classifier(x_train, y_train, ae_type, nfolds, njobs)
         encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
         classification = LambdaCallback(on_epoch_end=svm_callback)
 
-        self.history = self.model.fit(x_train, x_train, epochs=nepochs, batch_size=128, shuffle=True, verbose=1,
-                                      validation_split=0.2, callbacks=[classification])
+        if ae_type == 'B0':
+            self.history = self.model.fit(x_train[:, :2048], x_train, epochs=nepochs, batch_size=128, shuffle=True,
+                                          verbose=1, validation_split=0.2, callbacks=[classification])
+        else:
+            self.history = self.model.fit(x_train, x_train, epochs=nepochs, batch_size=128, shuffle=True, verbose=1,
+                                          validation_split=0.2, callbacks=[classification])
