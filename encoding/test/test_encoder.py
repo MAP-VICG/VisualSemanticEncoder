@@ -63,11 +63,11 @@ class AutoencoderTests(unittest.TestCase):
         self.assertIsNotNone(ae.best_model_weights)
 
         for i in range(5):
+            self.assertTrue(0 <= ae.accuracies['test'][i] <= 1)
             self.assertTrue(0 <= ae.accuracies['train'][i] <= 1)
             self.assertTrue(0 <= ae.accuracies['vis test'][i] <= 1)
             self.assertTrue(0 <= ae.accuracies['sem test'][i] <= 1)
             self.assertTrue(0 <= ae.accuracies['vs50 test'][i] <= 1)
-            self.assertTrue(0 <= ae.accuracies['vs100 test'][i] <= 1)
             self.assertTrue(0 <= ae.history.history['val_loss'][i] <= 100)
             self.assertTrue(0 <= ae.history.history['loss'][i] <= 100)
 

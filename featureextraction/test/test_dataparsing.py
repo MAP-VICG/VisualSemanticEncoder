@@ -136,7 +136,7 @@ class DataIOTests(unittest.TestCase):
         """
         cls.base_path = path.join('mockfiles', 'CUB200')
         cls.data = CUB200Data(cls.base_path)
-        train_fts, test_fts, train_class, test_class = cls.data.build_data()
+        train_fts, train_class, test_fts, test_class = cls.data.build_data()
         DataIO.save_files(cls.base_path, train_fts, train_class, test_fts, test_class, 'CUB200')
 
     def test_get_features(self):
@@ -159,7 +159,7 @@ class DataIOTests(unittest.TestCase):
         """
         Tests if files with data set data are saved
         """
-        train_fts, test_fts, train_class, test_class = self.data.build_data()
+        train_fts, train_class, test_fts, test_class = self.data.build_data()
         DataIO.save_files(self.base_path, train_fts, train_class, test_fts, test_class, 'CUB200')
 
         self.assertTrue(path.isfile(path.join(self.base_path, 'CUB200_x_train.txt')))

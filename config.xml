@@ -7,8 +7,12 @@
 	<autoencoder>
 		<epochs>10</epochs>
 		<ae_type>EXTENDED_AE</ae_type>
-		<output_size>2360</output_size>
-		<encoding_size>128</encoding_size>
+		<CUB200>
+			<encoding_size>312</encoding_size>
+		</CUB200>
+		<AWA2>
+			<encoding_size>85</encoding_size>
+		</AWA2>
 	</autoencoder>
 	<semantic_features>
 		<AWA2>
@@ -21,24 +25,27 @@
 				Great_Crested_Flycatcher</classes_names>
 		</CUB200>
 	</semantic_features>
-	<baselines>
+	<baseline>
 		<CUB200>
 			<vis>0.6151</vis>
-			<stk>0.0</stk>
-			<tnn>0.0</tnn>
-			<pca>
-				<c128>0.0</c128>
-				<c256>0.0</c256>
-				<c512>0.0</c512>
-				<c1024>0.0</c1024>
-			</pca>
 		</CUB200>
-	</baselines>
+		<AWA2>
+			<vis>0.92</vis>
+		</AWA2>
+	</baseline>
 	<paths>
 		<results_path>./_files/results/</results_path>
-		<x_train_path>../Datasets/CUB200/CUB200_x_train.txt</x_train_path>
-		<y_train_path>../Datasets/CUB200/CUB200_y_train.txt</y_train_path>
-		<x_test_path>../Datasets/CUB200/CUB200_x_test.txt</x_test_path>
-		<y_test_path>../Datasets/CUB200/CUB200_y_test.txt</y_test_path>
+		<CUB200>
+			<x_train_path>../Datasets/CUB200/CUB200_x_train.txt</x_train_path>
+			<y_train_path>../Datasets/CUB200/CUB200_y_train.txt</y_train_path>
+			<x_test_path>../Datasets/CUB200/CUB200_x_test.txt</x_test_path>
+			<y_test_path>../Datasets/CUB200/CUB200_y_test.txt</y_test_path>
+		</CUB200>
+		<AWA2>
+			<x_train_path>../Datasets/AWA2/AWA2_x_train.txt</x_train_path>
+			<y_train_path>../Datasets/AWA2/AWA2_y_train.txt</y_train_path>
+			<x_test_path>../Datasets/AWA2/AWA2_x_test.txt</x_test_path>
+			<y_test_path>../Datasets/AWA2/AWA2_y_test.txt</y_test_path>
+		</AWA2>
 	</paths>
 </SemanticEncoder>

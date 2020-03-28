@@ -28,7 +28,6 @@ class ConfigParser:
         self.epochs = 0
         self.console = False
         self.encoding_size = 0
-        self.output_size = 2048
         self.ae_type = None
 
         self.dataset = ''
@@ -41,7 +40,7 @@ class ConfigParser:
         self.classes_names = None
         self.chosen_classes = None
         self.configfile = configfile
-        self.baseline = {'vis': 0.0, 'stk': 0.0, 'tnn': 0.0, 'pca': 0.0}
+        self.baseline = {'vis': 0.0}
         
     def set_console_value(self, root):
         """
@@ -86,10 +85,6 @@ class ConfigParser:
                 self.ae_type = ModelType.EXTENDED_AE
             elif ae_type == ModelType.SIMPLE_AE.value:
                 self.ae_type = ModelType.SIMPLE_AE
-            elif ae_type == ModelType.SIMPLE_VAE.value:
-                self.ae_type = ModelType.SIMPLE_VAE
-            elif ae_type == ModelType.EXTENDED_VAE.value:
-                self.ae_type = ModelType.EXTENDED_VAE
             else:
                 raise ValueError('Invalid type of model chosen.')
         except AttributeError:
@@ -140,7 +135,7 @@ class ConfigParser:
         except AttributeError:
             raise AttributeError('Could not find "classes_names" node')
 
-    def set_baselines(self, root):
+    def set_baseline(self, root):
         """
         Reads XML looking for baselines node and sets its value
 
@@ -154,11 +149,8 @@ class ConfigParser:
             if not self.encoding_size and not isinstance(self.encoding_size, int):
                 raise ValueError('Encoding size tag must be set under autoencoder node')
 
-            path = 'baselines/%s/' % self.dataset
+            path = 'baseline/%s/' % self.dataset
             self.baseline['vis'] = float(root.find(path + 'vis').text)
-            self.baseline['stk'] = float(root.find(path + 'stk').text)
-            self.baseline['tnn'] = float(root.find(path + 'tnn').text)
-            self.baseline['pca'] = float(root.find(path + 'pca/c' + str(self.encoding_size)).text)
         except AttributeError:
             raise AttributeError('Could not find "baselines" node')
         
@@ -170,21 +162,9 @@ class ConfigParser:
         @return None
         """
         try:
-            self.encoding_size = int(root.find('autoencoder/encoding_size').text)
+            self.encoding_size = int(root.find('autoencoder/%s/encoding_size' % self.dataset).text)
         except AttributeError:
             raise AttributeError('Could not find "encoding_size" node')
-
-    def set_output_size(self, root):
-        """
-        Reads XML looking for output_size node and sets its value
-
-        @param root: XML root node
-        @return None
-        """
-        try:
-            self.output_size = int(root.find('autoencoder/output_size').text)
-        except AttributeError:
-            raise AttributeError('Could not find "output_size" node')
         
     def set_results_path(self, root): 
         """
@@ -208,7 +188,7 @@ class ConfigParser:
         @return None
         """
         try:
-            self.x_train_path = root.find('paths/x_train_path').text
+            self.x_train_path = root.find('paths/%s/x_train_path' % self.dataset).text
             self.x_train_path.replace('/', os.sep)
             self.x_train_path.replace('\\', os.sep)
         except AttributeError:
@@ -222,7 +202,7 @@ class ConfigParser:
         @return None
         """
         try:
-            self.y_train_path = root.find('paths/y_train_path').text
+            self.y_train_path = root.find('paths/%s/y_train_path' % self.dataset).text
             self.y_train_path.replace('/', os.sep)
             self.y_train_path.replace('\\', os.sep)
         except AttributeError:
@@ -236,7 +216,7 @@ class ConfigParser:
         @return None
         """
         try:
-            self.x_test_path = root.find('paths/x_test_path').text
+            self.x_test_path = root.find('paths/%s/x_test_path' % self.dataset).text
             self.x_test_path.replace('/', os.sep)
             self.x_test_path.replace('\\', os.sep)
         except AttributeError:
@@ -250,7 +230,7 @@ class ConfigParser:
         @return None
         """
         try:
-            self.y_test_path = root.find('paths/y_test_path').text
+            self.y_test_path = root.find('paths/%s/y_test_path' % self.dataset).text
             self.y_test_path.replace('/', os.sep)
             self.y_test_path.replace('\\', os.sep)
         except AttributeError:
@@ -268,18 +248,16 @@ class ConfigParser:
         self.set_dataset_name(root)
         self.set_console_value(root)
         self.set_autoencoder_type(root)
-
         self.set_num_epochs(root)
-        self.set_encoding_size(root)
-        self.set_output_size(root)
 
-        self.set_results_path(root)
-        self.set_x_train_path(root)
-        self.set_y_train_path(root)
-        self.set_x_test_path(root)
-        self.set_y_test_path(root)
-
-        if self.dataset and self.encoding_size:
-            self.set_baselines(root)
+        if self.dataset:
+            self.set_baseline(root)
+            self.set_encoding_size(root)
             self.set_chosen_classes(root)
             self.set_classes_names(root)
+
+            self.set_results_path(root)
+            self.set_x_train_path(root)
+            self.set_y_train_path(root)
+            self.set_x_test_path(root)
+            self.set_y_test_path(root)

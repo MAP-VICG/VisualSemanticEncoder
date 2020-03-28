@@ -51,7 +51,7 @@ class ConfigParserTests(unittest.TestCase):
         """
         Tests if the correct data set value was found
         """
-        self.assertEqual('awa2', self.parser.dataset)
+        self.assertEqual('AWA2', self.parser.dataset)
 
     def test_autoencoder_type(self):
         """
@@ -63,7 +63,7 @@ class ConfigParserTests(unittest.TestCase):
         """
         Tests if the correct baselines values were found
         """
-        self.assertEqual({'vis': 0.626, 'stk': 0.745, 'tnn': 0.0, 'pca': 0.031191}, self.parser.baseline)
+        self.assertEqual({'vis': 0.92}, self.parser.baseline)
 
     def test_num_epochs(self):
         """
@@ -75,13 +75,7 @@ class ConfigParserTests(unittest.TestCase):
         """
         Tests if the correct encoding size value was found
         """
-        self.assertEqual(128, self.parser.encoding_size)
-
-    def test_output_size(self):
-        """
-        Tests if the correct output size value was found
-        """
-        self.assertEqual(2048, self.parser.output_size)
+        self.assertEqual(85, self.parser.encoding_size)
 
     def test_results_path(self):
         """
@@ -93,25 +87,25 @@ class ConfigParserTests(unittest.TestCase):
         """
         Tests if the correct features path value was found
         """
-        self.assertEqual('../Datasets/Birds/features/birds_x_train.txt', self.parser.x_train_path)
+        self.assertEqual('../Datasets/AWA2/AWA2_x_train.txt', self.parser.x_train_path)
 
     def test_y_train_path(self):
         """
         Tests if the correct features path value was found
         """
-        self.assertEqual('../Datasets/Birds/features/birds_y_train.txt', self.parser.y_train_path)
+        self.assertEqual('../Datasets/AWA2/AWA2_y_train.txt', self.parser.y_train_path)
 
     def test_x_test_path(self):
         """
         Tests if the correct features path value was found
         """
-        self.assertEqual('../Datasets/Birds/features/birds_x_test.txt', self.parser.x_test_path)
+        self.assertEqual('../Datasets/AWA2/AWA2_x_test.txt', self.parser.x_test_path)
 
     def test_y_test_path(self):
         """
         Tests if the correct features path value was found
         """
-        self.assertEqual('../Datasets/Birds/features/birds_y_test.txt', self.parser.y_test_path)
+        self.assertEqual('../Datasets/AWA2/AWA2_y_test.txt', self.parser.y_test_path)
 
     def test_chosen_classes(self):
         """
