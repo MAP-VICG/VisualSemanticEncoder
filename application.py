@@ -9,113 +9,62 @@ Encodes visual and semantic features of images
     Institute of Mathematics and Computer Science (ICMC) 
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-import io
-import os
-import sys
 import time
-
+import numpy as np
+from scipy.io import loadmat
 from sklearn.preprocessing import normalize
 
-from utils.src.configparser import ConfigParser
-from utils.src.logwriter import LogWriter, MessageType
-from featureextraction.src.dataparsing import DataIO
-from encoding.src.encoder import Autoencoder
 from encoding.src.plotter import Plotter
-
-
-def run_ae(x_train, x_test, y_train, y_test, log, config):
-    """
-    Runs autoencoder training and validation and plots results
-
-    @param x_train: 2D numpy array with train data
-    @param x_test: 2D numpy array with test data
-    @param y_train: 1D numpy array with train labels
-    @param y_test: 1D numpy array with test labels
-    @param log: LogWriter object to print messages to log file
-    @param config: ConfigParser object with configuration parameters
-    """
-    # Normalize data
-    normalize(x_train, norm='l2', axis=1, copy=False)
-    normalize(x_test, norm='l2', axis=1, copy=False)
-
-    # Encode features
-    ae = Autoencoder(config.ae_type, x_train.shape[1], config.encoding_size, x_train.shape[1], config.baseline)
-    ae.run_ae_model(x_train, y_train, x_test, y_test, config.epochs, njobs=-1)
-
-    # Print results
-    log.write_message('SVM Best Accuracy %s' % str(ae.best_accuracy), MessageType.INF)
-    log.write_message('SVM Best Parameters %s' % str(ae.svm_best_parameters), MessageType.INF)
-    log.write_message('SVM Train Accuracies %s' % str(ae.accuracies['train']), MessageType.INF)
-    log.write_message('SVM Test Accuracies %s' % str(ae.accuracies['test']), MessageType.INF)
-
-    try:
-        log.write_message('AE Train Accuracies %s' % str(ae.history.history['acc']), MessageType.INF)
-        log.write_message('AE Validation Accuracies %s' % str(ae.history.history['val_acc']), MessageType.INF)
-        log.write_message('AE Best Accuracy %s' % str(max(ae.history.history['acc'])), MessageType.INF)
-    except KeyError:
-        pass
-
-    old_stdout = sys.stdout
-    sys.stdout = buffer = io.StringIO()
-    ae.model.summary()
-    log.write_message('Model summary \n\n%s' % buffer.getvalue(), MessageType.INF)
-    sys.stdout = old_stdout
-
-    # Save model
-    ae.define_best_models(x_train, y_train, os.path.join(config.results_path, 'ae_weights.h5'))
-
-    # Plot results
-    pt = Plotter(ae, config.results_path)
-    pt.plot_evaluation(x_test, y_test, config.baseline)
+from encoding.src.encoder import ModelFactory, ModelType
 
 
 def main():
     init_time = time.time()
-    
-    if len(sys.argv) > 1 and sys.argv[1] == '--config':
-        config_path = sys.argv[2]
+    data = 'cub'
+
+    if data == 'awa':
+        sem_length = 312
+        baseline = 0.614
+        cub = loadmat('../Datasets/SAE/cub_demo_data.mat')
+        x_train_vis = cub['X_tr']
+        x_train_sem = normalize(cub['S_tr'], norm='l2', axis=1, copy=True)
+
+        x_test_vis = cub['X_te']
+        labels_map = cub['S_te_pro']
+
+        testclasses_id = np.array([int(x) for x in cub['te_cl_id']])
+        test_labels = np.array([int(x) for x in cub['test_labels_cub']])
     else:
-        config_path = os.path.join(os.getcwd(), 'config.xml')
-        
-    config = ConfigParser(config_path)
-    config.read_configuration()
-    log = LogWriter(log_path=config.results_path, log_name='semantic_encoder', console=config.console)
+        sem_length = 85
+        baseline = 0.847
+        awa = loadmat('../Datasets/SAE/awa_demo_data.mat')
+        x_train_vis = awa['X_tr']
+        x_train_sem = normalize(awa['S_tr'], norm='l2', axis=1, copy=True)
 
-    # Print configuration details
-    log.write_message('Configuration file: %s' % str(config.configfile), MessageType.INF)
-    log.write_message('Data set: n %s' % str(config.dataset), MessageType.INF)
-    log.write_message('Results path: %s' % str(config.results_path), MessageType.INF)
-    log.write_message('Number of epochs: %s' % str(config.epochs), MessageType.INF)
-    log.write_message('Encoding size: %s' % str(config.encoding_size), MessageType.INF)
+        x_test_vis = awa['X_te']
+        labels_map = awa['S_te_gt']
 
-    log.write_message('x_train path is %s' % config.x_train_path, MessageType.INF)
-    log.write_message('y_train path is %s' % config.y_train_path, MessageType.INF)
-    log.write_message('x_test path is %s' % config.x_test_path, MessageType.INF)
-    log.write_message('y_test path is %s' % config.y_test_path, MessageType.INF)
+        testclasses_id = np.array([int(x) for x in awa['param']['testclasses_id'][0][0]])
+        test_labels = np.array([int(x) for x in awa['param']['test_labels'][0][0]])
 
-    log.write_message('Visual features baseline: %f' % config.baseline['vis'], MessageType.INF)
+    mapping = {value: idx for idx, value in enumerate(testclasses_id)}
+    x_test_sem = np.array([labels_map[mapping[label], :] for label in test_labels])
 
-    try:
-        # Read features
-        x_train = DataIO.get_features(config.x_train_path)
-        y_train = DataIO.get_labels(config.y_train_path)
+    ae = ModelFactory(1024, sem_length, sem_length)(ModelType.SEMANTIC_VAE)
+    ae.run_model(vis_fts=x_train_vis, sem_fts=x_train_sem, num_epochs=5, x_test_vis=x_test_vis,
+                 x_test_sem=x_test_sem, sem_length=sem_length,
+                 labels_map=labels_map, testclasses_id=testclasses_id, test_labels=test_labels)
 
-        x_test = DataIO.get_features(config.x_test_path)
-        y_test = DataIO.get_labels(config.y_test_path)
-
-        # Run AE
-        run_ae(x_train, x_test, y_train, y_test, log, config)
-
-        log.write_message('Execution has finished successfully', MessageType.INF)
-    except (IOError, FileNotFoundError) as e:
-        log.write_message('Could not read data set. %s' % str(e), MessageType.ERR)
+    pt = Plotter(ae, './_files/')
+    pt.plot_evaluation(baseline)
+    print(max(ae.zsl_accuracies))
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
     time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
 
-    log.write_message('Elapsed time is %s' % time_elapsed, MessageType.INF)
+    print('Elapsed time is %s' % time_elapsed)
     
     
 if __name__ == '__main__':

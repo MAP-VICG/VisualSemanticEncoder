@@ -28,16 +28,18 @@ lambda_ = .2
 param = Params(1, cub, 'cub')
 
 # Learn projection
-S_tr = ZSL.normalize_fea(np.array(cub['S_tr']))
+sem_atts_train = ZSL.kill_semantic_attributes(np.array(cub['S_tr']), 1)
+
+S_tr = ZSL.normalize_fea(sem_atts_train)
 W = ZSL.SAE(X_tr.transpose(), S_tr.transpose(), lambda_).transpose()
 
 # [F --> S], projecting data from feature space to semantic space
 S_te_est = X_te.dot(W)
 zsl_accuracy, _ = ZSL.zsl_el(S_te_est, cub['S_te_pro'], param, 'cub')
-print('\n[1] AwA ZSL accuracy [V >>> S]: %.1f%%\n' % (zsl_accuracy * 100))
+print('\n[1] CUB ZSL accuracy [V >>> S]: %.1f%%\n' % (zsl_accuracy * 100))
 
 # [S --> F], projecting from semantic to visual space
 X_te_pro = cub['S_te_pro'].dot(W.transpose())
 zsl_accuracy, _ = ZSL.zsl_el(X_te, X_te_pro, param, 'cub')
 
-print('[2] AwA ZSL accuracy [S >>> V]: %.1f%%\n' % (zsl_accuracy * 100))
+print('[2] CUB ZSL accuracy [S >>> V]: %.1f%%\n' % (zsl_accuracy * 100))

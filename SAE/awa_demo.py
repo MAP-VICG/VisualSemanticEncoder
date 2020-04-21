@@ -14,7 +14,12 @@ from utils import ZSL, Params
 awa = loadmat('../../Datasets/SAE/awa_demo_data.mat')
 
 X_tr = np.array(awa['X_tr'])
-S_tr = np.array(awa['S_tr'])
+S_tr = sem_atts_train = ZSL.kill_semantic_attributes(np.array(awa['S_tr']), 1)
+
+# with open('test.txt', 'w+') as f:
+#     for att in S_tr:
+#         f.write(' '.join(list(map(str, att))) + '\n')
+
 X_te = np.array(awa['X_te'])
 S_te_gt = np.array(awa['S_te_gt'])
 S_te_pro = np.array(awa['S_te_pro'])
