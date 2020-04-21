@@ -12,7 +12,7 @@ Tests for module dataparsing
 import unittest
 import numpy as np
 from os import path, remove
-from featureextraction.src.dataparsing import DataParser, CUB200Data, AWA2Data, DataIO
+from featureextraction.src.dataparsing import CUB200Data, AWA2Data, DataIO
 
 
 class AWA2DataTests(unittest.TestCase):
