@@ -26,7 +26,7 @@ A. Ponti, her teacher advisor.
 │   ├── test/
 │   │   ├── mockfiles/
 │   │   │   ├── AWA2/
-│   │   │   └── CUB200
+│   │   │   └── CUB200/
 │   │   ├── __init__.py
 │   │   ├── test_dataparsing.py
 │   │   └── test_imgftsextraction.py
