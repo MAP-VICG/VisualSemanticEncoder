@@ -8,7 +8,7 @@ The visual features are extracted using a convolutional neural network such as R
 features are acquired from attributes indicated by specialists that describe each class.
 
 Our approach proposes to merge the semantic and visual features in a single encoding with a condensed dimensionality. 
-This project contains several tests that were made thought our research, including simple image classification and 
+This project contains several tests that were made through our research, including simple image classification and 
 Zero Shot Learning classification. 
 
 The research is made by Damares Resende, a Computer Science Master Student from the University of São Paulo, and Moacir 
