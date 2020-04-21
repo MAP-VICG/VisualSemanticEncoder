@@ -1,5 +1,5 @@
 """
-Retrieves basic information about the Birds data set
+Retrieves basic information about the CUB200 and AwA2 data sets
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -11,9 +11,8 @@ Retrieves basic information about the Birds data set
 """
 import numpy as np
 from os import path, listdir, sep
-from sklearn.model_selection import train_test_split
 
-from featureextraction.src.kerasextraction import ResNet50FeatureExtractor
+from featureextraction.src.imgftsextraction import ResNet50FeatureExtractor
 
 
 class DataParser:
@@ -77,20 +76,19 @@ class DataParser:
         """
         Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
 
-        @return: data set with features, array with labels
+        @return: tuple with visual features, semantic features and classes
         """
         images = self.get_images_list()
         classes = self.get_images_class()
 
-        sem_fts = self.get_semantic_attributes()
+        sem_msk = self.get_semantic_attributes()
         vis_fts = self.get_visual_attributes(images)
 
-        all_fts = []
+        sem_fts = []
         for i, fts in enumerate(vis_fts):
-            klass = classes[i] - 1
-            all_fts.append(np.hstack((fts, sem_fts[klass, :])))
+            sem_fts.append(sem_msk[classes[i] - 1, :])
 
-        return np.array(all_fts), classes
+        return vis_fts, np.array(sem_fts), classes
 
 
 class AWA2Data(DataParser):
@@ -124,34 +122,12 @@ class AWA2Data(DataParser):
 
         return np.array(labels)
 
-    def build_data(self):
-        """
-        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
-
-        @return: training data, test data, training class id list, test class id list
-        """
-        all_fts, classes = super(AWA2Data, self).build_data()
-        return train_test_split(np.array(all_fts), classes, test_size=0.33, random_state=42)
-
 
 class CUB200Data(DataParser):
     def __init__(self, base_path):
         super(CUB200Data, self).__init__(base_path)
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'attributes', 'class_attribute_labels_continuous.txt')
-
-    def _get_train_test_mask(self):
-        """
-        Goes through the full list of images and creates a boolean mask to split data set into training and test sets,
-        where True indicates training set and False test set.
-
-        @return: integer 1D numpy array
-        """
-
-        with open(path.join(self.base_path, 'train_test_split.txt')) as f:
-            mask = [int(value.split()[1]) for value in f.readlines()]
-
-        return np.array(mask) == 1
 
     def _get_images_list(self):
         """
@@ -175,18 +151,18 @@ class CUB200Data(DataParser):
 
         return np.array(labels)
 
-    def build_data(self):
+    def get_train_test_mask(self):
         """
-        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
+        Goes through the full list of images and creates a boolean mask to split data set into training and test sets,
+        where True indicates training set and False test set. Then builds boolean arrays to mask data sets.
 
-        @return: training data, test data, training class id list, test class id list
+        @return: tuple with boolean arrays for training and test masks
         """
-        mask = self._get_train_test_mask()
-        inverse_mask = mask == False
 
-        all_fts, classes = super(CUB200Data, self).build_data()
+        with open(path.join(self.base_path, 'train_test_split.txt')) as f:
+            mask = [int(value.split()[1]) for value in f.readlines()]
 
-        return all_fts[mask], all_fts[inverse_mask], classes[mask], classes[inverse_mask]
+        return np.array(mask) == 1, np.array(mask) == 0
 
 
 class DataIO:
@@ -215,28 +191,39 @@ class DataIO:
         return np.array(labels)
 
     @staticmethod
-    def save_files(base_path, x_train, x_test, y_train, y_test, prefix):
+    def save_files(base_path, prefix, **kwargs):
         """
         Saves sets data into files
 
         @param base_path: string with base path to save files
         @param prefix: string with prefix to identify data set
-        @param x_train: numpy array with training set
-        @param y_train: list of classes
-        @param x_test: numpy array with test set
-        @param y_test: list of classes
+        @param kwargs: data sets
         @return: None
         """
-        with open(path.join(base_path, '%s_x_train.txt' % prefix), 'w+') as f:
-            for instance in x_train:
-                f.write(' '.join(list(map(str, instance))) + '\n')
+        if 'x_train_vis' in kwargs.keys():
+            with open(path.join(base_path, '%s_x_train_vis.txt' % prefix), 'w+') as f:
+                for instance in kwargs['x_train_vis']:
+                    f.write(' '.join(list(map(str, instance))) + '\n')
 
-        with open(path.join(base_path, '%s_x_test.txt' % prefix), 'w+') as f:
-            for instance in x_test:
-                f.write(' '.join(list(map(str, instance))) + '\n')
+        if 'x_train_sem' in kwargs.keys():
+            with open(path.join(base_path, '%s_x_train_sem.txt' % prefix), 'w+') as f:
+                for instance in kwargs['x_train_sem']:
+                    f.write(' '.join(list(map(str, instance))) + '\n')
 
-        with open(path.join(base_path, '%s_y_train.txt' % prefix), 'w+') as f:
-            f.write('\n'.join(list(map(str, y_train))))
+        if 'x_test_vis' in kwargs.keys():
+            with open(path.join(base_path, '%s_x_test_vis.txt' % prefix), 'w+') as f:
+                for instance in kwargs['x_test_vis']:
+                    f.write(' '.join(list(map(str, instance))) + '\n')
 
-        with open(path.join(base_path, '%s_y_test.txt' % prefix), 'w+') as f:
-            f.write('\n'.join(list(map(str, y_test))))
+        if 'x_test_sem' in kwargs.keys():
+            with open(path.join(base_path, '%s_x_test_sem.txt' % prefix), 'w+') as f:
+                for instance in kwargs['x_test_sem']:
+                    f.write(' '.join(list(map(str, instance))) + '\n')
+
+        if 'y_train' in kwargs.keys():
+            with open(path.join(base_path, '%s_y_train.txt' % prefix), 'w+') as f:
+                f.write('\n'.join(list(map(str, kwargs['y_train']))))
+
+        if 'y_test' in kwargs.keys():
+            with open(path.join(base_path, '%s_y_test.txt' % prefix), 'w+') as f:
+                f.write('\n'.join(list(map(str, kwargs['y_test']))))
