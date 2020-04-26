@@ -72,3 +72,21 @@ class ZSLTests(unittest.TestCase):
         w = ZSL.sae(x_tr.transpose(), s_tr.transpose(), .2).transpose()
 
         self.assertTrue((np.around(ref, decimals=5) == np.around(w, decimals=5)).all())
+
+    def test_zsl_el(self):
+        """
+        Tests if accuracy of Zero Shot Learning computed is the same as the expected one and if
+        the returned classes of 1NN is the same as the reference
+        """
+        data = loadmat('mockfiles/cub_demo_data.mat')
+        labels = list(map(int, data['train_labels_cub']))
+        s_tr = normalize(data['S_tr'], norm='l2', axis=1, copy=False)
+        x_tr, x_te = ZSL.dimension_reduction(data['X_tr'], data['X_te'], labels)
+        w = ZSL.sae(x_tr.transpose(), s_tr.transpose(), .2).transpose()
+        temp_labels = np.array([int(x) for x in data['te_cl_id']])
+        test_labels = np.array([int(x) for x in data['test_labels_cub']])
+        ref = loadmat('mockfiles/y_hit.mat')['Y_hit5']
+
+        acc, y_hit = ZSL.zsl_el(x_te.dot(w), data['S_te_pro'], test_labels, temp_labels, 1, z_score=True)
+        self.assertEqual(0.61405, np.around(acc, decimals=5))
+        self.assertTrue((ref == y_hit).all())

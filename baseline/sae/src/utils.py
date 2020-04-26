@@ -12,8 +12,10 @@ published in CVPR 2017. Code originally written in Matlab and is here transforme
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import numpy as np
+from scipy.stats import zscore
 from numpy.linalg import matrix_power
 from scipy.linalg import solve_sylvester
+from scipy.spatial.distance import cdist
 
 
 class ZSL:
@@ -103,3 +105,37 @@ class ZSL:
         c = (1 + lambda_) * sem_data.dot(vis_data.transpose())
 
         return solve_sylvester(a, b, c)
+
+    @staticmethod
+    def zsl_el(s_est, s_temp, test_labels, temp_labels, hit_k, z_score=False):
+        """
+        Compute distance between each sample estimated and the samples in the given template,
+        then compares the estimated class with it's true value and computes the classification
+        accuracy for the whole set.
+
+        :param s_est: estimated semantic data
+        :param s_temp: semantic data template
+        :param test_labels: data true classification
+        :param temp_labels: template labels
+        :param hit_k: number of close neighbors to take into account
+        :param z_score: if true, computes zscore of distance vector
+        :return: tuple with classification accuracy and hit_k distance
+        """
+        dist = 1 - (cdist(s_est, s_temp, metric='cosine'))
+        y_hit_k = np.zeros((dist.shape[0], hit_k))
+
+        if z_score:
+            dist = zscore(dist)
+
+        for i in range(dist.shape[0]):
+            prx = np.argsort(dist[i, :])
+            prx = [prx[x] for x in range(len(prx) - 1, 0, -1)]
+            y_hit_k[i, :] = temp_labels[prx[0:hit_k]]
+
+        n = 0
+        for i in range(dist.shape[0]):
+            if test_labels[i] in y_hit_k[i, :]:
+                n += 1
+        zsl_accuracy = n / dist.shape[0]
+
+        return zsl_accuracy, y_hit_k
