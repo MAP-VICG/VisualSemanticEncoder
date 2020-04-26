@@ -24,7 +24,7 @@ class ZSLTests(unittest.TestCase):
         Initializes variables to be used in the tests
         """
         cls.data = loadmat('mockfiles/cub_demo_data.mat')
-        cls.labels = list(map(int, loadmat('mockfiles/cub_demo_data.mat')['train_labels_cub']))
+        cls.labels = list(map(int, cls.data['train_labels_cub']))
 
     def test_sub2ind(self):
         """
