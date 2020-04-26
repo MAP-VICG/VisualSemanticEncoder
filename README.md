@@ -18,6 +18,21 @@ A. Ponti, her teacher advisor.
 
 ```buildoutcfg
 /SemanticEncoder/
+├── baseline/
+│   ├── sae/
+│   │   ├── src
+│   │   │   ├── __init__.py
+│   │   │   ├── awa_demo.py
+│   │   │   ├── cub_demo.py
+│   │   │   └── utils.py
+│   │   ├── test
+│   │   │   ├── mockfiles.py
+│   │   │   ├── __init__.py
+│   │   │   ├── test_awa_demo.py
+│   │   │   ├── test_cub_demo.py
+│   │   │   └── test_utils.py
+│   │   └── __init__.py
+│   └── __init__.py
 ├── featureextraction/
 │   ├── src/
 │   │   ├── __init__.py
