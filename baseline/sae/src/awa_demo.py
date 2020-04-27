@@ -28,6 +28,8 @@ class AWA:
         self.hit_k = 1
         self.lambda_ = 500000
         self.z_score = False
+        self.s_tr = None
+        self.w = None
 
         self.data = loadmat(data_path)
         self.temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
@@ -35,7 +37,21 @@ class AWA:
 
         self.x_tr = self._normalize(self.data['X_tr'].transpose()).transpose()
         self.x_te = np.array(self.data['X_te'])
-        self.w = self._compute_weights().transpose()
+
+    def set_semantic_data(self, sem_data=None):
+        """
+        Replaces the default semantic data by the given array if it has similar shape with the original one
+
+        :param sem_data: array of shape (8855, 312)
+        :return: None
+        """
+        if self.s_tr is None and sem_data is None:
+            self.s_tr = self.data['S_tr']
+        elif sem_data is not None:
+            if sem_data.shape == (24295, 85):
+                self.s_tr = sem_data
+            else:
+                raise ValueError('Data provided is invalid. It should be of shape (24295, 85)')
 
     def _compute_weights(self):
         """
@@ -43,7 +59,8 @@ class AWA:
 
         :return: a 2D numpy array with the matrix of weights computed
         """
-        return ZSL.sae(self.x_tr.transpose(), self.data['S_tr'].transpose(), self.lambda_).transpose()
+        self.set_semantic_data()
+        return ZSL.sae(self.x_tr.transpose(), self.s_tr.transpose(), self.lambda_).transpose()
 
     @staticmethod
     def _normalize(data):
@@ -65,6 +82,9 @@ class AWA:
 
         :return: float number with the accuracy of the ZSL classification
         """
+        if self.w is None:
+            self.w = self._compute_weights().transpose()
+
         s_est = self.x_te.dot(self._normalize(self.w).transpose())
         s_te_gt = self._normalize(self.data['S_te_gt'].transpose()).transpose()
         acc, _ = ZSL.zsl_el(s_est, s_te_gt, self.test_labels, self.temp_labels, self.hit_k, self.z_score)
@@ -79,6 +99,9 @@ class AWA:
 
         :return: float number with the accuracy of the ZSL classification
         """
+        if self.w is None:
+            self.w = self._compute_weights().transpose()
+
         x_te_pro = self._normalize(self.data['S_te_pro'].transpose()).transpose().dot(self._normalize(self.w))
         x_te_pro = self._normalize(x_te_pro.transpose()).transpose()
         acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.test_labels, self.temp_labels, self.hit_k, self.z_score)

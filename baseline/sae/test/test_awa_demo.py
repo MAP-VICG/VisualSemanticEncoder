@@ -23,6 +23,16 @@ class AWATests(unittest.TestCase):
         """
         cls.awa = AWA('../../Datasets/SAE/awa_demo_data.mat')
 
+    def test_set_semantic_data(self):
+        """
+        Tests if semantic data for training can be replaced
+        """
+        dummy_data = np.zeros((24295, 85))
+        dummy_awa = AWA('../../Datasets/SAE/awa_demo_data.mat')
+
+        dummy_awa.set_semantic_data(dummy_data)
+        self.assertEqual(0.08236, np.around(dummy_awa.v2s_projection(), decimals=5))
+
     def test_v2s_projection(self):
         """
         Tests if the returned accuracy is the expected one

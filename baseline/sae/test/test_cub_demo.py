@@ -23,6 +23,16 @@ class CUB200Tests(unittest.TestCase):
         """
         cls.cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
 
+    def test_set_semantic_data(self):
+        """
+        Tests if semantic data for training can be replaced
+        """
+        dummy_data = np.zeros((8855, 312))
+        dummy_cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+
+        dummy_cub.set_semantic_data(dummy_data)
+        self.assertEqual(0.02046, np.around(dummy_cub.v2s_projection(), decimals=5))
+
     def test_v2s_projection(self):
         """
         Tests if the returned accuracy is the expected one

@@ -28,6 +28,8 @@ class CUB200:
         self.hit_k = 1
         self.lambda_ = .2
         self.z_score = True
+        self.s_tr = None
+        self.w = None
 
         self.data = loadmat(data_path)
         self.temp_labels = np.array([int(x) for x in self.data['te_cl_id']])
@@ -35,7 +37,21 @@ class CUB200:
 
         labels = list(map(int, self.data['train_labels_cub']))
         self.x_tr, self.x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
-        self.w = self._compute_weights()
+
+    def set_semantic_data(self, sem_data=None):
+        """
+        Replaces the default semantic data by the given array if it has similar shape with the original one
+
+        :param sem_data: array of shape (8855, 312)
+        :return: None
+        """
+        if self.s_tr is None and sem_data is None:
+            self.s_tr = self.data['S_tr']
+        elif sem_data is not None:
+            if sem_data.shape == (8855, 312):
+                self.s_tr = sem_data
+            else:
+                raise ValueError('Data provided is invalid. It should be of shape (8855, 312)')
 
     def _compute_weights(self):
         """
@@ -43,7 +59,8 @@ class CUB200:
 
         :return: a 2D numpy array with the matrix of weights computed
         """
-        s_tr = normalize(self.data['S_tr'], norm='l2', axis=1, copy=False)
+        self.set_semantic_data()
+        s_tr = normalize(self.s_tr, norm='l2', axis=1, copy=False)
         return ZSL.sae(self.x_tr.transpose(), s_tr.transpose(), self.lambda_).transpose()
 
     def v2s_projection(self):
@@ -55,6 +72,9 @@ class CUB200:
 
         :return: float number with the accuracy of the ZSL classification
         """
+        if self.w is None:
+            self.w = self._compute_weights()
+
         x_te = self.x_te.dot(self.w)
         acc, _ = ZSL.zsl_el(x_te, self.data['S_te_pro'], self.test_labels, self.temp_labels, self.hit_k, self.z_score)
         return acc
@@ -68,6 +88,9 @@ class CUB200:
 
         :return: float number with the accuracy of the ZSL classification
         """
+        if self.w is None:
+            self.w = self._compute_weights()
+
         x_te_pro = self.data['S_te_pro'].dot(self.w.transpose())
         acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.test_labels, self.temp_labels, self.hit_k, self.z_score)
         return acc
