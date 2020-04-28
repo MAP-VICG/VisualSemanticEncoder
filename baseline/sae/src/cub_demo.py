@@ -38,6 +38,14 @@ class CUB200:
         labels = list(map(int, self.data['train_labels_cub']))
         self.x_tr, self.x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
 
+    def reset_weights(self):
+        """
+        Set w to None so it can be computed before calculating the feature space projection
+
+        :return: None
+        """
+        self.w = None
+
     def set_semantic_data(self, sem_data=None):
         """
         Replaces the default semantic data by the given array if it has similar shape with the original one

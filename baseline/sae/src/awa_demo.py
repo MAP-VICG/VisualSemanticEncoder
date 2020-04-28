@@ -38,6 +38,14 @@ class AWA:
         self.x_tr = self._normalize(self.data['X_tr'].transpose()).transpose()
         self.x_te = np.array(self.data['X_te'])
 
+    def reset_weights(self):
+        """
+        Set w to None so it can be computed before calculating the feature space projection
+
+        :return: None
+        """
+        self.w = None
+
     def set_semantic_data(self, sem_data=None):
         """
         Replaces the default semantic data by the given array if it has similar shape with the original one
