@@ -67,7 +67,6 @@ class AWA:
 
         :return: a 2D numpy array with the matrix of weights computed
         """
-        self.set_semantic_data()
         return ZSL.sae(self.x_tr.transpose(), self.s_tr.transpose(), self.lambda_).transpose()
 
     @staticmethod
@@ -118,5 +117,6 @@ class AWA:
 
 if __name__ == '__main__':
     awa = AWA('../../../../Datasets/SAE/awa_demo_data.mat')
+    awa.set_semantic_data()
     print('\n[1] AwA ZSL accuracy [V >>> S]: %.1f%%\n' % (awa.v2s_projection() * 100))
     print('[2] AwA ZSL accuracy [S >>> V]: %.1f%%\n' % (awa.s2v_projection() * 100))

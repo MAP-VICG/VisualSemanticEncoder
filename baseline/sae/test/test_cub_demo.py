@@ -22,6 +22,7 @@ class CUB200Tests(unittest.TestCase):
         Initializes variables to be used in the tests
         """
         cls.cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+        cls.cub.set_semantic_data()
 
     def test_set_semantic_data(self):
         """
@@ -38,11 +39,14 @@ class CUB200Tests(unittest.TestCase):
         Tests if weights can be properly reset so projection accuracy would change appropriately
         """
         dummy_cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+        dummy_cub.set_semantic_data()
+
         self.assertIsNone(dummy_cub.w)
         self.assertEqual(0.61405, np.around(dummy_cub.v2s_projection(), decimals=5))
 
         dummy_cub.reset_weights()
         self.assertIsNone(dummy_cub.w)
+
         dummy_data = np.zeros((8855, 312))
         dummy_cub.set_semantic_data(dummy_data)
         self.assertEqual(0.02046, np.around(dummy_cub.v2s_projection(), decimals=5))

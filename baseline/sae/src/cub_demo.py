@@ -67,7 +67,6 @@ class CUB200:
 
         :return: a 2D numpy array with the matrix of weights computed
         """
-        self.set_semantic_data()
         s_tr = normalize(self.s_tr, norm='l2', axis=1, copy=False)
         return ZSL.sae(self.x_tr.transpose(), s_tr.transpose(), self.lambda_).transpose()
 
@@ -106,5 +105,6 @@ class CUB200:
 
 if __name__ == '__main__':
     cub = CUB200('../../../../Datasets/SAE/cub_demo_data.mat')
+    cub.set_semantic_data()
     print('\n[1] CUB ZSL accuracy [V >>> S]: %.1f%%\n' % (cub.v2s_projection() * 100))
     print('[2] CUB ZSL accuracy [S >>> V]: %.1f%%\n' % (cub.s2v_projection() * 100))
