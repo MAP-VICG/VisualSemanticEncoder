@@ -124,7 +124,7 @@ class SemanticDegradation:
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)-15s %(message)s'
-    FILENAME = 'semantic_degradation.log'
+    FILENAME = '../../../plotter/data/semantic_degradation.log'
     logging.basicConfig(filename=FILENAME, format=FORMAT, filemode='a', level=logging.DEBUG)
     logger = logging.getLogger('SemanticDegradation')
 
