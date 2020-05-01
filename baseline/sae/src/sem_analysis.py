@@ -134,9 +134,9 @@ if __name__ == '__main__':
         logger.info('Evaluating AWA')
         sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 10, key_value, 'awa', verbose=True)
         sem.degrade_semantic_data()
-        sem.write2json('awa_v2s_projection_%s.json' % str(key_value))
+        sem.write2json('../../../plotter/data/awa_v2s_projection_%s.json' % str(key_value))
 
         logger.info('Evaluating CUB200')
         sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 10, key_value, 'cub', verbose=True)
         sem.degrade_semantic_data()
-        sem.write2json('cub_v2s_projection_%s.json' % str(key_value))
+        sem.write2json('../../../plotter/data/cub_v2s_projection_%s.json' % str(key_value))
