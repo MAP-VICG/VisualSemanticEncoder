@@ -82,8 +82,8 @@ class CUB200:
         if self.w is None:
             self.w = self._compute_weights()
 
-        x_te = self.x_te.dot(self.w)
-        acc, _ = ZSL.zsl_el(x_te, self.data['S_te_pro'], self.test_labels, self.temp_labels, self.hit_k, self.z_score)
+        s_est = self.x_te.dot(self.w)
+        acc, _ = ZSL.zsl_el(s_est, self.data['S_te_pro'], self.test_labels, self.temp_labels, self.hit_k, self.z_score)
         return acc
 
     def s2v_projection(self):
