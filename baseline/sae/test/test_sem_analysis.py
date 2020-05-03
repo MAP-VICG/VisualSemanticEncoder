@@ -1,8 +1,7 @@
 import unittest
 import numpy as np
 
-from ..src.cub_demo import CUB200
-from ..src.sem_analysis import kill_semantic_attributes
+from ..src.sem_analysis import SemanticDegradation
 
 
 class SemanticAnalysisTests(unittest.TestCase):
@@ -12,7 +11,8 @@ class SemanticAnalysisTests(unittest.TestCase):
         """
         rate = 0.5
         new_value = -9999
-        sem_data = CUB200('../../Datasets/SAE/cub_demo_data.mat').data['S_tr']
+        sd = SemanticDegradation('../../Datasets/SAE/cub_demo_data.mat', 10, new_value, 'cub')
+        sem_data = sd.data.data['S_tr']
 
         # reference
         count = np.zeros(sem_data.shape[0])
@@ -21,7 +21,7 @@ class SemanticAnalysisTests(unittest.TestCase):
                 if value == new_value:
                     count[i] += 1
 
-        new_data = kill_semantic_attributes(sem_data, rate, new_value)
+        new_data = sd.kill_semantic_attributes(sem_data, rate)
 
         # to check if new array changes
         new_data_count = np.zeros(sem_data.shape[0])
@@ -47,7 +47,8 @@ class SemanticAnalysisTests(unittest.TestCase):
         """
         rate = 0.75
         new_value = -9999
-        sem_data = CUB200('../../Datasets/SAE/cub_demo_data.mat').data['S_tr']
+        sd = SemanticDegradation('../../Datasets/SAE/cub_demo_data.mat', 10, new_value, 'cub')
+        sem_data = sd.data.data['S_tr']
 
         # reference
         count = np.zeros(sem_data.shape[0])
@@ -56,7 +57,7 @@ class SemanticAnalysisTests(unittest.TestCase):
                 if value == new_value:
                     count[i] += 1
 
-        new_data = kill_semantic_attributes(sem_data, rate, new_value)
+        new_data = sd.kill_semantic_attributes(sem_data, rate)
 
         # to check if new array changes
         new_data_count = np.zeros(sem_data.shape[0])
@@ -82,7 +83,8 @@ class SemanticAnalysisTests(unittest.TestCase):
         """
         rate = 0.25
         new_value = -9999
-        sem_data = CUB200('../../Datasets/SAE/cub_demo_data.mat').data['S_tr']
+        sd = SemanticDegradation('../../Datasets/SAE/cub_demo_data.mat', 10, new_value, 'cub')
+        sem_data = sd.data.data['S_tr']
 
         # reference
         count = np.zeros(sem_data.shape[0])
@@ -91,7 +93,7 @@ class SemanticAnalysisTests(unittest.TestCase):
                 if value == new_value:
                     count[i] += 1
 
-        new_data = kill_semantic_attributes(sem_data, rate, new_value)
+        new_data = sd.kill_semantic_attributes(sem_data, rate)
 
         # to check if new array changes
         new_data_count = np.zeros(sem_data.shape[0])
