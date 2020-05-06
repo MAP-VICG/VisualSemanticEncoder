@@ -157,7 +157,7 @@ if __name__ == '__main__':
             acc[rate]['params']['C'] = ', '.join(list(map(str, acc[rate]['params']['C'])))
 
         json_string = json.dumps(acc)
-        with open('%s_svm_classification_%s.json' % tag, 'w+') as f:
+        with open('%s_svm_classification_%s.json' % (tag, str(key_value)), 'w+') as f:
             json.dump(json_string, f)
 
     # svm = SVMClassification('cub')
