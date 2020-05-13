@@ -1,8 +1,12 @@
 import json
 import random
 import numpy as np
+from sklearn.svm import SVC
 from scipy.io import loadmat
 from sklearn.preprocessing import normalize
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import balanced_accuracy_score
 
 from baseline.sae.src.utils import ZSL
 
@@ -17,20 +21,6 @@ class SemanticDegradation:
         self.data_type = data_type
         self.new_value = new_value
         self.data = loadmat(datafile)
-
-        if data_type == 'awa':
-            self.z_score = False
-            self.temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
-            self.test_labels = np.array([int(x) for x in self.data['param']['test_labels'][0][0]])
-            self.s_te_pro = normalize(self.data['S_te_pro'].transpose(), norm='l2', axis=1, copy=True).transpose()
-        elif data_type == 'cub':
-            self.z_score = True
-            self.temp_labels = np.array([int(x) for x in self.data['te_cl_id']])
-            self.test_labels = np.array([int(x) for x in self.data['test_labels_cub']])
-            self.s_te_pro = self.data['S_te_pro']
-
-            labels = list(map(int, self.data['train_labels_cub']))
-            self.data['X_tr'], self.data['X_te'] = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
 
         if new_value is None:
             self.limits = (np.min(self.data['S_tr']), np.max(self.data['S_tr']))
@@ -80,23 +70,42 @@ class SemanticDegradation:
 
         return new_data
 
-    def degrade_semantic_data(self, n_folds):
+    def structure_data_zsl(self):
+        if self.data_type == 'awa':
+            temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
+            test_labels = np.array([int(x) for x in self.data['param']['test_labels'][0][0]])
+            s_te_pro = normalize(self.data['S_te_pro'].transpose(), norm='l2', axis=1, copy=True).transpose()
+
+            return temp_labels, test_labels, s_te_pro, False
+
+        elif self.data_type == 'cub':
+            temp_labels = np.array([int(x) for x in self.data['te_cl_id']])
+            test_labels = np.array([int(x) for x in self.data['test_labels_cub']])
+            s_te_pro = self.data['S_te_pro']
+
+            labels = list(map(int, self.data['train_labels_cub']))
+            self.data['X_tr'], self.data['X_te'] = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
+
+            return temp_labels, test_labels, s_te_pro, True
+
+    def degrade_semantic_data_zsl(self, n_folds):
         """
         Randomly replaces the values of the semantic array for a new value specified and runs SAE over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
 
-        :return: None
+        :return: acc_dict
         """
         rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in rates}
+        temp_labels, test_labels, s_te_pro, z_score = self.structure_data_zsl()
 
         for rate in rates:
             for j in range(n_folds):
                 s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
                 s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
 
-                acc, _ = ZSL.zsl_el(s_te, self.s_te_pro, self.test_labels, self.temp_labels, 1, self.z_score)
+                acc, _ = ZSL.zsl_el(s_te, s_te_pro, test_labels, temp_labels, 1, z_score)
                 acc_dict[rate]['acc'][j] = acc
 
             acc_dict[rate]['mean'] = np.mean(acc_dict[rate]['acc'])
@@ -104,6 +113,65 @@ class SemanticDegradation:
             acc_dict[rate]['max'] = np.max(acc_dict[rate]['acc'])
             acc_dict[rate]['min'] = np.min(acc_dict[rate]['acc'])
             acc_dict[rate]['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+
+        return acc_dict
+
+    def structure_data_svm(self):
+        """
+        Loads data and structures it in a unique set of semantic data, visual data and labels so
+        SVM can be applied.
+
+        :return: tuple with arrays for semantic data, visual data and labels
+        """
+        if self.data_type == 'awa':
+            y_tr = self.data['param']['train_labels'][0][0]
+            y_te = self.data['param']['test_labels'][0][0]
+            attr_id = self.data['param']['testclasses_id'][0][0]
+            x_tr, x_te = self.data['X_tr'], self.data['X_te']
+        elif self.data_type == 'cub':
+            y_tr = self.data['train_labels_cub']
+            y_te = self.data['test_labels_cub']
+            attr_id = self.data['te_cl_id']
+            x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], list(map(int, y_tr)))
+        else:
+            raise ValueError('Unknown type of data')
+
+        labels_dict = {attr_id[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
+        s_te = np.array([labels_dict[label[0]] for label in y_te])
+
+        return np.vstack((self.data['S_tr'], s_te)), np.vstack((x_tr, x_te)), np.vstack((y_tr, y_te))[:, 0]
+
+    def degrade_semantic_data_svm(self, n_folds):
+        rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0, 'C': []} for key in rates}
+        sem_data, vis_data, labels = self.structure_data_svm()
+        tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
+
+        for rate in rates:
+            skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+            for train_index, test_index in skf.split(sem_data, labels):
+                x_train = sem_data[train_index]
+                x_test = self.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index])
+                y_train, y_test = labels[train_index], labels[test_index]
+
+                svm_model = GridSearchCV(SVC(gamma='scale'), tuning_params, scoring='recall_macro', n_jobs=-1)
+                svm_model.fit(x_train, y_train)
+
+                svm_acc = []
+                for _ in range(n_folds):
+                    prediction = svm_model.best_estimator_.predict(self.kill_semantic_attributes(x_test, rate))
+                    svm_acc.append(balanced_accuracy_score(prediction, y_test))
+
+                acc_dict[rate]['acc'].append(np.mean(np.array(svm_acc)))
+                acc_dict[rate]['C'].append(svm_model.best_params_['C'])
+
+            acc_dict[rate]['acc'] = np.array(acc_dict[rate]['acc'])
+            acc_dict[rate]['mean'] = np.mean(acc_dict[rate]['acc'])
+            acc_dict[rate]['std'] = np.std(acc_dict[rate]['acc'])
+            acc_dict[rate]['max'] = np.max(acc_dict[rate]['acc'])
+            acc_dict[rate]['min'] = np.min(acc_dict[rate]['acc'])
+            acc_dict[rate]['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+            acc_dict[rate]['C'] = ', '.join(list(map(str, acc_dict[rate]['C'])))
 
         return acc_dict
 
@@ -123,7 +191,9 @@ class SemanticDegradation:
 
 if __name__ == '__main__':
     sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa')
-    sem.write2json(sem.degrade_semantic_data(n_folds=10), '../../../plotter/data/awa_v2s_projection_random.json')
+    # sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), '../../../plotter/data/awa_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), '../../../plotter/data/awa_svm_classification_random.json')
 
     sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub')
-    sem.write2json(sem.degrade_semantic_data(n_folds=10), '../../../plotter/data/cub_v2s_projection_random.json')
+    # sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), '../../../plotter/data/cub_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), '../../../plotter/data/cub_svm_classification_random.json')
