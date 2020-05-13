@@ -13,7 +13,7 @@ import unittest
 import numpy as np
 from scipy.io import loadmat
 
-from baseline.sae.src.svm_analysis import SVMClassification
+from baseline.sae._discontinued.svm_analysis import SVMClassification
 
 
 class SVMClassificationTests(unittest.TestCase):

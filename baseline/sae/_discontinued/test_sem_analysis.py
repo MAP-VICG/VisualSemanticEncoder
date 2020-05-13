@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from ..src.sem_analysis import SemanticDegradation
+from baseline.sae._discontinued.sem_analysis import SemanticDegradation
 
 
 class SemanticAnalysisTests(unittest.TestCase):
