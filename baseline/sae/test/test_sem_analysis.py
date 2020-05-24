@@ -124,14 +124,6 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual(new_data.shape, sem_data.shape)
         self.assertTrue((new_data_count == count + round(sem_data.shape[1] * rate)).all())
 
-    def test_estimate_semantic_data_awa(self):
-        """
-        Tests if semantic data is correctly estimated by comparing it with awa_demo results
-        """
-        svm = SemanticDegradation('mockfiles/awa_sae_data.mat', 'awa', new_value=0)
-        sem_data = svm.estimate_semantic_data(svm.data['x_tr'], svm.data['s_tr'], svm.data['x_te'])
-        self.assertTrue((np.round(svm.data['s_est'], decimals=4) == np.round(sem_data, decimals=4)).all())
-
     def test_estimate_semantic_data_cub(self):
         """
         Tests if semantic data is correctly estimated by comparing it with cub_demo results
