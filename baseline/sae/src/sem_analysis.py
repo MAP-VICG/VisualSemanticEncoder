@@ -1,3 +1,16 @@
+"""
+Computes the accuracy of zero shot learning classification and SVM classification
+for AWA and CUB data sets. Semantic data is degraded to analyse its importance for
+the classifications.
+
+@author: Damares Resende
+@contact: damaresresende@usp.br
+@since: May 23, 2020
+
+@organization: University of Sao Paulo (USP)
+    Institute of Mathematics and Computer Science (ICMC)
+    Laboratory of Visualization, Imaging and Computer Graphics (VICG)
+"""
 import json
 import random
 import numpy as np
@@ -12,18 +25,28 @@ from baseline.sae.src.utils import ZSL
 
 
 class SemanticDegradation:
-    def __init__(self, datafile, data_type, new_value=None):
+    def __init__(self, datafile, data_type, new_value=None, rates=None):
         """
+        Initializes control variables
 
-        :param data_type:
+        :param datafile: string with path of data to load
+        :param data_type: string to specify type of data: awa or cub
         :param new_value: real value to replace to. If not specified, a random value will be chosen
+        :param rates: list of rates to test. Values must range from 0 to 1
         """
         self.data_type = data_type
         self.new_value = new_value
         self.data = loadmat(datafile)
 
+        if rates is None:
+            self.rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        else:
+            self.rates = rates
+
         if new_value is None:
             self.limits = (np.min(self.data['S_tr']), np.max(self.data['S_tr']))
+        else:
+            self.limits = None
 
     def estimate_semantic_data(self, vis_tr_data, sem_tr_data, vis_te_data):
         """
@@ -71,6 +94,13 @@ class SemanticDegradation:
         return new_data
 
     def structure_data_zsl(self):
+        """
+        Sets data of template labels, test labels, template semantic data and z_score flag
+        according to the specified type of data to calculate SAE according to its original
+        algorithm.
+
+        :return: tuple with emp_labels, test_labels, s_te_pro and z_score
+        """
         if self.data_type == 'awa':
             temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
             test_labels = np.array([int(x) for x in self.data['param']['test_labels'][0][0]])
@@ -94,13 +124,13 @@ class SemanticDegradation:
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
 
-        :return: acc_dict
+        :param n_folds: number of folds to use in cross validation
+        :return: dictionary with classification accuracy for each fold
         """
-        rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-        acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in rates}
+        acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
         temp_labels, test_labels, s_te_pro, z_score = self.structure_data_zsl()
 
-        for rate in rates:
+        for rate in self.rates:
             for j in range(n_folds):
                 s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
                 s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
@@ -118,8 +148,8 @@ class SemanticDegradation:
 
     def structure_data_svm(self):
         """
-        Loads data and structures it in a unique set of semantic data, visual data and labels so
-        SVM can be applied.
+        Loads data and structures it in a unique set of semantic data, visual data and labels,
+        so SVM can be applied.
 
         :return: tuple with arrays for semantic data, visual data and labels
         """
@@ -142,12 +172,19 @@ class SemanticDegradation:
         return np.vstack((self.data['S_tr'], s_te)), np.vstack((x_tr, x_te)), np.vstack((y_tr, y_te))[:, 0]
 
     def degrade_semantic_data_svm(self, n_folds):
-        rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0, 'C': []} for key in rates}
+        """
+        Trains SVM classifier using grid search and k-fold cross validation. Test data is
+        randomly replaced by a random value. The amount of data replaced varies from 0 to 100%
+        according to the specified rate.
+
+        :param n_folds: number of folds to use in cross validation
+        :return: dictionary with classification accuracy for each fold
+        """
+        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0, 'C': []} for key in self.rates}
         sem_data, vis_data, labels = self.structure_data_svm()
         tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
 
-        for rate in rates:
+        for rate in self.rates:
             skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
             for train_index, test_index in skf.split(sem_data, labels):
                 x_train = sem_data[train_index]
@@ -191,9 +228,9 @@ class SemanticDegradation:
 
 if __name__ == '__main__':
     sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa')
-    # sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), '../../../plotter/data/awa_v2s_projection_random.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), '../../../plotter/data/awa_svm_classification_random.json')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random.json')
 
     sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub')
-    # sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), '../../../plotter/data/cub_v2s_projection_random.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), '../../../plotter/data/cub_svm_classification_random.json')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random.json')
