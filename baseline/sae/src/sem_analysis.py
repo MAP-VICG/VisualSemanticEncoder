@@ -154,13 +154,13 @@ class SemanticDegradation:
         :return: tuple with arrays for semantic data, visual data and labels
         """
         if self.data_type == 'awa':
-            y_tr = self.data['param']['train_labels'][0][0]
-            y_te = self.data['param']['test_labels'][0][0]
-            attr_id = self.data['param']['testclasses_id'][0][0]
+            y_tr = self.data['train_labels'][0]
+            y_te = self.data['test_labels'][0]
+            attr_id = self.data['testclasses_id'][0]
             x_tr, x_te = self.data['X_tr'], self.data['X_te']
         elif self.data_type == 'cub':
-            y_tr = self.data['train_labels_cub']
-            y_te = self.data['test_labels_cub']
+            y_tr = self.data['train_labels_cub'][0]
+            y_te = self.data['test_labels_cub'][0]
             attr_id = self.data['te_cl_id']
             x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], list(map(int, y_tr)))
         else:
@@ -227,10 +227,10 @@ class SemanticDegradation:
 
 
 if __name__ == '__main__':
-    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa')
-    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random.json')
+    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data_resnet.mat', 'awa')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random_resnet.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random_resnet.json')
 
-    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub')
-    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random.json')
+    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data_resnet.mat', 'cub')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random_resnet.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random_resnet.json')
