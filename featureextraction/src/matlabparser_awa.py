@@ -39,7 +39,9 @@ for lb in test_labels:
 
 S_te_pro = np.array(S_te_pro)
 
-data = {'test_labels': test_labels_awa, 'train_labels': train_labels_awa, 'X_tr': X_tr,
-        'X_te': X_te, 'S_tr': S_tr, 'S_te': S_te, 'testclasses_id': test_labels, 'S_te_pro': S_te_pro}
+data = {'S_te_gt': S_te_pro, 'S_te_pro': S_te_pro, 'S_tr': S_tr, 'X_te': X_te, 'X_tr': X_tr,
+        'param': {'testclasses_id': np.expand_dims(np.array(test_labels), axis=1),
+                  'test_labels': np.expand_dims(np.array(test_labels_awa), axis=1),
+                  'train_labels': np.expand_dims(np.array(train_labels_awa), axis=1)}}
 
 savemat('../../../Datasets/SAE/awa_demo_data_resnet.mat', data)

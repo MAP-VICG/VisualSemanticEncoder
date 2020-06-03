@@ -2,11 +2,9 @@
 Computes the accuracy of zero shot learning classification and SVM classification
 for AWA and CUB data sets. Semantic data is degraded to analyse its importance for
 the classifications.
-
 @author: Damares Resende
 @contact: damaresresende@usp.br
 @since: May 23, 2020
-
 @organization: University of Sao Paulo (USP)
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
@@ -28,7 +26,6 @@ class SemanticDegradation:
     def __init__(self, datafile, data_type, new_value=None, rates=None):
         """
         Initializes control variables
-
         :param datafile: string with path of data to load
         :param data_type: string to specify type of data: awa or cub
         :param new_value: real value to replace to. If not specified, a random value will be chosen
@@ -51,7 +48,6 @@ class SemanticDegradation:
     def estimate_semantic_data(self, vis_tr_data, sem_tr_data, vis_te_data):
         """
         Trains SAE and applies it to visual data in order to estimate its correspondent semantic data
-
         :param vis_tr_data: visual training data
         :param sem_tr_data: semantic training data
         :param vis_te_data: visual test data
@@ -71,7 +67,6 @@ class SemanticDegradation:
     def kill_semantic_attributes(self, data, rate):
         """
         Randomly sets to new_value a specific rate of the semantic attributes
-
         :param data: 2D numpy array with semantic data
         :param rate: float number from 0 to 1 specifying the rate of values to be replaced
         :return: 2D numpy array with new data set
@@ -98,7 +93,6 @@ class SemanticDegradation:
         Sets data of template labels, test labels, template semantic data and z_score flag
         according to the specified type of data to calculate SAE according to its original
         algorithm.
-
         :return: tuple with emp_labels, test_labels, s_te_pro and z_score
         """
         if self.data_type == 'awa':
@@ -123,7 +117,6 @@ class SemanticDegradation:
         Randomly replaces the values of the semantic array for a new value specified and runs SAE over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
-
         :param n_folds: number of folds to use in cross validation
         :return: dictionary with classification accuracy for each fold
         """
@@ -150,17 +143,16 @@ class SemanticDegradation:
         """
         Loads data and structures it in a unique set of semantic data, visual data and labels,
         so SVM can be applied.
-
         :return: tuple with arrays for semantic data, visual data and labels
         """
         if self.data_type == 'awa':
-            y_tr = self.data['train_labels'][0]
-            y_te = self.data['test_labels'][0]
-            attr_id = self.data['testclasses_id'][0]
+            y_tr = self.data['param']['train_labels'][0][0]
+            y_te = self.data['param']['test_labels'][0][0]
+            attr_id = self.data['param']['testclasses_id'][0][0]
             x_tr, x_te = self.data['X_tr'], self.data['X_te']
         elif self.data_type == 'cub':
-            y_tr = self.data['train_labels_cub'][0]
-            y_te = self.data['test_labels_cub'][0]
+            y_tr = self.data['train_labels_cub']
+            y_te = self.data['test_labels_cub']
             attr_id = self.data['te_cl_id']
             x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], list(map(int, y_tr)))
         else:
@@ -176,7 +168,6 @@ class SemanticDegradation:
         Trains SVM classifier using grid search and k-fold cross validation. Test data is
         randomly replaced by a random value. The amount of data replaced varies from 0 to 100%
         according to the specified rate.
-
         :param n_folds: number of folds to use in cross validation
         :return: dictionary with classification accuracy for each fold
         """
@@ -216,7 +207,6 @@ class SemanticDegradation:
     def write2json(acc_dict, filename):
         """
         Writes data from accuracy dictionary to JSON file
-
         :param acc_dict: dict with classification accuracies
         :param filename: string with name of file to write data to
         :return: None
@@ -227,10 +217,10 @@ class SemanticDegradation:
 
 
 if __name__ == '__main__':
-    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data_resnet.mat', 'awa')
-    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random_resnet.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random_resnet.json')
+    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random.json')
 
-    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data_resnet.mat', 'cub')
-    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random_resnet.json')
-    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random_resnet.json')
+    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub')
+    sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random.json')
+    sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random.json')
