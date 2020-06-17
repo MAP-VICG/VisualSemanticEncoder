@@ -18,22 +18,28 @@ from sklearn.preprocessing import normalize
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
+from autoencoder.src.autoencoder import Autoencoder, ModelType
 
 from baseline.sae.src.utils import ZSL
 
 
 class SemanticDegradation:
-    def __init__(self, datafile, data_type, new_value=None, rates=None):
+    def __init__(self, datafile, data_type, new_value=None, rates=None, ae_type='sae', epochs=50):
         """
         Initializes control variables
+
         :param datafile: string with path of data to load
         :param data_type: string to specify type of data: awa or cub
         :param new_value: real value to replace to. If not specified, a random value will be chosen
         :param rates: list of rates to test. Values must range from 0 to 1
+        :param ae_type: type of autoencoder: sae or se
+        :param epochs: number of epochs to use in training of AE of type se
         """
         self.data_type = data_type
         self.new_value = new_value
         self.data = loadmat(datafile)
+        self.ae_type = ae_type
+        self.epochs = epochs
 
         if rates is None:
             self.rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
@@ -48,6 +54,7 @@ class SemanticDegradation:
     def estimate_semantic_data(self, vis_tr_data, sem_tr_data, vis_te_data):
         """
         Trains SAE and applies it to visual data in order to estimate its correspondent semantic data
+
         :param vis_tr_data: visual training data
         :param sem_tr_data: semantic training data
         :param vis_te_data: visual test data
@@ -67,6 +74,7 @@ class SemanticDegradation:
     def kill_semantic_attributes(self, data, rate):
         """
         Randomly sets to new_value a specific rate of the semantic attributes
+
         :param data: 2D numpy array with semantic data
         :param rate: float number from 0 to 1 specifying the rate of values to be replaced
         :return: 2D numpy array with new data set
@@ -93,6 +101,7 @@ class SemanticDegradation:
         Sets data of template labels, test labels, template semantic data and z_score flag
         according to the specified type of data to calculate SAE according to its original
         algorithm.
+
         :return: tuple with emp_labels, test_labels, s_te_pro and z_score
         """
         if self.data_type == 'awa':
@@ -117,6 +126,7 @@ class SemanticDegradation:
         Randomly replaces the values of the semantic array for a new value specified and runs SAE over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
+
         :param n_folds: number of folds to use in cross validation
         :return: dictionary with classification accuracy for each fold
         """
@@ -126,7 +136,30 @@ class SemanticDegradation:
         for rate in self.rates:
             for j in range(n_folds):
                 s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
-                s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
+
+                if self.ae_type == 'sae':
+                    s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
+                elif self.ae_type == 'se':
+                    if self.data_type == 'awa':
+                        labels = self.data['param']['testclasses_id'][0][0]
+                        train_labels = self.data['param']['train_labels'][0][0]
+
+                        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
+                        sem_data = np.array([labels_dict[label[0]] for label in self.data['param']['test_labels'][0][0]])
+                    elif self.data_type == 'cub':
+                        labels = self.data['te_cl_id']
+                        train_labels = self.data['train_labels_cub']
+
+                        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
+                        sem_data = np.array([labels_dict[label[0]] for label in self.data['test_labels_cub']])
+                    else:
+                        raise ValueError('Invalid type of data')
+
+                    input_length = output_length = self.data['X_tr'].shape[1] + self.data['S_tr'].shape[1]
+                    ae = Autoencoder(input_length, self.data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
+                    s_te = ae.estimate_semantic_data(self.data['X_tr'], self.data['S_tr'], self.data['X_te'], sem_data, train_labels)
+                else:
+                    raise ValueError('Invalid type of autoencoder')
 
                 acc, _ = ZSL.zsl_el(s_te, s_te_pro, test_labels, temp_labels, 1, z_score)
                 acc_dict[rate]['acc'][j] = acc
@@ -143,6 +176,7 @@ class SemanticDegradation:
         """
         Loads data and structures it in a unique set of semantic data, visual data and labels,
         so SVM can be applied.
+
         :return: tuple with arrays for semantic data, visual data and labels
         """
         if self.data_type == 'awa':
@@ -168,6 +202,7 @@ class SemanticDegradation:
         Trains SVM classifier using grid search and k-fold cross validation. Test data is
         randomly replaced by a random value. The amount of data replaced varies from 0 to 100%
         according to the specified rate.
+
         :param n_folds: number of folds to use in cross validation
         :return: dictionary with classification accuracy for each fold
         """
@@ -179,9 +214,17 @@ class SemanticDegradation:
             skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
             for train_index, test_index in skf.split(sem_data, labels):
                 x_train = sem_data[train_index]
-                x_test = self.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index])
-                y_train, y_test = labels[train_index], labels[test_index]
 
+                if self.ae_type == 'sae':
+                    x_test = self.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index])
+                elif self.ae_type == 'se':
+                    input_length = output_length = vis_data.shape[1] + sem_data.shape[1]
+                    ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
+                    x_test = ae.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index], sem_data[test_index], labels[train_index])
+                else:
+                    raise ValueError('Invalid type of autoencoder')
+
+                y_train, y_test = labels[train_index], labels[test_index]
                 svm_model = GridSearchCV(SVC(gamma='scale'), tuning_params, scoring='recall_macro', n_jobs=-1)
                 svm_model.fit(x_train, y_train)
 
@@ -207,6 +250,7 @@ class SemanticDegradation:
     def write2json(acc_dict, filename):
         """
         Writes data from accuracy dictionary to JSON file
+
         :param acc_dict: dict with classification accuracies
         :param filename: string with name of file to write data to
         :return: None
@@ -217,10 +261,10 @@ class SemanticDegradation:
 
 
 if __name__ == '__main__':
-    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa')
+    sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', data_type='awa', ae_type='se', epochs=50)
     sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random.json')
     sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random.json')
 
-    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub')
+    sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', data_type='cub', ae_type='se', epochs=50)
     sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random.json')
     sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random.json')
