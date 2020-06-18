@@ -12,7 +12,7 @@ Retrieves basic information about the CUB200 and AwA2 data sets
 import numpy as np
 from os import path, listdir, sep
 
-from featureextraction.src.imgftsextraction import ResNet50FeatureExtractor
+from featureextraction.src.fetureextraction import ResNet50FeatureExtractor
 
 
 class DataParser:

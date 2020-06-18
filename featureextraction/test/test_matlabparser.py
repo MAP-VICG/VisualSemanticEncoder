@@ -21,21 +21,11 @@ class MatlabParserTests(unittest.TestCase):
         """
         Loads data
         """
-        cls.awa_prs = Parser('awa')
-        x_vis = '../../../Datasets/AWA2/AWA2_x_vis.txt'
-        x_sem = '../../../Datasets/AWA2/AWA2_x_sem.txt'
-        y = '../../../Datasets/AWA2/AWA2_y.txt'
-        cls.awa_vis_data, cls.awa_sem_data, cls.awa_labels = cls.awa_prs.load_awa_data(x_vis, x_sem, y)
+        cls.awa_prs = Parser('AWA2')
+        cls.awa_vis_data, cls.awa_sem_data, cls.awa_labels = cls.awa_prs.load_data('../../../Datasets/AWA2/')
 
-        cls.cub_prs = Parser('cub')
-        tr_vis = '../../../Datasets/CUB200/CUB200_x_train_vis.txt'
-        te_vis = '../../../Datasets/CUB200/CUB200_x_test_vis.txt'
-        tr_sem = '../../../Datasets/CUB200/CUB200_x_train_sem.txt'
-        te_sem = '../../../Datasets/CUB200/CUB200_x_test_sem.txt'
-        tr_y = '../../../Datasets/CUB200/CUB200_y_train.txt'
-        te_y = '../../../Datasets/CUB200/CUB200_y_test.txt'
-        cls.cub_vis_data, cls.cub_sem_data, cls.cub_labels = cls.cub_prs.load_cub_data(tr_vis, te_vis, tr_sem, te_sem,
-                                                                                       tr_y, te_y)
+        cls.cub_prs = Parser('CUB200')
+        cls.cub_vis_data, cls.cub_sem_data, cls.cub_labels = cls.cub_prs.load_data('../../../Datasets/CUB200/')
 
         cls.template_cub = loadmat('../../../Datasets/SAE/cub_demo_data.mat')
         cls.template_awa = loadmat('../../../Datasets/SAE/awa_demo_data.mat')
@@ -122,30 +112,21 @@ class MatlabParserTests(unittest.TestCase):
         """
         Tests if data loaded is in the expected shape for awa
         """
-        awa_prs = Parser('awa')
-        x_vis = '../../../Datasets/AWA2/AWA2_x_vis.txt'
-        x_sem = '../../../Datasets/AWA2/AWA2_x_sem.txt'
-        y = '../../../Datasets/AWA2/AWA2_y.txt'
-        awa_vis_data, awa_sem_data, awa_labels = awa_prs.load_awa_data(x_vis, x_sem, y)
-        self.assertEqual((37322, 2048), awa_vis_data.shape)
-        self.assertEqual((37322, 85), awa_sem_data.shape)
-        self.assertEqual((37322,), awa_labels.shape)
+        prs = Parser('AWA2')
+        vis_data, sem_data, labels = prs.load_data('../../../Datasets/AWA2/')
+        self.assertEqual((37322, 2048), vis_data.shape)
+        self.assertEqual((37322, 85), sem_data.shape)
+        self.assertEqual((37322,), labels.shape)
 
     def test_load_cub(self):
         """
         Tests if data loaded is in the expected shape for cub
         """
-        cub_prs = Parser('cub')
-        tr_vis = '../../../Datasets/CUB200/CUB200_x_train_vis.txt'
-        te_vis = '../../../Datasets/CUB200/CUB200_x_test_vis.txt'
-        tr_sem = '../../../Datasets/CUB200/CUB200_x_train_sem.txt'
-        te_sem = '../../../Datasets/CUB200/CUB200_x_test_sem.txt'
-        tr_y = '../../../Datasets/CUB200/CUB200_y_train.txt'
-        te_y = '../../../Datasets/CUB200/CUB200_y_test.txt'
-        cub_vis_data, cub_sem_data, cub_labels = cub_prs.load_cub_data(tr_vis, te_vis, tr_sem, te_sem, tr_y, te_y)
-        self.assertEqual((11788, 2048), cub_vis_data.shape)
-        self.assertEqual((11788, 312), cub_sem_data.shape)
-        self.assertEqual((11788,), cub_labels.shape)
+        prs = Parser('CUB200')
+        vis_data, sem_data, labels = prs.load_data('../../../Datasets/CUB200/')
+        self.assertEqual((11788, 2048), vis_data.shape)
+        self.assertEqual((11788, 312), sem_data.shape)
+        self.assertEqual((11788,), labels.shape)
 
     def test_build_semantic_matrix_cub(self):
         """

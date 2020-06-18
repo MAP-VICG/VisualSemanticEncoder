@@ -13,7 +13,7 @@ import unittest
 from os import path, sep, remove
 
 from featureextraction.src.dataparsing import CUB200Data
-from featureextraction.src.imgftsextraction import ResNet50FeatureExtractor
+from featureextraction.src.fetureextraction import ResNet50FeatureExtractor
 
 
 class ResNet50FeatureExtractorTest(unittest.TestCase):
