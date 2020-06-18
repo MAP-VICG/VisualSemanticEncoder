@@ -37,16 +37,18 @@ A. Ponti, her teacher advisor.
 │   ├── src/
 │   │   ├── __init__.py
 │   │   ├── dataparsing.py
-│   │   └── imgftsextraction.py
+│   │   ├── featureextraction.py
+│   │   └── matlabparser.py
 │   ├── test/
 │   │   ├── mockfiles/
 │   │   │   ├── AWA2/
 │   │   │   └── CUB200/
 │   │   ├── __init__.py
 │   │   ├── test_dataparsing.py
-│   │   └── test_imgftsextraction.py
+│   │   ├── test_featureextraction.py
+│   │   └── test_matlabparser.py
 │   ├── __init__.py
-│   └── main.py
+│   └── extractfeatures.py
 ├── README.md
 ├── requirements_local.txt
 └── requirements_server.txt
