@@ -11,6 +11,7 @@ degradation rate analyzed.
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import json
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -33,18 +34,31 @@ def plot_accuracy(data_path, label):
         y.append(data[str(rate)]['mean'])
         err.append(data[str(rate)]['std'])
 
-    plt.errorbar(degradation_rates, y, yerr=err, label=label)
+    plt.errorbar(np.array(degradation_rates) * 100, y, yerr=err, label=label)
 
 
 fig = plt.figure()
-plt.ylabel('Accuracy')
-plt.xlabel('Degradation Rate of Semantic Data')
-plt.title('Accuracy analysis for ZSL and SVM Classification')
 
-plot_accuracy(data_path='../data/awa_v2s_projection_random.json', label='awa_zsl')
-plot_accuracy(data_path='../data/cub_v2s_projection_random.json', label='cub_zsl')
-plot_accuracy(data_path='../data/awa_svm_classification_random.json', label='awa_svm')
-plot_accuracy(data_path='../data/cub_svm_classification_random.json', label='cub_svm')
+plt.subplot(121)
+plot_accuracy(data_path='../data/awa_v2s_projection_random.json', label='g_awa_zsl')
+plot_accuracy(data_path='../data/cub_v2s_projection_random.json', label='g_cub_zsl')
+plot_accuracy(data_path='../data/awa_v2s_projection_random_resnet.json', label='r_awa_zsl')
+plot_accuracy(data_path='../data/cub_v2s_projection_random_resnet.json', label='r_cub_zsl')
+plt.ylabel('Accuracy')
+plt.xlabel('Degradation Rate (%)')
+plt.title('ZSL Classification')
+
+plt.legend(loc='upper right')
+plt.tight_layout()
+
+plt.subplot(122)
+plot_accuracy(data_path='../data/awa_svm_classification_random.json', label='g_awa_svm')
+plot_accuracy(data_path='../data/cub_svm_classification_random.json', label='g_cub_svm')
+plot_accuracy(data_path='../data/awa_svm_classification_random_resnet.json', label='r_awa_svm')
+plot_accuracy(data_path='../data/cub_svm_classification_random_resnet.json', label='r_cub_svm')
+plt.ylabel('Accuracy')
+plt.xlabel('Degradation Rate (%)')
+plt.title('SVM Classification')
 
 plt.legend(loc='upper right')
 plt.tight_layout()
