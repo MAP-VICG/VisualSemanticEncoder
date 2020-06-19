@@ -1,5 +1,5 @@
 """
-Computes the enconded space for SAE and SEC for AWA2 and CUB200 data sets. Uses k fold cross validation
+Computes the encoded space for SAE and SEC for AWA2 and CUB200 data sets. Uses k fold cross validation
 to evaluate results. Accuracies are captured for ZSL and SVM classifications.
 
 @author: Damares Resende
