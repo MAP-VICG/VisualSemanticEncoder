@@ -139,7 +139,7 @@ class SemanticDegradation:
 
                 if self.ae_type == 'sae':
                     s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
-                elif self.ae_type == 'se':
+                elif self.ae_type == 'sec':
                     if self.data_type == 'awa':
                         labels = self.data['param']['testclasses_id'][0][0]
                         train_labels = self.data['param']['train_labels'][0][0]
@@ -217,7 +217,7 @@ class SemanticDegradation:
 
                 if self.ae_type == 'sae':
                     x_test = self.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index])
-                elif self.ae_type == 'se':
+                elif self.ae_type == 'sec':
                     input_length = output_length = vis_data.shape[1] + sem_data.shape[1]
                     ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
                     x_test = ae.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index], sem_data[test_index], labels[train_index])
