@@ -18,18 +18,34 @@ A. Ponti, her teacher advisor.
 
 ```buildoutcfg
 /SemanticEncoder/
-├── baseline/
+├── encoders/
 │   ├── sae/
 │   │   ├── src
 │   │   │   ├── __init__.py
 │   │   │   ├── awa_demo.py
-│   │   │   ├── cub_demo.py
-│   │   │   └── utils.py
+│   │   │   └── cub_demo.py
 │   │   ├── test
-│   │   │   ├── mockfiles.py
 │   │   │   ├── __init__.py
 │   │   │   ├── test_awa_demo.py
-│   │   │   ├── test_cub_demo.py
+│   │   │   └── test_cub_demo.py
+│   │   └── __init__.py
+│   ├── sec/
+│   │   ├── src
+│   │   │   ├── __init__.py
+│   │   │   └── autoencoder.py
+│   │   ├── test
+│   │   │   ├── __init__.py
+│   │   │   └── test_autoencoder.py
+│   │   └── __init__.py
+│   ├── tools/
+│   │   ├── src
+│   │   │   ├── __init__.py
+│   │   │   ├── sem_analysis.py
+│   │   │   └── utils.py
+│   │   ├── test
+│   │   │   ├── mockfiles
+│   │   │   ├── __init__.py
+│   │   │   ├── test_sem_analysis.py
 │   │   │   └── test_utils.py
 │   │   └── __init__.py
 │   └── __init__.py
@@ -58,4 +74,9 @@ A. Ponti, her teacher advisor.
 
 The application feature extraction parses the semantic features of AwA2 and CUB 200 data sets and runs ResNet 50 to 
 extract each set visual features.   
-      
+     
+### Encoders
+
+The application encodes semantic features and analyzes space formed for Zero Shot Learning classification and 
+SVM classification. SAE is the baseline project, published by Elyor Kodirov, Tao Xiang, and Shaogang Gong in the 
+paper "Semantic Autoencoder for Zero-shot Learning". SEEC is the proposed solution. 
