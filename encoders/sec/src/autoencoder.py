@@ -105,7 +105,7 @@ class Autoencoder:
         self.epochs = epochs
         self.model = ModelFactory(input_length, encoding_length, output_length)(ae_type)
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
-        self.history = {'loss': [], 'val_loss': [], 'acc': [], 'best_accuracy': [], 'best_model_weights': []}
+        self.history = {'loss': [], 'val_loss': [], 'acc': [], 'best_accuracy': [], 'best_model_weights': [], 'best_loss': []}
 
     def _fit(self, tr_vis_data, tr_sem_data, tr_labels):
         """
@@ -123,12 +123,18 @@ class Autoencoder:
             prediction = clf.predict(self.encoder.predict(x_train))
             accuracies[epoch] = balanced_accuracy_score(prediction, tr_labels)
 
+            if logs['loss'] < self.history['best_loss'][-1][0]:
+                self.history['best_loss'][-1] = (logs['loss'], epoch)
+                self.history['best_model_weights'][-1] = self.model.get_weights()
+            elif logs['loss'] == self.history['best_loss'][-1][0] and accuracies[epoch] > self.history['best_accuracy'][-1][0]:
+                self.history['best_model_weights'][-1] = self.model.get_weights()
+
             if accuracies[epoch] > self.history['best_accuracy'][-1][0]:
                 self.history['best_accuracy'][-1] = (accuracies[epoch], epoch)
-                self.history['best_model_weights'][-1] = self.model.get_weights()
 
         self.history['best_accuracy'].append((0, 0))
         self.history['best_model_weights'].append(None)
+        self.history['best_loss'].append((float('inf'), 0))
         accuracies = np.zeros(self.epochs)
 
         x_train = np.hstack((tr_vis_data, tr_sem_data))
@@ -157,4 +163,5 @@ class Autoencoder:
         self.model.set_weights(self.history['best_model_weights'][-1])
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
-        return self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))
+        return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
+               self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))

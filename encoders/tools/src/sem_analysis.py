@@ -14,8 +14,9 @@ import random
 import numpy as np
 from sklearn.svm import SVC
 from scipy.io import loadmat
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import normalize
-from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 from encoders.sec.src.autoencoder import Autoencoder, ModelType
@@ -183,19 +184,17 @@ class SemanticDegradation:
             y_tr = self.data['param']['train_labels'][0][0]
             y_te = self.data['param']['test_labels'][0][0]
             attr_id = self.data['param']['testclasses_id'][0][0]
-            x_tr, x_te = self.data['X_tr'], self.data['X_te']
         elif self.data_type == 'cub':
             y_tr = self.data['train_labels_cub']
             y_te = self.data['test_labels_cub']
             attr_id = self.data['te_cl_id']
-            x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], list(map(int, y_tr)))
         else:
             raise ValueError('Unknown type of data')
 
         labels_dict = {attr_id[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
         s_te = np.array([labels_dict[label[0]] for label in y_te])
 
-        return np.vstack((self.data['S_tr'], s_te)), np.vstack((x_tr, x_te)), np.vstack((y_tr, y_te))[:, 0]
+        return np.vstack((self.data['S_tr'], s_te)), np.vstack((self.data['X_tr'], self.data['X_te'])), np.vstack((y_tr, y_te))[:, 0]
 
     def degrade_semantic_data_svm(self, n_folds):
         """
@@ -206,43 +205,43 @@ class SemanticDegradation:
         :param n_folds: number of folds to use in cross validation
         :return: dictionary with classification accuracy for each fold
         """
-        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0, 'C': []} for key in self.rates}
+        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
         sem_data, vis_data, labels = self.structure_data_svm()
-        tuning_params = {'kernel': ['linear'], 'C': [0.5, 1, 5, 10]}
 
         for rate in self.rates:
             skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
             for train_index, test_index in skf.split(sem_data, labels):
-                x_train = sem_data[train_index]
+                if self.data_type == 'cub':
+                    tr_vis, te_vis = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], list(map(int, labels[train_index])))
+                else:
+                    tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
 
                 if self.ae_type == 'sae':
-                    x_test = self.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index])
+                    x_train = sem_data[train_index]
+                    x_test = self.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis)
                 elif self.ae_type == 'sec':
-                    input_length = output_length = vis_data.shape[1] + sem_data.shape[1]
+                    input_length = output_length = tr_vis.shape[1] + sem_data.shape[1]
                     ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
-                    x_test = ae.estimate_semantic_data(vis_data[train_index], sem_data[train_index], vis_data[test_index], sem_data[test_index], labels[train_index])
+                    x_train, x_test = ae.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis, sem_data[test_index], labels[train_index])
                 else:
                     raise ValueError('Invalid type of autoencoder')
 
                 y_train, y_test = labels[train_index], labels[test_index]
-                svm_model = GridSearchCV(SVC(gamma='scale'), tuning_params, scoring='recall_macro', n_jobs=-1)
-                svm_model.fit(x_train, y_train)
+                clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+                clf.fit(x_train, y_train)
 
                 svm_acc = []
                 for _ in range(n_folds):
-                    prediction = svm_model.best_estimator_.predict(self.kill_semantic_attributes(x_test, rate))
+                    prediction = clf.predict(self.kill_semantic_attributes(x_test, rate))
                     svm_acc.append(balanced_accuracy_score(prediction, y_test))
 
                 acc_dict[rate]['acc'].append(np.mean(np.array(svm_acc)))
-                acc_dict[rate]['C'].append(svm_model.best_params_['C'])
 
-            acc_dict[rate]['acc'] = np.array(acc_dict[rate]['acc'])
             acc_dict[rate]['mean'] = np.mean(acc_dict[rate]['acc'])
             acc_dict[rate]['std'] = np.std(acc_dict[rate]['acc'])
             acc_dict[rate]['max'] = np.max(acc_dict[rate]['acc'])
             acc_dict[rate]['min'] = np.min(acc_dict[rate]['acc'])
             acc_dict[rate]['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
-            acc_dict[rate]['C'] = ', '.join(list(map(str, acc_dict[rate]['C'])))
 
         return acc_dict
 
