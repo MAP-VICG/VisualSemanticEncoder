@@ -158,7 +158,8 @@ class SemanticDegradation:
 
                     input_length = output_length = self.data['X_tr'].shape[1] + self.data['S_tr'].shape[1]
                     ae = Autoencoder(input_length, self.data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
-                    s_te = ae.estimate_semantic_data(self.data['X_tr'], self.data['S_tr'], self.data['X_te'], sem_data, train_labels)
+                    _, s_te = ae.estimate_semantic_data(self.data['X_tr'], self.data['S_tr'], self.data['X_te'], sem_data, train_labels)
+                    ae.save_data('%s_demo_data' % self.data_type, 'sec_%s_demo_data.json' % self.data_type)
                 else:
                     raise ValueError('Invalid type of autoencoder')
 
@@ -223,6 +224,7 @@ class SemanticDegradation:
                     input_length = output_length = tr_vis.shape[1] + sem_data.shape[1]
                     ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
                     x_train, x_test = ae.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis, sem_data[test_index], labels[train_index])
+                    ae.save_data('%s_demo_data' % self.data_type, 'sec_%s_demo_data.json' % self.data_type)
                 else:
                     raise ValueError('Invalid type of autoencoder')
 

@@ -10,6 +10,7 @@ array dimensionality and creating a new feature space with the merged data.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import json
 import numpy as np
 from enum import Enum
 from sklearn.svm import SVC
@@ -119,9 +120,9 @@ class Autoencoder:
         :return: None
         """
         def svm_callback(epoch, logs):
-            clf.fit(self.encoder.predict(x_train), tr_labels)
+            clf.fit(self.encoder.predict(x_train), tr_labels.reshape(-1))
             prediction = clf.predict(self.encoder.predict(x_train))
-            accuracies[epoch] = balanced_accuracy_score(prediction, tr_labels)
+            accuracies[epoch] = balanced_accuracy_score(prediction, tr_labels.reshape(-1))
 
             if logs['loss'] < self.history['best_loss'][-1][0]:
                 self.history['best_loss'][-1] = (logs['loss'], epoch)
@@ -157,7 +158,7 @@ class Autoencoder:
         :param te_vis_data: test visual data
         :param te_sem_data: test semantic data
         :param tr_labels: training labels
-        :return: 2D numpy array with the computed semantic data
+        :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
         self._fit(tr_vis_data, tr_sem_data, tr_labels)
         self.model.set_weights(self.history['best_model_weights'][-1])
@@ -165,3 +166,27 @@ class Autoencoder:
 
         return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
                self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))
+
+    def save_data(self, label, filename):
+        """
+        Writes best weights to h5 file and training history to json file
+
+        :param label: string with identification of weights file
+        :param filename: string with history file name and path
+        :return: None
+        """
+        for i in range(len(self.history['best_model_weights'])):
+            self.model.set_weights(self.history['best_model_weights'][i])
+            self.model.save_weights('sec_best_model_%s_%d.h5' % (label, i + 1))
+
+        json_dict = dict()
+        json_dict['best_accuracy'] = '; '.join(list(map(str, self.history['best_accuracy'])))
+        json_dict['best_loss'] = '; '.join(list(map(str, self.history['best_loss'])))
+
+        json_dict['loss'] = '; '.join(list(map(str, self.history['loss'])))
+        json_dict['val_loss'] = '; '.join(list(map(str, self.history['val_loss'])))
+        json_dict['acc'] = '; '.join(list(map(str, self.history['acc'])))
+
+        json_string = json.dumps(json_dict)
+        with open(filename, 'w+') as f:
+            json.dump(json_string, f)
