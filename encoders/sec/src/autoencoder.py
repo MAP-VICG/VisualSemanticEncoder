@@ -106,7 +106,7 @@ class Autoencoder:
         self.epochs = epochs
         self.model = ModelFactory(input_length, encoding_length, output_length)(ae_type)
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
-        self.history = {'loss': [], 'val_loss': [], 'acc': [], 'best_accuracy': [], 'best_model_weights': [], 'best_loss': []}
+        self.history = dict()
 
     def _fit(self, tr_vis_data, tr_sem_data, tr_labels):
         """
@@ -124,18 +124,18 @@ class Autoencoder:
             prediction = clf.predict(self.encoder.predict(x_train))
             accuracies[epoch] = balanced_accuracy_score(prediction, tr_labels.reshape(-1))
 
-            if logs['loss'] < self.history['best_loss'][-1][0]:
-                self.history['best_loss'][-1] = (logs['loss'], epoch)
-                self.history['best_model_weights'][-1] = self.model.get_weights()
-            elif logs['loss'] == self.history['best_loss'][-1][0] and accuracies[epoch] > self.history['best_accuracy'][-1][0]:
-                self.history['best_model_weights'][-1] = self.model.get_weights()
+            if logs['loss'] < self.history['best_loss'][0]:
+                self.history['best_loss'] = (logs['loss'], epoch)
+                self.history['best_model_weights'] = self.model.get_weights()
+            elif logs['loss'] == self.history['best_loss'][0] and accuracies[epoch] > self.history['best_accuracy'][0]:
+                self.history['best_model_weights'] = self.model.get_weights()
 
-            if accuracies[epoch] > self.history['best_accuracy'][-1][0]:
-                self.history['best_accuracy'][-1] = (accuracies[epoch], epoch)
+            if accuracies[epoch] > self.history['best_accuracy'][0]:
+                self.history['best_accuracy'] = (accuracies[epoch], epoch)
 
-        self.history['best_accuracy'].append((0, 0))
-        self.history['best_model_weights'].append(None)
-        self.history['best_loss'].append((float('inf'), 0))
+        self.history['best_accuracy'] = (0, 0)
+        self.history['best_model_weights'] = None
+        self.history['best_loss'] = (float('inf'), 0)
         accuracies = np.zeros(self.epochs)
 
         x_train = np.hstack((tr_vis_data, tr_sem_data))
@@ -145,9 +145,9 @@ class Autoencoder:
         result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
                                 validation_split=0.2, callbacks=[classification])
 
-        self.history['loss'].append(result.history['loss'])
-        self.history['val_loss'].append(result.history['val_loss'])
-        self.history['acc'].append(accuracies)
+        self.history['loss'] = result.history['loss']
+        self.history['val_loss'] = result.history['val_loss']
+        self.history['acc'] = accuracies
 
     def estimate_semantic_data(self, tr_vis_data, tr_sem_data, te_vis_data, te_sem_data, tr_labels):
         """
@@ -161,7 +161,7 @@ class Autoencoder:
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
         self._fit(tr_vis_data, tr_sem_data, tr_labels)
-        self.model.set_weights(self.history['best_model_weights'][-1])
+        self.model.set_weights(self.history['best_model_weights'])
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
         return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
@@ -175,18 +175,39 @@ class Autoencoder:
         :param filename: string with history file name and path
         :return: None
         """
-        for i in range(len(self.history['best_model_weights'])):
-            self.model.set_weights(self.history['best_model_weights'][i])
-            self.model.save_weights('sec_best_model_%s_%d.h5' % (label, i + 1))
-
-        json_dict = dict()
-        json_dict['best_accuracy'] = '; '.join(list(map(str, self.history['best_accuracy'])))
-        json_dict['best_loss'] = '; '.join(list(map(str, self.history['best_loss'])))
-
-        json_dict['loss'] = '; '.join(list(map(str, self.history['loss'])))
-        json_dict['val_loss'] = '; '.join(list(map(str, self.history['val_loss'])))
-        json_dict['acc'] = '; '.join(list(map(str, self.history['acc'])))
+        self.save_best_weights(label)
+        json_dict = self.get_summary()
 
         json_string = json.dumps(json_dict)
         with open(filename, 'w+') as f:
             json.dump(json_string, f)
+
+    def get_summary(self):
+        """
+        Retrieves the dictionary with summary with results for the AE training
+        :return: dictionary with results summary
+        """
+        try:
+            summary = dict()
+            summary['best_accuracy'] = ', '.join(list(map(str, self.history['best_accuracy'])))
+            summary['best_loss'] = ', '.join(list(map(str, self.history['best_loss'])))
+
+            summary['loss'] = ', '.join(list(map(str, self.history['loss'])))
+            summary['val_loss'] = ', '.join(list(map(str, self.history['val_loss'])))
+            summary['acc'] = ', '.join(list(map(str, self.history['acc'])))
+            return summary
+        except KeyError:
+            raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
+
+    def save_best_weights(self, label):
+        """
+        Saves the best weights of the AE training into h5 file
+
+        :param label: string with identification of weights file
+        :return: None
+        """
+        try:
+            self.model.set_weights(self.history['best_model_weights'])
+            self.model.save_weights('sec_best_model_%s.h5' % label)
+        except KeyError:
+            raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
