@@ -12,7 +12,7 @@ Tests for module autoencoder
 
 import unittest
 import numpy as np
-from os import path
+from os import path, remove
 from scipy.io import loadmat
 
 from encoders.sec.src.autoencoder import ModelFactory, ModelType, Autoencoder
@@ -70,9 +70,10 @@ class ModelFactoryTests(unittest.TestCase):
         labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
         s_te = np.array([labels_dict[label[0]] for label in data['param']['test_labels'][0][0]])
 
-        _, sem_data = ae.estimate_semantic_data(data['X_tr'], data['S_tr'], data['X_te'], s_te, train_labels)
+        sem_tr, sem_te = ae.estimate_semantic_data(data['X_tr'], data['S_tr'], data['X_te'], s_te, train_labels)
 
-        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_data.shape)
+        self.assertEqual((data['X_tr'].shape[0], data['S_tr'].shape[1]), sem_tr.shape)
+        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_te.shape)
 
     def test_estimate_semantic_data_cub(self):
         """
@@ -88,11 +89,15 @@ class ModelFactoryTests(unittest.TestCase):
         labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
         s_te = np.array([labels_dict[label[0]] for label in data['test_labels_cub']])
 
-        _, sem_data = ae.estimate_semantic_data(data['X_tr'], data['S_tr'], data['X_te'], s_te, train_labels)
+        sem_tr, sem_te = ae.estimate_semantic_data(data['X_tr'], data['S_tr'], data['X_te'], s_te, train_labels)
 
-        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_data.shape)
+        self.assertEqual((data['X_tr'].shape[0], data['S_tr'].shape[1]), sem_tr.shape)
+        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_te.shape)
 
     def test_save_data(self):
+        """
+        Tests if model weights and json file was saved
+        """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
         ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
@@ -108,3 +113,13 @@ class ModelFactoryTests(unittest.TestCase):
         ae.save_data('cub_demo_data', 'sec_cub_demo_data.json')
         self.assertTrue(path.isfile('sec_best_model_cub_demo_data_1.h5'))
         self.assertTrue(path.isfile('sec_cub_demo_data.json'))
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Deletes files created in tests
+        """
+        if path.isfile('sec_best_model_cub_demo_data_1.h5'):
+            remove('sec_best_model_cub_demo_data_1.h5')
+        if path.isfile('sec_cub_demo_data.json'):
+            remove('sec_cub_demo_data.json')
