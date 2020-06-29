@@ -10,6 +10,7 @@ array dimensionality and creating a new feature space with the merged data.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import json
 import numpy as np
 from enum import Enum
@@ -199,15 +200,19 @@ class Autoencoder:
         except KeyError:
             raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
 
-    def save_best_weights(self, label):
+    def save_best_weights(self, label, path='.'):
         """
         Saves the best weights of the AE training into h5 file
 
         :param label: string with identification of weights file
+        :param path: string with path to save weights file
         :return: None
         """
         try:
+            if not os.path.isdir(path):
+                os.mkdir(path)
+
             self.model.set_weights(self.history['best_model_weights'])
-            self.model.save_weights('sec_best_model_%s.h5' % label)
+            self.model.save_weights(os.path.join(path, 'sec_best_model_%s.h5' % label))
         except KeyError:
             raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')

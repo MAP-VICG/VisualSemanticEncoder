@@ -9,20 +9,49 @@ to evaluate results. Accuracies are captured for ZSL and SVM classifications.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 from encoders.tools.src.sem_analysis import SemanticDegradation
 
-# sem = SemanticDegradation('../../Datasets/SAE/awa_demo_data.mat', data_type='awa', ae_type='sec', epochs=50)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random_sec.json')
-# sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random_sec.json')
-#
-# sem = SemanticDegradation('../../Datasets/SAE/awa_demo_resnet_data.mat', data_type='awa', ae_type='sec', epochs=50)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'awa_v2s_projection_random_resnet_sec.json')
-# sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'awa_svm_classification_random_resnet_sec.json')
-#
-# sem = SemanticDegradation('../../Datasets/SAE/cub_demo_data.mat', data_type='cub', ae_type='sec', epochs=50)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random_sec.json')
-# sem.write2json(sem.degrade_semantic_data_svm(n_folds=10), 'cub_svm_classification_random_sec.json')
+folds = 5
+epochs = 30
+ae_type = 'sec'
+rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 
-sem = SemanticDegradation('../../Datasets/SAE/cub_demo_data_resnet.mat', data_type='cub', ae_type='sae', epochs=50)
-sem.write2json(sem.degrade_semantic_data_zsl(n_folds=10), 'cub_v2s_projection_random_resent_sec.json')
-sem.write2json(sem.degrade_semantic_data_svm(n_folds=2), 'cub_svm_classification_random_resnet_sec.json')
+if not os.path.isdir('results'):
+    os.mkdir('results')
+
+if not os.path.isdir(os.path.join('results', 'inception')):
+    os.mkdir(os.path.join('results', 'inception'))
+
+if not os.path.isdir(os.path.join('results', 'resnet')):
+    os.mkdir(os.path.join('results', 'resnet'))
+
+if not os.path.isdir(os.sep.join(['results', 'inception', ae_type])):
+    os.mkdir(os.sep.join(['results', 'inception', ae_type]))
+
+if not os.path.isdir(os.sep.join(['results', 'resnet', ae_type])):
+    os.mkdir(os.sep.join(['results', 'resnet', ae_type]))
+
+data = '../../Datasets/SAE/awa_demo_data.mat'
+res_path = os.sep.join(['results', 'inception', ae_type])
+sem = SemanticDegradation(data, data_type='awa', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
+# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection.json'))
+sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'awa_svm_classification.json'))
+
+data = '../../Datasets/SAE/awa_demo_data_resnet.mat'
+res_path = os.sep.join(['results', 'resnet', ae_type])
+sem = SemanticDegradation(data, data_type='awa', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
+# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection_resnet.json'))
+sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'awa_svm_classification_resnet.json'))
+
+data = '../../Datasets/SAE/cub_demo_data.mat'
+res_path = os.sep.join(['results', 'inception', ae_type])
+sem = SemanticDegradation(data, data_type='cub', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
+# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection.json'))
+sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'cub_svm_classification.json'))
+
+data = '../../Datasets/SAE/cub_demo_data_resnet.mat'
+res_path = os.sep.join(['results', 'resnet', ae_type])
+sem = SemanticDegradation(data, data_type='cub', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
+# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection_resent.json'))
+sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'cub_svm_classification_resnet.json'))

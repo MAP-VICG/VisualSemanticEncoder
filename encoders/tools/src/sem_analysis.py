@@ -9,6 +9,7 @@ the classifications.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import json
 import random
 import numpy as np
@@ -25,7 +26,7 @@ from encoders.tools.src.utils import ZSL
 
 
 class SemanticDegradation:
-    def __init__(self, datafile, data_type, new_value=None, rates=None, ae_type='sae', epochs=50):
+    def __init__(self, datafile, data_type, new_value=None, rates=None, ae_type='sae', epochs=50, results_path='.'):
         """
         Initializes control variables
 
@@ -35,12 +36,14 @@ class SemanticDegradation:
         :param rates: list of rates to test. Values must range from 0 to 1
         :param ae_type: type of autoencoder: sae or se
         :param epochs: number of epochs to use in training of AE of type se
+        :param results_path: string that indicates where results will be saved
         """
         self.data_type = data_type
         self.new_value = new_value
         self.data = loadmat(datafile)
         self.ae_type = ae_type
         self.epochs = epochs
+        self.results_path = results_path
 
         if rates is None:
             self.rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
@@ -51,6 +54,8 @@ class SemanticDegradation:
             self.limits = (np.min(self.data['S_tr']), np.max(self.data['S_tr']))
         else:
             self.limits = None
+
+        self.results = {rate: dict() for rate in self.rates}
 
     def estimate_semantic_data(self, vis_tr_data, sem_tr_data, vis_te_data):
         """
@@ -210,8 +215,13 @@ class SemanticDegradation:
         sem_data, vis_data, labels = self.structure_data_svm()
 
         for rate in self.rates:
+            fold = 0
+            self.results[rate] = dict()
+            str_rate = str(round(rate * 100))
             skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+
             for train_index, test_index in skf.split(sem_data, labels):
+                fold += 1
                 if self.data_type == 'cub':
                     tr_vis, te_vis = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], list(map(int, labels[train_index])))
                 else:
@@ -224,7 +234,8 @@ class SemanticDegradation:
                     input_length = output_length = tr_vis.shape[1] + sem_data.shape[1]
                     ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
                     x_train, x_test = ae.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis, sem_data[test_index], labels[train_index])
-                    ae.save_data('%s_demo_data' % self.data_type, 'sec_%s_demo_data.json' % self.data_type)
+                    self.results[rate]['fold_%d' % fold] = ae.get_summary()
+                    ae.save_best_weights('fold_%d_%s' % (fold, self.data_type), os.path.join(self.results_path, str_rate))
                 else:
                     raise ValueError('Invalid type of autoencoder')
 
@@ -239,11 +250,16 @@ class SemanticDegradation:
 
                 acc_dict[rate]['acc'].append(np.mean(np.array(svm_acc)))
 
-            acc_dict[rate]['mean'] = np.mean(acc_dict[rate]['acc'])
-            acc_dict[rate]['std'] = np.std(acc_dict[rate]['acc'])
-            acc_dict[rate]['max'] = np.max(acc_dict[rate]['acc'])
-            acc_dict[rate]['min'] = np.min(acc_dict[rate]['acc'])
-            acc_dict[rate]['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+            acc_dict[rate]['mean'] = self.results['mean'] = np.mean(acc_dict[rate]['acc'])
+            acc_dict[rate]['std'] = self.results['std'] = np.std(acc_dict[rate]['acc'])
+            acc_dict[rate]['max'] = self.results['max'] = np.max(acc_dict[rate]['acc'])
+            acc_dict[rate]['min'] = self.results['mib'] = np.min(acc_dict[rate]['acc'])
+            acc_dict[rate]['acc'] = self.results['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+
+            if not os.path.isdir(os.path.join(self.results_path, str_rate)):
+                os.mkdir(os.path.join(self.results_path, str_rate))
+            name = '%s_summary_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
+            self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict
 
