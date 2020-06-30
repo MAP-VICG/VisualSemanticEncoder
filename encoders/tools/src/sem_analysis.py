@@ -140,6 +140,8 @@ class SemanticDegradation:
         temp_labels, test_labels, s_te_pro, z_score = self.structure_data_zsl()
 
         for rate in self.rates:
+            self.results[rate] = dict()
+            str_rate = str(round(rate * 100))
             for j in range(n_folds):
                 s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
 
@@ -164,18 +166,24 @@ class SemanticDegradation:
                     input_length = output_length = self.data['X_tr'].shape[1] + self.data['S_tr'].shape[1]
                     ae = Autoencoder(input_length, self.data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
                     _, s_te = ae.estimate_semantic_data(self.data['X_tr'], self.data['S_tr'], self.data['X_te'], sem_data, train_labels)
-                    ae.save_data('%s_demo_data' % self.data_type, 'sec_%s_demo_data.json' % self.data_type)
+                    self.results[rate]['fold_%d' % (j + 1)] = ae.get_summary()
+                    ae.save_best_weights('v2s_fold_%d_%s' % ((j + 1), self.data_type), os.path.join(self.results_path, str_rate))
                 else:
                     raise ValueError('Invalid type of autoencoder')
 
                 acc, _ = ZSL.zsl_el(s_te, s_te_pro, test_labels, temp_labels, 1, z_score)
                 acc_dict[rate]['acc'][j] = acc
 
-            acc_dict[rate]['mean'] = np.mean(acc_dict[rate]['acc'])
-            acc_dict[rate]['std'] = np.std(acc_dict[rate]['acc'])
-            acc_dict[rate]['max'] = np.max(acc_dict[rate]['acc'])
-            acc_dict[rate]['min'] = np.min(acc_dict[rate]['acc'])
-            acc_dict[rate]['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+            acc_dict[rate]['mean'] = self.results['mean'] = np.mean(acc_dict[rate]['acc'])
+            acc_dict[rate]['std'] = self.results['std'] = np.std(acc_dict[rate]['acc'])
+            acc_dict[rate]['max'] = self.results['max'] = np.max(acc_dict[rate]['acc'])
+            acc_dict[rate]['min'] = self.results['min'] = np.min(acc_dict[rate]['acc'])
+            acc_dict[rate]['acc'] = self.results['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
+
+            if not os.path.isdir(os.path.join(self.results_path, str_rate)):
+                os.mkdir(os.path.join(self.results_path, str_rate))
+            name = '%s_summary_v2s_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
+            self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict
 
@@ -235,7 +243,7 @@ class SemanticDegradation:
                     ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
                     x_train, x_test = ae.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis, sem_data[test_index], labels[train_index])
                     self.results[rate]['fold_%d' % fold] = ae.get_summary()
-                    ae.save_best_weights('fold_%d_%s' % (fold, self.data_type), os.path.join(self.results_path, str_rate))
+                    ae.save_best_weights('svm_fold_%d_%s' % (fold, self.data_type), os.path.join(self.results_path, str_rate))
                 else:
                     raise ValueError('Invalid type of autoencoder')
 
@@ -258,7 +266,7 @@ class SemanticDegradation:
 
             if not os.path.isdir(os.path.join(self.results_path, str_rate)):
                 os.mkdir(os.path.join(self.results_path, str_rate))
-            name = '%s_summary_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
+            name = '%s_summary_svm_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
             self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict

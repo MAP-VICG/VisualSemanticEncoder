@@ -35,23 +35,23 @@ if not os.path.isdir(os.sep.join(['results', 'resnet', ae_type])):
 data = '../../Datasets/SAE/awa_demo_data.mat'
 res_path = os.sep.join(['results', 'inception', ae_type])
 sem = SemanticDegradation(data, data_type='awa', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection.json'))
+sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection.json'))
 sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'awa_svm_classification.json'))
 
 data = '../../Datasets/SAE/awa_demo_data_resnet.mat'
 res_path = os.sep.join(['results', 'resnet', ae_type])
 sem = SemanticDegradation(data, data_type='awa', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection_resnet.json'))
+sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'awa_v2s_projection_resnet.json'))
 sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'awa_svm_classification_resnet.json'))
 
 data = '../../Datasets/SAE/cub_demo_data.mat'
 res_path = os.sep.join(['results', 'inception', ae_type])
 sem = SemanticDegradation(data, data_type='cub', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection.json'))
+sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection.json'))
 sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'cub_svm_classification.json'))
 
 data = '../../Datasets/SAE/cub_demo_data_resnet.mat'
 res_path = os.sep.join(['results', 'resnet', ae_type])
 sem = SemanticDegradation(data, data_type='cub', rates=rates, ae_type=ae_type, epochs=epochs, results_path=res_path)
-# sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection_resent.json'))
+sem.write2json(sem.degrade_semantic_data_zsl(n_folds=folds), os.path.join(res_path, 'cub_v2s_projection_resent.json'))
 sem.write2json(sem.degrade_semantic_data_svm(n_folds=folds), os.path.join(res_path, 'cub_svm_classification_resnet.json'))
