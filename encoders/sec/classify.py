@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
-#
+
 # data = loadmat('../../../Datasets/SAE/awa_demo_data.mat')
 # vis_data = np.vstack((data['X_tr'], data['X_te']))
 # labels = np.vstack((data['param']['train_labels'][0][0], data['param']['test_labels'][0][0]))
@@ -17,7 +17,7 @@ from encoders.tools.src.utils import ZSL
 # labels_dict = {data['param']['testclasses_id'][0][0][i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
 # s_te = np.array([labels_dict[label[0]] for label in data['param']['test_labels'][0][0]])
 # sem_data = np.vstack((data['S_tr'], s_te))
-#
+
 data = loadmat('../../../Datasets/SAE/cub_demo_data_resnet.mat')
 
 vis_data = np.vstack((data['X_tr'], data['X_te']))

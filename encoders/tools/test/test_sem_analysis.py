@@ -9,6 +9,7 @@ Tests for module sem_analysis
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os, shutil
 import unittest
 import numpy as np
 from scipy.io import loadmat
@@ -150,7 +151,7 @@ class SemanticDegradationTests(unittest.TestCase):
         svm = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', new_value=0)
         sem_data, vis_data, labels = svm.structure_data_svm()
         self.assertEqual((11788, 312), sem_data.shape)
-        self.assertEqual((11788, 150), vis_data.shape)
+        self.assertEqual((11788, 1024), vis_data.shape)
         self.assertEqual((11788,), labels.shape)
 
     def test_structure_data_zsl_awa(self):
@@ -183,9 +184,8 @@ class SemanticDegradationTests(unittest.TestCase):
         acc_dict = sem.degrade_semantic_data_svm(n_folds=2)
 
         self.assertEqual([0], list(acc_dict.keys()))
-        self.assertEqual(['acc', 'mean', 'std', 'max', 'min', 'C'], list(acc_dict[0].keys()))
+        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
-        self.assertEqual(2, len(acc_dict[0]['C'].split(',')))
 
     def test_degrade_semantic_data_zsl_awa(self):
         """
@@ -214,3 +214,11 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
         self.assertEqual(0.61405, np.around(acc[0], decimals=5))
         self.assertEqual(0.61405, np.around(acc[1], decimals=5))
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Deletes files created in tests
+        """
+        if os.path.isdir('0'):
+            shutil.rmtree('0')
