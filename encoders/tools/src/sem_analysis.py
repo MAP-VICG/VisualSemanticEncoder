@@ -1,63 +1,17 @@
-"""
-Computes the accuracy of zero shot learning classification and SVM classification
-for AWA and CUB data sets. Semantic data is degraded to analyse its importance for
-the classifications.
-@author: Damares Resende
-@contact: damaresresende@usp.br
-@since: May 23, 2020
-@organization: University of Sao Paulo (USP)
-    Institute of Mathematics and Computer Science (ICMC)
-    Laboratory of Visualization, Imaging and Computer Graphics (VICG)
-"""
 import os
 import json
 import random
 import numpy as np
-from sklearn.svm import SVC
 from scipy.io import loadmat
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import normalize
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import balanced_accuracy_score
-from encoders.sec.src.autoencoder import Autoencoder, ModelType
 
 from encoders.tools.src.utils import ZSL
+from encoders.sec.src.autoencoder import Autoencoder, ModelType
 
 
-class SemanticDegradation:
-    def __init__(self, datafile, data_type, new_value=None, rates=None, ae_type='sae', epochs=50, results_path='.'):
-        """
-        Initializes control variables
-
-        :param datafile: string with path of data to load
-        :param data_type: string to specify type of data: awa or cub
-        :param new_value: real value to replace to. If not specified, a random value will be chosen
-        :param rates: list of rates to test. Values must range from 0 to 1
-        :param ae_type: type of autoencoder: sae or se
-        :param epochs: number of epochs to use in training of AE of type se
-        :param results_path: string that indicates where results will be saved
-        """
-        self.data_type = data_type
-        self.new_value = new_value
-        self.data = loadmat(datafile)
-        self.ae_type = ae_type
-        self.epochs = epochs
-        self.results_path = results_path
-
-        if rates is None:
-            self.rates = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-        else:
-            self.rates = rates
-
-        if new_value is None:
-            self.limits = (np.min(self.data['S_tr']), np.max(self.data['S_tr']))
-        else:
-            self.limits = None
-
-        self.results = {rate: dict() for rate in self.rates}
-
-    def estimate_semantic_data(self, vis_tr_data, sem_tr_data, vis_te_data):
+class AwAZSL:
+    @staticmethod
+    def estimate_semantic_data_sae(vis_tr_data, sem_tr_data, vis_te_data):
         """
         Trains SAE and applies it to visual data in order to estimate its correspondent semantic data
 
@@ -66,16 +20,137 @@ class SemanticDegradation:
         :param vis_te_data: visual test data
         :return: 2D numpy array with estimated semantic data
         """
-        if self.data_type == 'awa':
-            x_tr = normalize(vis_tr_data.transpose(), norm='l2', axis=1, copy=True).transpose()
-            w = ZSL.sae(x_tr.transpose(), sem_tr_data.transpose(), 500000)
-            return vis_te_data.dot(normalize(w, norm='l2', axis=1, copy=True).transpose())
-        elif self.data_type == 'cub':
-            s_tr = normalize(sem_tr_data, norm='l2', axis=1, copy=False)
-            w = ZSL.sae(vis_tr_data.transpose(), s_tr.transpose(), .2).transpose()
-            return vis_te_data.dot(w)
+        x_tr = normalize(vis_tr_data.transpose(), norm='l2', axis=1, copy=True).transpose()
+        w = ZSL.sae(x_tr.transpose(), sem_tr_data.transpose(), 500000)
+        return vis_te_data.dot(normalize(w, norm='l2', axis=1, copy=True).transpose())
+
+    @staticmethod
+    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info):
+        """
+        Trains AE and applies it to visual data in order to estimate its correspondent semantic data
+
+        :param vis_tr_data: visual training data
+        :param sem_tr_data: semantic training data
+        :param vis_te_data: visual test data
+        :param sem_te_data: visual test data
+        :param tr_labels: training labels
+        :param epochs: number of epochs
+        :param w_info: dictionary with path to save weights file and the weights label
+        :return: 2D numpy array with estimated semantic data
+        """
+        input_length = output_length = vis_tr_data.shape[1] + sem_tr_data.shape[1]
+        ae = Autoencoder(input_length, sem_tr_data.shape[1], output_length, ModelType.SIMPLE_AE, epochs)
+        _, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
+        ae.save_best_weights('awa_v2s_%s' % w_info['label'], w_info['path'])
+
+        return s_te, ae.get_summary()
+
+    @staticmethod
+    def structure_data(data):
+        """
+        Sets data of template labels, test labels, template semantic data and z_score flag
+        according to the specified type of data to calculate SAE according to its original
+        algorithm.
+
+        :param data: data dictionary
+        :return: tuple with emp_labels, test_labels, s_te_pro and z_score
+        """
+        temp_labels = np.array([int(x) for x in data['param']['testclasses_id'][0][0]])
+        test_labels = np.array([int(x) for x in data['param']['test_labels'][0][0]])
+        train_labels = np.array([int(x) for x in data['param']['train_labels'][0][0]])
+        s_te_pro = normalize(data['S_te_pro'].transpose(), norm='l2', axis=1, copy=True).transpose()
+
+        labels_dict = {temp_labels[i]: attributes for i, attributes in enumerate(s_te_pro)}
+        sem_te_data = np.array([labels_dict[label] for label in test_labels])
+
+        return temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, False
+
+
+class CUBZSL:
+    @staticmethod
+    def estimate_semantic_data_sae(vis_tr_data, sem_tr_data, vis_te_data):
+        """
+        Trains SAE and applies it to visual data in order to estimate its correspondent semantic data
+
+        :param vis_tr_data: visual training data
+        :param sem_tr_data: semantic training data
+        :param vis_te_data: visual test data
+        :return: 2D numpy array with estimated semantic data
+        """
+        s_tr = normalize(sem_tr_data, norm='l2', axis=1, copy=False)
+        w = ZSL.sae(vis_tr_data.transpose(), s_tr.transpose(), .2).transpose()
+        return vis_te_data.dot(w)
+
+    @staticmethod
+    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info):
+        """
+        Trains AE and applies it to visual data in order to estimate its correspondent semantic data
+
+        :param vis_tr_data: visual training data
+        :param sem_tr_data: semantic training data
+        :param vis_te_data: visual test data
+        :param sem_te_data: visual test data
+        :param tr_labels: training labels
+        :param epochs: number of epochs
+        :param w_info: dictionary with path to save weights file and the weights label
+        :return: 2D numpy array with estimated semantic data
+        """
+        input_length = output_length = vis_tr_data.shape[1] + sem_tr_data.shape[1]
+        ae = Autoencoder(input_length, sem_tr_data.shape[1], output_length, ModelType.SIMPLE_AE, epochs)
+        _, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
+        ae.save_best_weights('cub_v2s_%s' % w_info['label'], w_info['path'])
+
+        return s_te, ae.get_summary()
+
+    @staticmethod
+    def structure_data(data):
+        """
+        Sets data of template labels, test labels, template semantic data and z_score flag
+        according to the specified type of data to calculate SAE according to its original
+        algorithm.
+
+        :param data: data dictionary
+        :return: tuple with emp_labels, test_labels, s_te_pro and z_score
+        """
+        temp_labels = np.array([int(x) for x in data['te_cl_id']])
+        test_labels = np.array([int(x) for x in data['test_labels_cub']])
+        train_labels = np.array([int(x) for x in data['train_labels_cub']])
+        s_te_pro = data['S_te_pro']
+
+        labels = list(map(int, data['train_labels_cub']))
+        data['X_tr'], data['X_te'] = ZSL.dimension_reduction(data['X_tr'], data['X_te'], labels)
+
+        labels_dict = {temp_labels[i]: attributes for i, attributes in enumerate(s_te_pro)}
+        sem_te_data = np.array([labels_dict[label] for label in test_labels])
+
+        return temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, True
+
+
+class SemanticDegradation:
+    def __init__(self, datafile, data_type, new_value=None, rates=None, results_path='.'):
+        """
+        Initializes control variables
+
+        :param datafile: string with path of data to load
+        :param data_type: string with data type: awa or cub
+        :param new_value: real value to replace to. If not specified, a random value will be chosen
+        :param rates: list of rates to test. Values must range from 0 to 1
+        :param results_path: string that indicates where results will be saved
+        """
+        self.new_value = new_value
+        self.data = loadmat(datafile)
+        self.results_path = results_path
+        self.data_type = data_type
+
+        if data_type == 'awa':
+            self.dealer = AwAZSL()
+        elif data_type == 'cub':
+            self.dealer = CUBZSL()
         else:
-            raise ValueError('Unknown type of data')
+            raise ValueError('Invalid data type. It should be awa or cub')
+
+        self.rates = rates if rates else [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        self.results = {rate: dict() for rate in self.rates}
 
     def kill_semantic_attributes(self, data, rate):
         """
@@ -85,91 +160,48 @@ class SemanticDegradation:
         :param rate: float number from 0 to 1 specifying the rate of values to be replaced
         :return: 2D numpy array with new data set
         """
-        num_sem_attrs = data.shape[1]
-
         new_data = np.copy(data)
-        for ex in range(new_data.shape[0]):
-            mask = [False] * data.shape[1]
-            for idx in random.sample(range(data.shape[1]), round(num_sem_attrs * rate)):
-                mask[idx] = True
-
-            if self.limits is None and self.new_value is not None:
-                new_data[ex, mask] = new_data[ex, mask] * 0 + self.new_value
-            else:
-                for i in range(len(mask)):
-                    if mask[i]:
-                        new_data[ex, i] = random.uniform(self.limits[0], self.limits[1])
+        if self.new_value:
+            for ex in range(new_data.shape[0]):
+                for idx in random.sample(range(data.shape[1]), round(data.shape[1] * rate)):
+                    new_data[ex, idx] = self.new_value
+        else:
+            for ex in range(new_data.shape[0]):
+                for idx in random.sample(range(data.shape[1]), round(data.shape[1] * rate)):
+                    new_data[ex, idx] = random.uniform(np.max(self.data['S_tr']), np.max(self.data['S_tr']))
 
         return new_data
 
-    def structure_data_zsl(self):
+    def degrade_semantic_data(self, n_folds, ae_type, epochs=50):
         """
-        Sets data of template labels, test labels, template semantic data and z_score flag
-        according to the specified type of data to calculate SAE according to its original
-        algorithm.
-
-        :return: tuple with emp_labels, test_labels, s_te_pro and z_score
-        """
-        if self.data_type == 'awa':
-            temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
-            test_labels = np.array([int(x) for x in self.data['param']['test_labels'][0][0]])
-            s_te_pro = normalize(self.data['S_te_pro'].transpose(), norm='l2', axis=1, copy=True).transpose()
-
-            return temp_labels, test_labels, s_te_pro, False
-
-        elif self.data_type == 'cub':
-            temp_labels = np.array([int(x) for x in self.data['te_cl_id']])
-            test_labels = np.array([int(x) for x in self.data['test_labels_cub']])
-            s_te_pro = self.data['S_te_pro']
-
-            labels = list(map(int, self.data['train_labels_cub']))
-            self.data['X_tr'], self.data['X_te'] = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
-
-            return temp_labels, test_labels, s_te_pro, True
-
-    def degrade_semantic_data_zsl(self, n_folds):
-        """
-        Randomly replaces the values of the semantic array for a new value specified and runs SAE over it.
+        Randomly replaces the values of the semantic array for a new value specified and runs SAE or SEC over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
 
         :param n_folds: number of folds to use in cross validation
+        :param ae_type: string with ae type: sec or sae
+        :param epochs: number of epochs to use in training of AE of type se
         :return: dictionary with classification accuracy for each fold
         """
         acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
-        temp_labels, test_labels, s_te_pro, z_score = self.structure_data_zsl()
+        temp_labels, tr_labels, test_labels, s_te_pro, sem_te_data, z_score = self.dealer.structure_data(self.data)
 
         for rate in self.rates:
             self.results[rate] = dict()
             str_rate = str(round(rate * 100))
             for j in range(n_folds):
-                s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
-
-                if self.ae_type == 'sae':
-                    s_te = self.estimate_semantic_data(self.data['X_tr'], s_tr, self.data['X_te'])
-                elif self.ae_type == 'sec':
-                    if self.data_type == 'awa':
-                        labels = self.data['param']['testclasses_id'][0][0]
-                        train_labels = self.data['param']['train_labels'][0][0]
-
-                        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
-                        sem_data = np.array([labels_dict[label[0]] for label in self.data['param']['test_labels'][0][0]])
-                    elif self.data_type == 'cub':
-                        labels = self.data['te_cl_id']
-                        train_labels = self.data['train_labels_cub']
-
-                        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
-                        sem_data = np.array([labels_dict[label[0]] for label in self.data['test_labels_cub']])
-                    else:
-                        raise ValueError('Invalid type of data')
-
-                    input_length = output_length = self.data['X_tr'].shape[1] + self.data['S_tr'].shape[1]
-                    ae = Autoencoder(input_length, self.data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
-                    _, s_te = ae.estimate_semantic_data(self.data['X_tr'], self.data['S_tr'], self.data['X_te'], sem_data, train_labels)
-                    self.results[rate]['fold_%d' % (j + 1)] = ae.get_summary()
-                    ae.save_best_weights('v2s_fold_%d_%s' % ((j + 1), self.data_type), os.path.join(self.results_path, str_rate))
+                if ae_type == 'sae':
+                    s_tr = self.kill_semantic_attributes(self.data['S_tr'], rate)
+                    s_te = self.dealer.estimate_semantic_data_sae(self.data['X_tr'], s_tr, self.data['X_te'])
+                elif ae_type == 'sec':
+                    s_te = self.kill_semantic_attributes(sem_te_data, rate)
+                    w_info = {'label': 'fold_%d' % (j + 1), 'path': os.path.join(self.results_path, str_rate)}
+                    s_te, summary = self.dealer.estimate_semantic_data_sec(self.data['X_tr'], self.data['S_tr'],
+                                                                           self.data['X_te'], s_te,
+                                                                           tr_labels, epochs, w_info)
+                    self.results[rate]['fold_%d' % (j + 1)] = summary
                 else:
-                    raise ValueError('Invalid type of autoencoder')
+                    raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
 
                 acc, _ = ZSL.zsl_el(s_te, s_te_pro, test_labels, temp_labels, 1, z_score)
                 acc_dict[rate]['acc'][j] = acc
@@ -182,91 +214,7 @@ class SemanticDegradation:
 
             if not os.path.isdir(os.path.join(self.results_path, str_rate)):
                 os.mkdir(os.path.join(self.results_path, str_rate))
-            name = '%s_summary_v2s_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
-            self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
-
-        return acc_dict
-
-    def structure_data_svm(self):
-        """
-        Loads data and structures it in a unique set of semantic data, visual data and labels,
-        so SVM can be applied.
-
-        :return: tuple with arrays for semantic data, visual data and labels
-        """
-        if self.data_type == 'awa':
-            y_tr = self.data['param']['train_labels'][0][0]
-            y_te = self.data['param']['test_labels'][0][0]
-            attr_id = self.data['param']['testclasses_id'][0][0]
-        elif self.data_type == 'cub':
-            y_tr = self.data['train_labels_cub']
-            y_te = self.data['test_labels_cub']
-            attr_id = self.data['te_cl_id']
-        else:
-            raise ValueError('Unknown type of data')
-
-        labels_dict = {attr_id[i][0]: attributes for i, attributes in enumerate(self.data['S_te_pro'])}
-        s_te = np.array([labels_dict[label[0]] for label in y_te])
-
-        return np.vstack((self.data['S_tr'], s_te)), np.vstack((self.data['X_tr'], self.data['X_te'])), np.vstack((y_tr, y_te))[:, 0]
-
-    def degrade_semantic_data_svm(self, n_folds):
-        """
-        Trains SVM classifier using grid search and k-fold cross validation. Test data is
-        randomly replaced by a random value. The amount of data replaced varies from 0 to 100%
-        according to the specified rate.
-
-        :param n_folds: number of folds to use in cross validation
-        :return: dictionary with classification accuracy for each fold
-        """
-        acc_dict = {key: {'acc': [], 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
-        sem_data, vis_data, labels = self.structure_data_svm()
-
-        for rate in self.rates:
-            fold = 0
-            self.results[rate] = dict()
-            str_rate = str(round(rate * 100))
-            skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
-
-            for train_index, test_index in skf.split(sem_data, labels):
-                fold += 1
-                if self.data_type == 'cub':
-                    tr_vis, te_vis = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], list(map(int, labels[train_index])))
-                else:
-                    tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
-
-                if self.ae_type == 'sae':
-                    x_train = sem_data[train_index]
-                    x_test = self.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis)
-                elif self.ae_type == 'sec':
-                    input_length = output_length = tr_vis.shape[1] + sem_data.shape[1]
-                    ae = Autoencoder(input_length, sem_data.shape[1], output_length, ModelType.SIMPLE_AE, self.epochs)
-                    x_train, x_test = ae.estimate_semantic_data(tr_vis, sem_data[train_index], te_vis, sem_data[test_index], labels[train_index])
-                    self.results[rate]['fold_%d' % fold] = ae.get_summary()
-                    ae.save_best_weights('svm_fold_%d_%s' % (fold, self.data_type), os.path.join(self.results_path, str_rate))
-                else:
-                    raise ValueError('Invalid type of autoencoder')
-
-                y_train, y_test = labels[train_index], labels[test_index]
-                clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-                clf.fit(x_train, y_train)
-
-                svm_acc = []
-                for _ in range(n_folds):
-                    prediction = clf.predict(self.kill_semantic_attributes(x_test, rate))
-                    svm_acc.append(balanced_accuracy_score(prediction, y_test))
-
-                acc_dict[rate]['acc'].append(np.mean(np.array(svm_acc)))
-
-            acc_dict[rate]['mean'] = self.results['mean'] = np.mean(acc_dict[rate]['acc'])
-            acc_dict[rate]['std'] = self.results['std'] = np.std(acc_dict[rate]['acc'])
-            acc_dict[rate]['max'] = self.results['max'] = np.max(acc_dict[rate]['acc'])
-            acc_dict[rate]['min'] = self.results['mib'] = np.min(acc_dict[rate]['acc'])
-            acc_dict[rate]['acc'] = self.results['acc'] = ', '.join(list(map(str, acc_dict[rate]['acc'])))
-
-            if not os.path.isdir(os.path.join(self.results_path, str_rate)):
-                os.mkdir(os.path.join(self.results_path, str_rate))
-            name = '%s_summary_svm_%s_%s.json' % (self.data_type, str_rate, self.ae_type)
+            name = '%s_summary_v2s_%s_%s.json' % (self.data_type, str_rate, ae_type)
             self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict
