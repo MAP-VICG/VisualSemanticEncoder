@@ -187,7 +187,7 @@ class SemanticDegradation:
         temp_labels, tr_labels, test_labels, s_te_pro, sem_te_data, z_score = self.dealer.structure_data(self.data)
 
         for rate in self.rates:
-            self.results[rate] = dict()
+            self.results = dict()
             str_rate = str(round(rate * 100))
             for j in range(n_folds):
                 if ae_type == 'sae':
@@ -199,7 +199,7 @@ class SemanticDegradation:
                     s_te, summary = self.dealer.estimate_semantic_data_sec(self.data['X_tr'], self.data['S_tr'],
                                                                            self.data['X_te'], s_te,
                                                                            tr_labels, epochs, w_info)
-                    self.results[rate]['fold_%d' % (j + 1)] = summary
+                    self.results['fold_%d' % (j + 1)] = summary
                 else:
                     raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
 

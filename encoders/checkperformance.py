@@ -15,7 +15,7 @@ from encoders.tools.src.sem_analysis import SemanticDegradation
 folds = 2
 epochs = 3
 ae_type = 'sec'
-rates = [0]
+rates = [0, 0.05, 0.1, 0.2, 0.4, 0.8, 0.1]
 
 if not os.path.isdir('results'):
     os.mkdir('results')
