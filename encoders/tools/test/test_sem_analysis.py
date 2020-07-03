@@ -6,7 +6,7 @@ from os import remove
 from scipy.io import loadmat
 
 from encoders.tools.src.utils import ZSL
-from encoders.tools.src.sem_analysis import SemanticDegradation, CUBZSL, AwAZSL
+from encoders.tools.src.sem_analysis import SemanticDegradation, CUBClassification, AwAClassification
 
 
 class SemanticDegradationTests(unittest.TestCase):
@@ -107,7 +107,7 @@ class SemanticDegradationTests(unittest.TestCase):
         labels = list(map(int, input_data['train_labels_cub']))
         x_tr, x_te = ZSL.dimension_reduction(input_data['X_tr'], input_data['X_te'], labels)
 
-        sem_data = CUBZSL.estimate_semantic_data_sae(x_tr, input_data['S_tr'], x_te)
+        sem_data = CUBClassification.estimate_semantic_data_sae(x_tr, input_data['S_tr'], x_te)
         self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
 
     def test_estimate_semantic_data_awa(self):
@@ -117,7 +117,7 @@ class SemanticDegradationTests(unittest.TestCase):
         input_data = loadmat('../../../../Datasets/SAE/awa_demo_data.mat')
         template = loadmat('mockfiles/awa_est_sem_data.mat')
 
-        sem_data = AwAZSL.estimate_semantic_data_sae(input_data['X_tr'], input_data['S_tr'], input_data['X_te'])
+        sem_data = AwAClassification.estimate_semantic_data_sae(input_data['X_tr'], input_data['S_tr'], input_data['X_te'])
         self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
 
     def test_structure_data_awa(self):
@@ -125,7 +125,7 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if data loaded from awa_demo_data.mat file is correctly structured for ZSL classification
         """
         input_data = loadmat('../../../../Datasets/SAE/awa_demo_data.mat')
-        temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, z_score = AwAZSL.structure_data(input_data)
+        temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, z_score = AwAClassification.structure_data(input_data)
         self.assertEqual((10,), temp_labels.shape)
         self.assertEqual((24295,), train_labels.shape)
         self.assertEqual((6180,), test_labels.shape)
@@ -139,7 +139,7 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if data loaded from cub_demo_data.mat file is correctly structured for ZSL classification
         """
         input_data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
-        temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, z_score = CUBZSL.structure_data(input_data)
+        temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, z_score = CUBClassification.structure_data(input_data)
         self.assertEqual((50,), temp_labels.shape)
         self.assertEqual((8855,), train_labels.shape)
         self.assertEqual((2933,), test_labels.shape)
@@ -153,11 +153,11 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if data estimated for cub_demo_data.mat file is correctly structured
         """
         data = loadmat('../../../../Datasets/SAE/awa_demo_data.mat')
-        _, tr_labels, _, _, sem_te_data, _ = AwAZSL.structure_data(data)
+        _, tr_labels, _, _, sem_te_data, _ = AwAClassification.structure_data(data)
         x_tr, x_te = data['X_tr'], data['X_te']
 
         w_info = {'label': 'fold_0', 'path': '.'}
-        s_est, summary = CUBZSL.estimate_semantic_data_sec(x_tr, data['S_tr'], x_te, sem_te_data, tr_labels, 5, w_info)
+        s_est, summary = CUBClassification.estimate_semantic_data_sec(x_tr, data['S_tr'], x_te, sem_te_data, tr_labels, 5, w_info)
         remove('sec_best_model_cub_v2s_fold_0.h5')
 
         self.assertEqual((6180, 85), s_est.shape)
@@ -168,15 +168,16 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if data estimated for cub_demo_data.mat file is correctly structured
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
-        _, tr_labels, _, _, sem_te_data, _ = CUBZSL.structure_data(data)
+        _, tr_labels, _, _, sem_te_data, _ = CUBClassification.structure_data(data)
         x_tr, x_te = ZSL.dimension_reduction(data['X_tr'], data['X_te'], tr_labels)
 
         w_info = {'label': 'fold_0', 'path': '.'}
-        s_est, summary = CUBZSL.estimate_semantic_data_sec(x_tr, data['S_tr'], x_te, sem_te_data, tr_labels, 5, w_info)
+        s_est, summary = CUBClassification.estimate_semantic_data_sec(x_tr, data['S_tr'], x_te, sem_te_data, tr_labels, 5, w_info)
         remove('sec_best_model_cub_v2s_fold_0.h5')
 
         self.assertEqual((2933, 312), s_est.shape)
         self.assertEqual(['best_accuracy', 'best_loss', 'loss', 'val_loss', 'acc'], list(summary.keys()))
+
     def test_degrade_semantic_data_zsl_awa_sae(self):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
@@ -232,6 +233,26 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
         self.assertTrue(0 <= acc[0] <= 1)
         self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_get_classification_data_awa(self):
+        """
+        Tests if the shapes of returned data are as expected
+        """
+        data = loadmat('../../../../Datasets/SAE/awa_demo_data.mat')
+        sem_data, vis_data, labels = AwAClassification.get_classification_data(data)
+        self.assertEqual((30475, 85), sem_data.shape)
+        self.assertEqual((30475, 1024), vis_data.shape)
+        self.assertEqual((30475,), labels.shape)
+
+    def test_get_classification_data_cub(self):
+        """
+        Tests if the shapes of returned data are as expected
+        """
+        data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
+        sem_data, vis_data, labels = CUBClassification.get_classification_data(data)
+        self.assertEqual((11788, 312), sem_data.shape)
+        self.assertEqual((11788, 150), vis_data.shape)
+        self.assertEqual((11788,), labels.shape)
 
     @classmethod
     def tearDownClass(cls):

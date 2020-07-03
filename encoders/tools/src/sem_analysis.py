@@ -9,7 +9,7 @@ from encoders.tools.src.utils import ZSL
 from encoders.sec.src.autoencoder import Autoencoder, ModelType
 
 
-class AwAZSL:
+class AwAClassification:
     @staticmethod
     def estimate_semantic_data_sae(vis_tr_data, sem_tr_data, vis_te_data):
         """
@@ -48,12 +48,11 @@ class AwAZSL:
     @staticmethod
     def structure_data(data):
         """
-        Sets data of template labels, test labels, template semantic data and z_score flag
-        according to the specified type of data to calculate SAE according to its original
-        algorithm.
+        Sets data of template labels, test labels, template semantic data and z_score flag according to
+        the specified type of data to calculate SAE according to its original algorithm.
 
         :param data: data dictionary
-        :return: tuple with emp_labels, test_labels, s_te_pro and z_score
+        :return: tuple with temp_labels, train_labels, test_labels, s_te_pro, sem_te_data and z_score
         """
         temp_labels = np.array([int(x) for x in data['param']['testclasses_id'][0][0]])
         test_labels = np.array([int(x) for x in data['param']['test_labels'][0][0]])
@@ -65,8 +64,26 @@ class AwAZSL:
 
         return temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, False
 
+    @staticmethod
+    def get_classification_data(data):
+        """
+        Joins training and test sets of the original data structure, so it can be used in k fold
+        cross validation. For simple classification applications it is necessary because training
+        and test sets cannot be disjoint
 
-class CUBZSL:
+        :param data: data dictionary
+        :return: tuple with sem_data, vis_data and data_labels
+        """
+        _, train_labels, test_labels, _, sem_te_data, _ = AwAClassification.structure_data(data)
+
+        sem_data = np.vstack((data['S_tr'], sem_te_data))
+        vis_data = np.vstack((data['X_tr'], data['X_te']))
+        data_labels = np.vstack((np.expand_dims(train_labels, axis=1), np.expand_dims(test_labels, axis=1)))
+
+        return sem_data, vis_data, data_labels.reshape(-1)
+
+
+class CUBClassification:
     @staticmethod
     def estimate_semantic_data_sae(vis_tr_data, sem_tr_data, vis_te_data):
         """
@@ -125,6 +142,24 @@ class CUBZSL:
 
         return temp_labels, train_labels, test_labels, s_te_pro, sem_te_data, True
 
+    @staticmethod
+    def get_classification_data(data):
+        """
+        Joins training and test sets of the original data structure, so it can be used in k fold
+        cross validation. For simple classification applications it is necessary because training
+        and test sets cannot be disjoint
+
+        :param data: data dictionary
+        :return: tuple with sem_data, vis_data and data_labels
+        """
+        _, train_labels, test_labels, _, sem_te_data, _ = CUBClassification.structure_data(data)
+
+        sem_data = np.vstack((data['S_tr'], sem_te_data))
+        vis_data = np.vstack((data['X_tr'], data['X_te']))
+        data_labels = np.vstack((np.expand_dims(train_labels, axis=1), np.expand_dims(test_labels, axis=1)))
+
+        return sem_data, vis_data, data_labels.reshape(-1)
+
 
 class SemanticDegradation:
     def __init__(self, datafile, data_type, new_value=None, rates=None, results_path='.'):
@@ -143,9 +178,9 @@ class SemanticDegradation:
         self.data_type = data_type
 
         if data_type == 'awa':
-            self.dealer = AwAZSL()
+            self.dealer = AwAClassification()
         elif data_type == 'cub':
-            self.dealer = CUBZSL()
+            self.dealer = CUBClassification()
         else:
             raise ValueError('Invalid data type. It should be awa or cub')
 
