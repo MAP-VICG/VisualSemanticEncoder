@@ -1,5 +1,7 @@
+import shutil
 import unittest
 import numpy as np
+from os import path
 from os import remove
 from scipy.io import loadmat
 
@@ -230,3 +232,11 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
         self.assertTrue(0 <= acc[0] <= 1)
         self.assertTrue(0 <= acc[1] <= 1)
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Deletes files created in tests
+        """
+        if path.isdir('0'):
+            shutil.rmtree('0')
