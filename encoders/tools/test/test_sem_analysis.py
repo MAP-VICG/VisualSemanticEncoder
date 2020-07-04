@@ -16,7 +16,7 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         rate = 0.25
         new_value = -9999
-        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', new_value)
+        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', new_value)
         sem_data = sd.data['S_tr']
 
         new_data = sd.kill_semantic_attributes(sem_data, rate)
@@ -45,7 +45,7 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         rate = 0.5
         new_value = -9999
-        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', new_value)
+        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', new_value)
         sem_data = sd.data['S_tr']
 
         new_data = sd.kill_semantic_attributes(sem_data, rate)
@@ -74,7 +74,7 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         rate = 0.75
         new_value = -9999
-        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', new_value)
+        sd = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', new_value)
         sem_data = sd.data['S_tr']
 
         new_data = sd.kill_semantic_attributes(sem_data, rate)
@@ -182,8 +182,8 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
-        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa', rates=[0])
-        acc_dict = sem.degrade_semantic_data(n_folds=2, ae_type='sae', epochs=2)
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        acc_dict = sem.degrade_semantic_data(ae_type='sae', data_type='awa', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
         self.assertEqual([0], list(acc_dict.keys()))
@@ -196,8 +196,8 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
-        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', rates=[0])
-        acc_dict = sem.degrade_semantic_data(n_folds=2, ae_type='sae', epochs=2)
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        acc_dict = sem.degrade_semantic_data(ae_type='sae', data_type='cub', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
         self.assertEqual([0], list(acc_dict.keys()))
@@ -210,8 +210,8 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
-        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', 'awa', rates=[0])
-        acc_dict = sem.degrade_semantic_data(n_folds=2, ae_type='sec', epochs=2)
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        acc_dict = sem.degrade_semantic_data(ae_type='sec', data_type='awa', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
         self.assertEqual([0], list(acc_dict.keys()))
@@ -224,8 +224,8 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
-        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', 'cub', rates=[0])
-        acc_dict = sem.degrade_semantic_data(n_folds=2, ae_type='sec', epochs=2)
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        acc_dict = sem.degrade_semantic_data(ae_type='sec', data_type='cub', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
         self.assertEqual([0], list(acc_dict.keys()))
