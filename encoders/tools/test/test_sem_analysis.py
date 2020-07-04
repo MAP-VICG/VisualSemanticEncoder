@@ -1,3 +1,14 @@
+"""
+Tests for module sem_analysis
+
+@author: Damares Resende
+@contact: damaresresende@usp.br
+@since: July 2, 2020
+
+@organization: University of Sao Paulo (USP)
+    Institute of Mathematics and Computer Science (ICMC)
+    Laboratory of Visualization, Imaging and Computer Graphics (VICG)
+"""
 import shutil
 import unittest
 import numpy as np
@@ -253,6 +264,119 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual((11788, 312), sem_data.shape)
         self.assertEqual((11788, 1024), vis_data.shape)
         self.assertEqual((11788,), labels.shape)
+
+    def test_set_training_params(self):
+        """
+        Tests if parameters values are correctly set
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=5, epochs=30)
+        self.assertEqual(sem.ae_type, 'sae')
+        self.assertEqual(sem.data_type, 'cub')
+        self.assertEqual(sem.n_folds, 5)
+        self.assertEqual(sem.epochs, 30)
+
+    def test_zero_shot_learning_awa(self):
+        """
+        Tests if accuracy of zero short learning classification is as expected for awa
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sae', data_type='awa', n_folds=2, epochs=2)
+        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = AwAClassification.structure_data(sem.data)
+        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
+        self.assertEqual(2, len(acc))
+        self.assertEqual(0.84676, np.around(acc[0], decimals=5))
+        self.assertEqual(0.84676, np.around(acc[1], decimals=5))
+
+    def test_zero_shot_learning_cub(self):
+        """
+        Tests if accuracy of zero short learning classification is as expected for cub
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=2, epochs=2)
+        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = CUBClassification.structure_data(sem.data)
+        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
+        self.assertEqual(2, len(acc))
+        self.assertEqual(0.61405, np.around(acc[0], decimals=5))
+        self.assertEqual(0.61405, np.around(acc[1], decimals=5))
+
+    def test_zero_shot_learning_awa_sec(self):
+        """
+        Tests if accuracy of zero_shot_learning is as expected for awa using sec
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sec', data_type='awa', n_folds=2, epochs=2)
+        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = AwAClassification.structure_data(sem.data)
+        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_zero_shot_learning_cub_sec(self):
+        """
+        Tests if accuracy of zero_shot_learning is as expected for cub using sec
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sec', data_type='cub', n_folds=2, epochs=2)
+        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = CUBClassification.structure_data(sem.data)
+        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_svm_classification_cub(self):
+        """
+        Tests if accuracy of svm_classification is as expected for cub using sae
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=2, epochs=2)
+        sem_data, vis_data, data_labels = CUBClassification.get_classification_data(sem.data)
+        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_svm_classification_awa(self):
+        """
+        Tests if accuracy of svm_classification is as expected for cub using sae
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sae', data_type='awa', n_folds=2, epochs=2)
+        sem_data, vis_data, data_labels = AwAClassification.get_classification_data(sem.data)
+        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_svm_classification_cub_sec(self):
+        """
+        Tests if accuracy of svm_classification is as expected for cub using sec
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sec', data_type='cub', n_folds=2, epochs=2)
+        sem_data, vis_data, data_labels = CUBClassification.get_classification_data(sem.data)
+        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+
+    def test_svm_classification_awa_sec(self):
+        """
+        Tests if accuracy of svm_classification is as expected for cub using sec
+        """
+        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
+        sem._set_training_params(ae_type='sec', data_type='awa', n_folds=2, epochs=2)
+        sem_data, vis_data, data_labels = AwAClassification.get_classification_data(sem.data)
+        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
+
+        self.assertEqual(2, len(acc))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
 
     @classmethod
     def tearDownClass(cls):

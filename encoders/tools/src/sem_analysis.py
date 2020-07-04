@@ -1,3 +1,17 @@
+"""
+Applies multiclass classification or zero shot learning classification to a
+specified data. Classification input is the semantic data array. Semantic data
+is computed either using SAE algorithm, proposed by Elyor Kodirov, Tao Xiang,
+and Shaogang Gong, or SEC algorithm, proposed by Damares Resende and Moacir Ponti
+
+@author: Damares Resende
+@contact: damaresresende@usp.br
+@since: July 2, 2020
+
+@organization: University of Sao Paulo (USP)
+    Institute of Mathematics and Computer Science (ICMC)
+    Laboratory of Visualization, Imaging and Computer Graphics (VICG)
+"""
 import os
 import json
 import random
@@ -219,18 +233,17 @@ class SemanticDegradation:
         """
         self._set_training_params(ae_type, data_type, n_folds, epochs)
         acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
-        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
 
         for rate in self.rates:
             self.results = dict()
             str_rate = str(round(rate * 100))
 
             if class_type == 'zsl':
-                self._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, acc_dict, rate)
-            elif class_type == 'cls':
                 temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
+                acc_dict[rate]['acc'] = self._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate)
+            elif class_type == 'cls':
                 sem_data, vis_data, data_labels = self.dealer.get_classification_data(self.data)
-                self._simple_classification(sem_data, vis_data, data_labels, acc_dict, rate)
+                acc_dict[rate]['acc'] = self._simple_classification(sem_data, vis_data, data_labels, rate)
             else:
                 raise ValueError('Unknown type of classification analysis')
 
@@ -248,6 +261,15 @@ class SemanticDegradation:
         return acc_dict
 
     def _set_training_params(self, ae_type, data_type, n_folds, epochs):
+        """
+        Sets configuration parameters to perform training
+
+        :param ae_type: string with encoding algorithm type: sae or sec
+        :param data_type: string with data type: awa or cub
+        :param n_folds: number of folds
+        :param epochs: number of epochs
+        :return:
+        """
         self.epochs = epochs
         self.n_folds = n_folds
         self.ae_type = ae_type
@@ -260,7 +282,20 @@ class SemanticDegradation:
         else:
             raise ValueError('Invalid data type. It should be awa or cub')
 
-    def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, acc_dict, rate):
+    def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate):
+        """
+        Applies zero shot learning classification n_folds times to the given data, and saves the results.
+
+        :param temp_labels: set of label ids for test data
+        :param tr_labels: training set labels
+        :param te_labels: test set labels
+        :param s_te_pro: matrix of semantic data per class for test set
+        :param s_te_data: semantic data for test
+        :param z_score: if true, computes zscore of distance vector
+        :param rate: rate to degrade semantic data
+        :return: list of accuracies for ZSL
+        """
+        accuracies = np.zeros(self.n_folds)
         if self.data_type == 'cub':
             labels = list(map(int, self.data['train_labels_cub']))
             x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
@@ -278,18 +313,27 @@ class SemanticDegradation:
             else:
                 raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
 
-            acc, _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
-            acc_dict[rate]['acc'][j] = acc
+            accuracies[j], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
+        return accuracies
 
-    def _simple_classification(self, sem_data, vis_data, data_labels, acc_dict, rate):
+    def _simple_classification(self, sem_data, vis_data, data_labels, rate):
+        """
+        Applies SVM classification on the specified data using k fold cross validation and degrading
+        semantic data at the specified rate.
+
+        :param sem_data: semantic data
+        :param vis_data:  visual data
+        :param data_labels: data labels
+        :param rate: degradation rate
+        :return:
+        """
         fold = 0
+        accuracies = np.zeros(self.n_folds)
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(sem_data, data_labels):
-            fold += 1
             if self.data_type == 'cub':
-                labels = list(map(int, self.data['train_labels_cub']))
-                x_tr, x_te = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], labels)
+                x_tr, x_te = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], data_labels[train_index])
             else:
                 x_tr, x_te = vis_data[train_index], vis_data[test_index]
 
@@ -309,7 +353,9 @@ class SemanticDegradation:
             clf.fit(sem_data[train_index], data_labels[train_index])
 
             prediction = clf.predict(s_te)
-            acc_dict[rate]['acc'].append(balanced_accuracy_score(prediction, data_labels[test_index]))
+            accuracies[fold] = balanced_accuracy_score(prediction, data_labels[test_index])
+            fold += 1
+        return accuracies
 
     @staticmethod
     def write2json(acc_dict, filename):
