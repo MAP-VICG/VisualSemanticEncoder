@@ -3,7 +3,12 @@ import json
 import random
 import numpy as np
 from scipy.io import loadmat
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import normalize
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
 from encoders.sec.src.autoencoder import Autoencoder, ModelType
@@ -134,9 +139,6 @@ class CUBClassification:
         train_labels = np.array([int(x) for x in data['train_labels_cub']])
         s_te_pro = data['S_te_pro']
 
-        labels = list(map(int, data['train_labels_cub']))
-        data['X_tr'], data['X_te'] = ZSL.dimension_reduction(data['X_tr'], data['X_te'], labels)
-
         labels_dict = {temp_labels[i]: attributes for i, attributes in enumerate(s_te_pro)}
         sem_te_data = np.array([labels_dict[label] for label in test_labels])
 
@@ -176,7 +178,7 @@ class SemanticDegradation:
         self.results_path = results_path
 
         self.epochs = self.n_folds = 0
-        self.ae_type = self.dealer = None
+        self.ae_type = self.dealer = self.data_type = None
 
         self.rates = rates if rates else [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         self.results = {rate: dict() for rate in self.rates}
@@ -210,6 +212,7 @@ class SemanticDegradation:
 
         :param ae_type: string with ae type: sec or sae
         :param data_type: string with data type: awa or cub
+        :param class_type: string with classification type: zsl or cls
         :param n_folds: number of folds to use in cross validation
         :param epochs: number of epochs to use in training of AE of type se
         :return: dictionary with classification accuracy for each fold
@@ -225,7 +228,9 @@ class SemanticDegradation:
             if class_type == 'zsl':
                 self._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, acc_dict, rate)
             elif class_type == 'cls':
-                self._simple_classification()
+                temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
+                sem_data, vis_data, data_labels = self.dealer.get_classification_data(self.data)
+                self._simple_classification(sem_data, vis_data, data_labels, acc_dict, rate)
             else:
                 raise ValueError('Unknown type of classification analysis')
 
@@ -246,6 +251,7 @@ class SemanticDegradation:
         self.epochs = epochs
         self.n_folds = n_folds
         self.ae_type = ae_type
+        self.data_type = data_type
 
         if data_type == 'awa':
             self.dealer = AwAClassification()
@@ -255,15 +261,19 @@ class SemanticDegradation:
             raise ValueError('Invalid data type. It should be awa or cub')
 
     def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, acc_dict, rate):
+        if self.data_type == 'cub':
+            labels = list(map(int, self.data['train_labels_cub']))
+            x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
+        else:
+            x_tr, x_te = self.data['X_tr'], self.data['X_te']
+
         for j in range(self.n_folds):
             if self.ae_type == 'sae':  # TODO: não faz sentido usar o SAE com degradação aqui
-                s_te = self.dealer.estimate_semantic_data_sae(self.data['X_tr'], self.data['S_tr'], self.data['X_te'])
+                s_te = self.dealer.estimate_semantic_data_sae(x_tr, self.data['S_tr'], x_te)
             elif self.ae_type == 'sec':
                 s_te = self.kill_semantic_attributes(s_te_data, rate)
                 w_info = {'label': 'fold_%d' % (j + 1), 'path': os.path.join(self.results_path, str(round(rate * 100)))}
-                s_te, summary = self.dealer.estimate_semantic_data_sec(self.data['X_tr'], self.data['S_tr'],
-                                                                       self.data['X_te'], s_te,
-                                                                       tr_labels, self.epochs, w_info)
+                s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, self.data['S_tr'], x_te, s_te, tr_labels, self.epochs, w_info)
                 self.results['fold_%d' % (j + 1)] = summary
             else:
                 raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
@@ -271,8 +281,35 @@ class SemanticDegradation:
             acc, _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
             acc_dict[rate]['acc'][j] = acc
 
-    def _simple_classification(self):
-        pass
+    def _simple_classification(self, sem_data, vis_data, data_labels, acc_dict, rate):
+        fold = 0
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+
+        for train_index, test_index in skf.split(sem_data, data_labels):
+            fold += 1
+            if self.data_type == 'cub':
+                labels = list(map(int, self.data['train_labels_cub']))
+                x_tr, x_te = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], labels)
+            else:
+                x_tr, x_te = vis_data[train_index], vis_data[test_index]
+
+            if self.ae_type == 'sae':  # TODO: não faz sentido usar o SAE com degradação aqui
+                s_te = self.dealer.estimate_semantic_data_sae(x_tr, sem_data[train_index], x_te)
+            elif self.ae_type == 'sec':
+                s_tr = sem_data[train_index]
+                lb_tr = data_labels[train_index]
+                s_te = self.kill_semantic_attributes(sem_data[test_index], rate)
+                w_info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str(round(rate * 100)))}
+                s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, lb_tr, self.epochs, w_info)
+                self.results['fold_%d' % (fold + 1)] = summary
+            else:
+                raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(sem_data[train_index], data_labels[train_index])
+
+            prediction = clf.predict(s_te)
+            acc_dict[rate]['acc'].append(balanced_accuracy_score(prediction, data_labels[test_index]))
 
     @staticmethod
     def write2json(acc_dict, filename):

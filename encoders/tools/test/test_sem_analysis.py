@@ -251,7 +251,7 @@ class SemanticDegradationTests(unittest.TestCase):
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         sem_data, vis_data, labels = CUBClassification.get_classification_data(data)
         self.assertEqual((11788, 312), sem_data.shape)
-        self.assertEqual((11788, 150), vis_data.shape)
+        self.assertEqual((11788, 1024), vis_data.shape)
         self.assertEqual((11788,), labels.shape)
 
     @classmethod
