@@ -189,61 +189,35 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertEqual((2933, 312), s_est.shape)
         self.assertEqual(['best_accuracy', 'best_loss', 'loss', 'val_loss', 'acc'], list(summary.keys()))
 
-    def test_degrade_semantic_data_zsl_awa_sae(self):
+    def test_degrade_semantic_data_zsl_awa(self):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        acc_dict = sem.degrade_semantic_data(ae_type='sae', data_type='awa', class_type='zsl', n_folds=2, epochs=2)
+        acc_dict = sem.degrade_semantic_data(data_type='awa', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
-        self.assertEqual([0], list(acc_dict.keys()))
-        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
+        self.assertTrue(0 <= acc[0] <= 1)
+        self.assertTrue(0 <= acc[1] <= 1)
+        self.assertEqual([0, 'ref'], list(acc_dict.keys()))
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
-        self.assertEqual(0.84676, np.around(acc[0], decimals=5))
-        self.assertEqual(0.84676, np.around(acc[1], decimals=5))
+        self.assertEqual(0.84676, np.around(acc_dict['ref'], decimals=5))
+        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
 
     def test_degrade_semantic_data_zsl_cub_sae(self):
         """
         Tests if classification results are in the expected shape and if accuracy returned is correct
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        acc_dict = sem.degrade_semantic_data(ae_type='sae', data_type='cub', class_type='zsl', n_folds=2, epochs=2)
+        acc_dict = sem.degrade_semantic_data(data_type='cub', class_type='zsl', n_folds=2, epochs=2)
         acc = list(map(float, acc_dict[0]['acc'].split(',')))
 
-        self.assertEqual([0], list(acc_dict.keys()))
-        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
-        self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
-        self.assertEqual(0.61405, np.around(acc[0], decimals=5))
-        self.assertEqual(0.61405, np.around(acc[1], decimals=5))
-
-    def test_degrade_semantic_data_zsl_awa_sec(self):
-        """
-        Tests if classification results are in the expected shape and if accuracy returned is correct
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        acc_dict = sem.degrade_semantic_data(ae_type='sec', data_type='awa', class_type='zsl', n_folds=2, epochs=2)
-        acc = list(map(float, acc_dict[0]['acc'].split(',')))
-
-        self.assertEqual([0], list(acc_dict.keys()))
-        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
-        self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
         self.assertTrue(0 <= acc[0] <= 1)
         self.assertTrue(0 <= acc[1] <= 1)
-
-    def test_degrade_semantic_data_zsl_cub_sec(self):
-        """
-        Tests if classification results are in the expected shape and if accuracy returned is correct
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        acc_dict = sem.degrade_semantic_data(ae_type='sec', data_type='cub', class_type='zsl', n_folds=2, epochs=2)
-        acc = list(map(float, acc_dict[0]['acc'].split(',')))
-
-        self.assertEqual([0], list(acc_dict.keys()))
-        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
+        self.assertEqual([0, 'ref'], list(acc_dict.keys()))
         self.assertEqual(2, len(acc_dict[0]['acc'].split(',')))
-        self.assertTrue(0 <= acc[0] <= 1)
-        self.assertTrue(0 <= acc[1] <= 1)
+        self.assertEqual(0.61405, np.around(acc_dict['ref'], decimals=5))
+        self.assertEqual(['acc', 'mean', 'std', 'max', 'min'], list(acc_dict[0].keys()))
 
     def test_get_classification_data_awa(self):
         """
@@ -270,42 +244,17 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if parameters values are correctly set
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=5, epochs=30)
-        self.assertEqual(sem.ae_type, 'sae')
+        sem._set_training_params(data_type='cub', n_folds=5, epochs=30)
         self.assertEqual(sem.data_type, 'cub')
         self.assertEqual(sem.n_folds, 5)
         self.assertEqual(sem.epochs, 30)
 
     def test_zero_shot_learning_awa(self):
         """
-        Tests if accuracy of zero short learning classification is as expected for awa
+        Tests if accuracy of zero_shot_learning is as expected for awa
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sae', data_type='awa', n_folds=2, epochs=2)
-        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = AwAClassification.structure_data(sem.data)
-        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
-        self.assertEqual(2, len(acc))
-        self.assertEqual(0.84676, np.around(acc[0], decimals=5))
-        self.assertEqual(0.84676, np.around(acc[1], decimals=5))
-
-    def test_zero_shot_learning_cub(self):
-        """
-        Tests if accuracy of zero short learning classification is as expected for cub
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=2, epochs=2)
-        temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = CUBClassification.structure_data(sem.data)
-        acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
-        self.assertEqual(2, len(acc))
-        self.assertEqual(0.61405, np.around(acc[0], decimals=5))
-        self.assertEqual(0.61405, np.around(acc[1], decimals=5))
-
-    def test_zero_shot_learning_awa_sec(self):
-        """
-        Tests if accuracy of zero_shot_learning is as expected for awa using sec
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sec', data_type='awa', n_folds=2, epochs=2)
+        sem._set_training_params(data_type='awa', n_folds=2, epochs=2)
         temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = AwAClassification.structure_data(sem.data)
         acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
 
@@ -313,12 +262,12 @@ class SemanticDegradationTests(unittest.TestCase):
         self.assertTrue(0 <= acc[0] <= 1)
         self.assertTrue(0 <= acc[1] <= 1)
 
-    def test_zero_shot_learning_cub_sec(self):
+    def test_zero_shot_learning_cub(self):
         """
-        Tests if accuracy of zero_shot_learning is as expected for cub using sec
+        Tests if accuracy of zero_shot_learning is as expected for cub
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sec', data_type='cub', n_folds=2, epochs=2)
+        sem._set_training_params(data_type='cub', n_folds=2, epochs=2)
         temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = CUBClassification.structure_data(sem.data)
         acc = sem._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, 0)
 
@@ -328,10 +277,10 @@ class SemanticDegradationTests(unittest.TestCase):
 
     def test_svm_classification_cub(self):
         """
-        Tests if accuracy of svm_classification is as expected for cub using sae
+        Tests if accuracy of svm_classification is as expected for cub
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sae', data_type='cub', n_folds=2, epochs=2)
+        sem._set_training_params(data_type='cub', n_folds=2, epochs=2)
         sem_data, vis_data, data_labels = CUBClassification.get_classification_data(sem.data)
         acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
 
@@ -344,33 +293,7 @@ class SemanticDegradationTests(unittest.TestCase):
         Tests if accuracy of svm_classification is as expected for cub using sae
         """
         sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sae', data_type='awa', n_folds=2, epochs=2)
-        sem_data, vis_data, data_labels = AwAClassification.get_classification_data(sem.data)
-        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
-
-        self.assertEqual(2, len(acc))
-        self.assertTrue(0 <= acc[0] <= 1)
-        self.assertTrue(0 <= acc[1] <= 1)
-
-    def test_svm_classification_cub_sec(self):
-        """
-        Tests if accuracy of svm_classification is as expected for cub using sec
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/cub_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sec', data_type='cub', n_folds=2, epochs=2)
-        sem_data, vis_data, data_labels = CUBClassification.get_classification_data(sem.data)
-        acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
-
-        self.assertEqual(2, len(acc))
-        self.assertTrue(0 <= acc[0] <= 1)
-        self.assertTrue(0 <= acc[1] <= 1)
-
-    def test_svm_classification_awa_sec(self):
-        """
-        Tests if accuracy of svm_classification is as expected for cub using sec
-        """
-        sem = SemanticDegradation('../../../../Datasets/SAE/awa_demo_data.mat', rates=[0])
-        sem._set_training_params(ae_type='sec', data_type='awa', n_folds=2, epochs=2)
+        sem._set_training_params(data_type='awa', n_folds=2, epochs=2)
         sem_data, vis_data, data_labels = AwAClassification.get_classification_data(sem.data)
         acc = sem._simple_classification(sem_data, vis_data, data_labels, 0)
 
@@ -383,5 +306,5 @@ class SemanticDegradationTests(unittest.TestCase):
         """
         Deletes files created in tests
         """
-        if path.isdir('0'):
-            shutil.rmtree('0')
+        if path.isdir('00'):
+            shutil.rmtree('00')

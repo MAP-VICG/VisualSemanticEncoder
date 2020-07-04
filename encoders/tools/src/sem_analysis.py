@@ -218,25 +218,54 @@ class SemanticDegradation:
 
         return new_data
 
-    def degrade_semantic_data(self, ae_type, data_type, class_type, n_folds, epochs=50):
+    def degrade_semantic_data(self, data_type, class_type, n_folds, epochs=50):
         """
         Randomly replaces the values of the semantic array for a new value specified and runs SAE or SEC over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
 
-        :param ae_type: string with ae type: sec or sae
         :param data_type: string with data type: awa or cub
         :param class_type: string with classification type: zsl or cls
         :param n_folds: number of folds to use in cross validation
         :param epochs: number of epochs to use in training of AE of type se
         :return: dictionary with classification accuracy for each fold
         """
-        self._set_training_params(ae_type, data_type, n_folds, epochs)
+        self._set_training_params(data_type, n_folds, epochs)
         acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
+
+        if class_type == 'zsl':
+            temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
+            if self.data_type == 'cub':
+                labels = list(map(int, self.data['train_labels_cub']))
+                x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
+            else:
+                x_tr, x_te = self.data['X_tr'], self.data['X_te']
+
+            s_te = self.dealer.estimate_semantic_data_sae(x_tr, self.data['S_tr'], x_te)
+            acc_dict['ref'], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
+        elif class_type == 'cls':
+            accuracies = []
+            skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+            sem_data, vis_data, data_labels = self.dealer.get_classification_data(self.data)
+
+            for tr_index, te_index in skf.split(sem_data, data_labels):
+                if self.data_type == 'cub':
+                    x_tr, x_te = ZSL.dimension_reduction(vis_data[tr_index], vis_data[te_index], data_labels[tr_index])
+                else:
+                    x_tr, x_te = vis_data[tr_index], vis_data[te_index]
+
+                s_te = self.dealer.estimate_semantic_data_sae(x_tr, sem_data[tr_index], x_te)
+                clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+                clf.fit(sem_data[tr_index], data_labels[tr_index])
+
+                prediction = clf.predict(s_te)
+                accuracies.append(balanced_accuracy_score(prediction, data_labels[te_index]))
+
+            acc_dict['ref'] = np.mean(np.array(accuracies))
 
         for rate in self.rates:
             self.results = dict()
-            str_rate = str(round(rate * 100))
+            str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
 
             if class_type == 'zsl':
                 temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
@@ -255,16 +284,16 @@ class SemanticDegradation:
 
             if not os.path.isdir(os.path.join(self.results_path, str_rate)):
                 os.mkdir(os.path.join(self.results_path, str_rate))
-            name = '%s_summary_v2s_%s_%s.json' % (data_type, str_rate, ae_type)
+
+            name = '%s_summary_v2s_%s.json' % (data_type, str_rate)
             self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict
 
-    def _set_training_params(self, ae_type, data_type, n_folds, epochs):
+    def _set_training_params(self, data_type, n_folds, epochs):
         """
         Sets configuration parameters to perform training
 
-        :param ae_type: string with encoding algorithm type: sae or sec
         :param data_type: string with data type: awa or cub
         :param n_folds: number of folds
         :param epochs: number of epochs
@@ -272,7 +301,6 @@ class SemanticDegradation:
         """
         self.epochs = epochs
         self.n_folds = n_folds
-        self.ae_type = ae_type
         self.data_type = data_type
 
         if data_type == 'awa':
@@ -282,7 +310,7 @@ class SemanticDegradation:
         else:
             raise ValueError('Invalid data type. It should be awa or cub')
 
-    def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate):
+    def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate=0):
         """
         Applies zero shot learning classification n_folds times to the given data, and saves the results.
 
@@ -296,6 +324,8 @@ class SemanticDegradation:
         :return: list of accuracies for ZSL
         """
         accuracies = np.zeros(self.n_folds)
+        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
+
         if self.data_type == 'cub':
             labels = list(map(int, self.data['train_labels_cub']))
             x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
@@ -303,20 +333,16 @@ class SemanticDegradation:
             x_tr, x_te = self.data['X_tr'], self.data['X_te']
 
         for j in range(self.n_folds):
-            if self.ae_type == 'sae':  # TODO: não faz sentido usar o SAE com degradação aqui
-                s_te = self.dealer.estimate_semantic_data_sae(x_tr, self.data['S_tr'], x_te)
-            elif self.ae_type == 'sec':
-                s_te = self.kill_semantic_attributes(s_te_data, rate)
-                w_info = {'label': 'fold_%d' % (j + 1), 'path': os.path.join(self.results_path, str(round(rate * 100)))}
-                s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, self.data['S_tr'], x_te, s_te, tr_labels, self.epochs, w_info)
-                self.results['fold_%d' % (j + 1)] = summary
-            else:
-                raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
+            s_tr = self.data['S_tr']
+            s_te = self.kill_semantic_attributes(s_te_data, rate)
+            info = {'label': 'fold_%d' % (j + 1), 'path': os.path.join(self.results_path, str_rate)}
+            s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, tr_labels, self.epochs, info)
 
+            self.results['fold_%d' % (j + 1)] = summary
             accuracies[j], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
         return accuracies
 
-    def _simple_classification(self, sem_data, vis_data, data_labels, rate):
+    def _simple_classification(self, sem_data, vis_data, data_labels, rate=0):
         """
         Applies SVM classification on the specified data using k fold cross validation and degrading
         semantic data at the specified rate.
@@ -330,30 +356,27 @@ class SemanticDegradation:
         fold = 0
         accuracies = np.zeros(self.n_folds)
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
 
-        for train_index, test_index in skf.split(sem_data, data_labels):
+        for tr_index, te_index in skf.split(sem_data, data_labels):
             if self.data_type == 'cub':
-                x_tr, x_te = ZSL.dimension_reduction(vis_data[train_index], vis_data[test_index], data_labels[train_index])
+                x_tr, x_te = ZSL.dimension_reduction(vis_data[tr_index], vis_data[te_index], data_labels[tr_index])
             else:
-                x_tr, x_te = vis_data[train_index], vis_data[test_index]
+                x_tr, x_te = vis_data[tr_index], vis_data[te_index]
 
-            if self.ae_type == 'sae':  # TODO: não faz sentido usar o SAE com degradação aqui
-                s_te = self.dealer.estimate_semantic_data_sae(x_tr, sem_data[train_index], x_te)
-            elif self.ae_type == 'sec':
-                s_tr = sem_data[train_index]
-                lb_tr = data_labels[train_index]
-                s_te = self.kill_semantic_attributes(sem_data[test_index], rate)
-                w_info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str(round(rate * 100)))}
-                s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, lb_tr, self.epochs, w_info)
-                self.results['fold_%d' % (fold + 1)] = summary
-            else:
-                raise ValueError('Invalid type of autoencoder. Accepted values are sec or sae')
+            s_tr = sem_data[tr_index]
+            lb_tr = data_labels[tr_index]
+            s_te = self.kill_semantic_attributes(sem_data[te_index], rate)
+            w_info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
+
+            s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, lb_tr, self.epochs, w_info)
+            self.results['fold_%d' % (fold + 1)] = summary
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(sem_data[train_index], data_labels[train_index])
+            clf.fit(sem_data[tr_index], data_labels[tr_index])
 
             prediction = clf.predict(s_te)
-            accuracies[fold] = balanced_accuracy_score(prediction, data_labels[test_index])
+            accuracies[fold] = balanced_accuracy_score(prediction, data_labels[te_index])
             fold += 1
         return accuracies
 
