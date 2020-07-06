@@ -44,7 +44,7 @@ class AwAClassification:
         return vis_te_data.dot(normalize(w, norm='l2', axis=1, copy=True).transpose())
 
     @staticmethod
-    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info):
+    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info=None):
         """
         Trains AE and applies it to visual data in order to estimate its correspondent semantic data
 
@@ -59,10 +59,12 @@ class AwAClassification:
         """
         input_length = output_length = vis_tr_data.shape[1] + sem_tr_data.shape[1]
         ae = Autoencoder(input_length, sem_tr_data.shape[1], output_length, ModelType.SIMPLE_AE, epochs)
-        _, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
-        ae.save_best_weights('awa_v2s_%s' % w_info['label'], w_info['path'])
+        s_tr, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
 
-        return s_te, ae.get_summary()
+        if w_info is not None and isinstance(w_info, dict) and sorted(list(w_info.keys())) == ['label', 'path']:
+            ae.save_best_weights('awa_%s' % w_info['label'], w_info['path'])
+
+        return s_tr, s_te, ae.get_summary()
 
     @staticmethod
     def structure_data(data):
@@ -118,7 +120,7 @@ class CUBClassification:
         return vis_te_data.dot(w)
 
     @staticmethod
-    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info):
+    def estimate_semantic_data_sec(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels, epochs, w_info=None):
         """
         Trains AE and applies it to visual data in order to estimate its correspondent semantic data
 
@@ -133,10 +135,12 @@ class CUBClassification:
         """
         input_length = output_length = vis_tr_data.shape[1] + sem_tr_data.shape[1]
         ae = Autoencoder(input_length, sem_tr_data.shape[1], output_length, ModelType.SIMPLE_AE, epochs)
-        _, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
-        ae.save_best_weights('cub_v2s_%s' % w_info['label'], w_info['path'])
+        s_tr, s_te = ae.estimate_semantic_data(vis_tr_data, sem_tr_data, vis_te_data, sem_te_data, tr_labels)
 
-        return s_te, ae.get_summary()
+        if w_info is not None and isinstance(w_info, dict) and sorted(list(w_info.keys())) == ['label', 'path']:
+            ae.save_best_weights('cub_%s' % w_info['label'], w_info['path'])
+
+        return s_tr, s_te, ae.get_summary()
 
     @staticmethod
     def structure_data(data):
@@ -218,61 +222,150 @@ class SemanticDegradation:
 
         return new_data
 
+    def zsl_classification_awa(self, n_folds, ae_type, epochs=50, rate=0):
+        temp_labels, l_tr, te_labels, s_te_pro, s_te, z_score = AwAClassification.structure_data(self.data)
+        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
+
+        accuracies = [0] * n_folds
+        for fold in range(n_folds):
+            x_tr, x_te = self.data['X_tr'], self.data['X_te']
+            s_tr, s_te = self.data['S_tr'], self.kill_semantic_attributes(s_te, rate)
+
+            if ae_type == 'sec':
+                info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
+                _, s_te, _ = AwAClassification.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, l_tr, epochs, info)
+            elif ae_type == 'sae':
+                s_te = AwAClassification.estimate_semantic_data_sae(x_tr, s_tr, x_te)
+            else:
+                raise ValueError('Unknown type of encoding')
+
+            accuracies[fold], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
+        return accuracies
+
+    def zsl_classification_cub(self, n_folds, ae_type, epochs=50, rate=0):
+        temp_labels, l_tr, te_labels, s_te_pro, s_te, z_score = CUBClassification.structure_data(self.data)
+        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
+
+        accuracies = [0] * n_folds
+        for fold in range(n_folds):
+            x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], l_tr)
+            s_tr, s_te = self.data['S_tr'], self.kill_semantic_attributes(s_te, rate)
+
+            if ae_type == 'sec':
+                info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
+                _, s_te, _ = CUBClassification.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, l_tr, epochs, info)
+            elif ae_type == 'sae':
+                s_te = CUBClassification.estimate_semantic_data_sae(x_tr, s_tr, x_te)
+            else:
+                raise ValueError('Unknown type of encoding')
+
+            accuracies[fold], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
+        return accuracies
+
+    def svm_classification_awa(self, n_folds, ae_type, epochs=50, rate=0):
+        sem_data, vis_data, labels = AwAClassification.get_classification_data(self.data)
+        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+
+        fold = 0
+        accuracies = []
+        for tr_idx, te_idx in skf.split(sem_data, labels):
+            l_tr = labels[tr_idx]
+            x_tr, x_te = vis_data[tr_idx], vis_data[te_idx]
+            s_tr, s_te = sem_data[tr_idx], self.kill_semantic_attributes(sem_data[te_idx], rate)
+
+            if ae_type == 'sec':
+                str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
+                info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
+                s_tr, s_te, _ = AwAClassification.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, l_tr, epochs, info)
+            elif ae_type == 'sae':
+                s_tr = AwAClassification.estimate_semantic_data_sae(x_te, s_te, x_tr)
+                s_te = AwAClassification.estimate_semantic_data_sae(x_tr, s_tr, x_te)
+            else:
+                raise ValueError('Unknown type of encoding')
+
+            fold += 1
+            clf.fit(s_tr, labels[tr_idx])
+            prediction = clf.predict(s_te)
+            accuracies.append(balanced_accuracy_score(prediction, labels[te_idx]))
+        return accuracies
+
+    def svm_classification_cub(self, n_folds, ae_type, epochs=50, rate=0):
+        sem_data, vis_data, labels = CUBClassification.get_classification_data(self.data)
+        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+
+        fold = 0
+        accuracies = []
+        for tr_idx, te_idx in skf.split(sem_data, labels):
+            l_tr = labels[tr_idx]
+            s_tr, s_te = sem_data[tr_idx], self.kill_semantic_attributes(sem_data[te_idx], rate)
+            x_tr, x_te = ZSL.dimension_reduction(vis_data[tr_idx], vis_data[te_idx], l_tr)
+
+            if ae_type == 'sec':
+                str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
+                info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
+                s_tr, s_te, _ = CUBClassification.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, l_tr, epochs, info)
+            elif ae_type == 'sae':
+                s_tr = CUBClassification.estimate_semantic_data_sae(x_te, s_te, x_tr)
+                s_te = CUBClassification.estimate_semantic_data_sae(x_tr, s_tr, x_te)
+            else:
+                raise ValueError('Unknown type of encoding')
+
+            fold += 1
+            clf.fit(s_tr, labels[tr_idx])
+            prediction = clf.predict(s_te)
+            accuracies.append(balanced_accuracy_score(prediction, labels[te_idx]))
+        return accuracies
+
     def degrade_semantic_data(self, data_type, class_type, n_folds, epochs=50):
         """
         Randomly replaces the values of the semantic array for a new value specified and runs SAE or SEC over it.
         Saves the resultant accuracy in a dictionary. Data is degraded with rates ranging from 10 to 100%
         for a specific number of folds.
-
         :param data_type: string with data type: awa or cub
         :param class_type: string with classification type: zsl or cls
         :param n_folds: number of folds to use in cross validation
         :param epochs: number of epochs to use in training of AE of type se
         :return: dictionary with classification accuracy for each fold
         """
-        self._set_training_params(data_type, n_folds, epochs)
-        acc_dict = {key: {'acc': np.zeros(n_folds), 'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
+        acc_dict = {key: {'mean': 0, 'std': 0, 'max': 0, 'min': 0} for key in self.rates}
 
         if class_type == 'zsl':
-            temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
-            if self.data_type == 'cub':
-                labels = list(map(int, self.data['train_labels_cub']))
-                x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
+            if data_type == 'awa':
+                acc_dict['ref'] = self.zsl_classification_awa(1, 'sae', epochs, 0)
+            elif data_type == 'cub':
+                acc_dict['ref'] = self.zsl_classification_cub(1, 'sae', epochs, 0)
             else:
-                x_tr, x_te = self.data['X_tr'], self.data['X_te']
-
-            s_te = self.dealer.estimate_semantic_data_sae(x_tr, self.data['S_tr'], x_te)
-            acc_dict['ref'], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
+                raise ValueError('Unknown type of data')
         elif class_type == 'cls':
-            accuracies = []
-            skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
-            sem_data, vis_data, data_labels = self.dealer.get_classification_data(self.data)
-
-            for tr_index, te_index in skf.split(sem_data, data_labels):
-                if self.data_type == 'cub':
-                    x_tr, x_te = ZSL.dimension_reduction(vis_data[tr_index], vis_data[te_index], data_labels[tr_index])
-                else:
-                    x_tr, x_te = vis_data[tr_index], vis_data[te_index]
-
-                s_te = self.dealer.estimate_semantic_data_sae(x_tr, sem_data[tr_index], x_te)
-                clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-                clf.fit(sem_data[tr_index], data_labels[tr_index])
-
-                prediction = clf.predict(s_te)
-                accuracies.append(balanced_accuracy_score(prediction, data_labels[te_index]))
-
-            acc_dict['ref'] = np.mean(np.array(accuracies))
+            if data_type == 'awa':
+                acc_dict['ref'] = self.svm_classification_awa(n_folds, 'sae', epochs, 0)
+            elif data_type == 'cub':
+                acc_dict['ref'] = self.svm_classification_cub(n_folds, 'sae', epochs, 0)
+            else:
+                raise ValueError('Unknown type of data')
+        else:
+            raise ValueError('Unknown type of classification analysis')
 
         for rate in self.rates:
             self.results = dict()
             str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
 
             if class_type == 'zsl':
-                temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score = self.dealer.structure_data(self.data)
-                acc_dict[rate]['acc'] = self._zero_shot_learning(temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate)
+                if data_type == 'awa':
+                    acc_dict[rate]['acc'] = self.zsl_classification_awa(n_folds, 'sec', epochs, rate)
+                elif data_type == 'cub':
+                    acc_dict[rate]['acc'] = self.zsl_classification_cub(n_folds, 'sec', epochs, rate)
+                else:
+                    raise ValueError('Unknown type of data')
             elif class_type == 'cls':
-                sem_data, vis_data, data_labels = self.dealer.get_classification_data(self.data)
-                acc_dict[rate]['acc'] = self._simple_classification(sem_data, vis_data, data_labels, rate)
+                if data_type == 'awa':
+                    acc_dict[rate]['acc'] = self.svm_classification_awa(n_folds, 'sec', epochs, rate)
+                elif data_type == 'cub':
+                    acc_dict[rate]['acc'] = self.svm_classification_cub(n_folds, 'sec', epochs, rate)
+                else:
+                    raise ValueError('Unknown type of data')
             else:
                 raise ValueError('Unknown type of classification analysis')
 
@@ -289,96 +382,6 @@ class SemanticDegradation:
             self.write2json(self.results, os.sep.join([self.results_path, str_rate, name]))
 
         return acc_dict
-
-    def _set_training_params(self, data_type, n_folds, epochs):
-        """
-        Sets configuration parameters to perform training
-
-        :param data_type: string with data type: awa or cub
-        :param n_folds: number of folds
-        :param epochs: number of epochs
-        :return:
-        """
-        self.epochs = epochs
-        self.n_folds = n_folds
-        self.data_type = data_type
-
-        if data_type == 'awa':
-            self.dealer = AwAClassification()
-        elif data_type == 'cub':
-            self.dealer = CUBClassification()
-        else:
-            raise ValueError('Invalid data type. It should be awa or cub')
-
-    def _zero_shot_learning(self, temp_labels, tr_labels, te_labels, s_te_pro, s_te_data, z_score, rate=0):
-        """
-        Applies zero shot learning classification n_folds times to the given data, and saves the results.
-
-        :param temp_labels: set of label ids for test data
-        :param tr_labels: training set labels
-        :param te_labels: test set labels
-        :param s_te_pro: matrix of semantic data per class for test set
-        :param s_te_data: semantic data for test
-        :param z_score: if true, computes zscore of distance vector
-        :param rate: rate to degrade semantic data
-        :return: list of accuracies for ZSL
-        """
-        accuracies = np.zeros(self.n_folds)
-        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
-
-        if self.data_type == 'cub':
-            labels = list(map(int, self.data['train_labels_cub']))
-            x_tr, x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
-        else:
-            x_tr, x_te = self.data['X_tr'], self.data['X_te']
-
-        for j in range(self.n_folds):
-            s_tr = self.data['S_tr']
-            s_te = self.kill_semantic_attributes(s_te_data, rate)
-            info = {'label': 'fold_%d' % (j + 1), 'path': os.path.join(self.results_path, str_rate)}
-            s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, tr_labels, self.epochs, info)
-
-            self.results['fold_%d' % (j + 1)] = summary
-            accuracies[j], _ = ZSL.zsl_el(s_te, s_te_pro, te_labels, temp_labels, 1, z_score)
-        return accuracies
-
-    def _simple_classification(self, sem_data, vis_data, data_labels, rate=0):
-        """
-        Applies SVM classification on the specified data using k fold cross validation and degrading
-        semantic data at the specified rate.
-
-        :param sem_data: semantic data
-        :param vis_data:  visual data
-        :param data_labels: data labels
-        :param rate: degradation rate
-        :return:
-        """
-        fold = 0
-        accuracies = np.zeros(self.n_folds)
-        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
-        str_rate = str(round(rate * 100)) if rate > 10 else '0' + str(round(rate * 100))
-
-        for tr_index, te_index in skf.split(sem_data, data_labels):
-            if self.data_type == 'cub':
-                x_tr, x_te = ZSL.dimension_reduction(vis_data[tr_index], vis_data[te_index], data_labels[tr_index])
-            else:
-                x_tr, x_te = vis_data[tr_index], vis_data[te_index]
-
-            s_tr = sem_data[tr_index]
-            lb_tr = data_labels[tr_index]
-            s_te = self.kill_semantic_attributes(sem_data[te_index], rate)
-            w_info = {'label': 'fold_%d' % (fold + 1), 'path': os.path.join(self.results_path, str_rate)}
-
-            s_te, summary = self.dealer.estimate_semantic_data_sec(x_tr, s_tr, x_te, s_te, lb_tr, self.epochs, w_info)
-            self.results['fold_%d' % (fold + 1)] = summary
-
-            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(sem_data[tr_index], data_labels[tr_index])
-
-            prediction = clf.predict(s_te)
-            accuracies[fold] = balanced_accuracy_score(prediction, data_labels[te_index])
-            fold += 1
-        return accuracies
 
     @staticmethod
     def write2json(acc_dict, filename):

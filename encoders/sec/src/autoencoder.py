@@ -213,6 +213,6 @@ class Autoencoder:
                 os.mkdir(path)
 
             self.model.set_weights(self.history['best_model_weights'])
-            self.model.save_weights(os.path.join(path, 'sec_best_model_%s.h5' % label))
+            self.model.save_weights(os.path.join(path, 'best_model_%s.h5' % label))
         except KeyError:
             raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
