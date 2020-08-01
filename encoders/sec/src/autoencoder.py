@@ -66,16 +66,16 @@ class ModelFactory:
         """
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
-        encoded = Dense(1826, activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(932, activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(428, activation='relu', name='e_dense3')(encoded)
+        encoded = Dense(self.input_length - round(0.3 * self.input_length), activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(self.input_length - round(0.6 * self.input_length), activation='relu', name='e_dense2')(encoded)
+        encoded = Dense(self.input_length - round(0.9 * self.input_length), activation='relu', name='e_dense3')(encoded)
 
         encoded = Dropout(0.2)(encoded)
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
 
-        decoded = Dense(428, activation='relu', name='d_dense4')(code)
-        decoded = Dense(932, activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(1826, activation='relu', name='d_dense6')(decoded)
+        decoded = Dense(self.input_length - round(0.9 * self.input_length), activation='relu', name='d_dense4')(code)
+        decoded = Dense(self.input_length - round(0.6 * self.input_length), activation='relu', name='d_dense5')(decoded)
+        decoded = Dense(self.input_length - round(0.3 * self.input_length), activation='relu', name='d_dense6')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
@@ -93,7 +93,7 @@ class ModelFactory:
         pass
 
 
-class Autoencoder:
+class Encoder:
     def __init__(self, input_length, encoding_length, output_length, ae_type, epochs):
         """
         Instantiates model object and initializes auxiliary variables

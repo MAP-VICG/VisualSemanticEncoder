@@ -9,16 +9,15 @@ Tests for module autoencoder
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-
 import unittest
 import numpy as np
 from os import path, remove
 from scipy.io import loadmat
 
-from encoders.sec.src.autoencoder import ModelFactory, ModelType, Autoencoder
+from encoders.sec.src.autoencoder import ModelFactory, ModelType, Encoder
 
 
-class ModelFactoryTests(unittest.TestCase):
+class EncoderTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
@@ -26,7 +25,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        cls.ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
+        cls.ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
 
         labels = data['te_cl_id']
         train_labels = data['train_labels_cub']
@@ -62,7 +61,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 3)
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 3)
         ae._fit(data['X_tr'], data['S_tr'], data['train_labels_cub'])
         expected_keys = ['best_accuracy', 'best_model_weights', 'best_loss', 'loss', 'val_loss', 'acc']
 
@@ -79,7 +78,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/awa_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 1)
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 1)
 
         labels = data['param']['testclasses_id'][0][0]
         train_labels = data['param']['train_labels'][0][0]
@@ -98,7 +97,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 1)
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 1)
 
         labels = data['te_cl_id']
         train_labels = data['train_labels_cub']
@@ -129,7 +128,7 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
         self.assertRaises(Exception, ae.get_summary)
 
     def test_save_best_weights(self):
@@ -137,8 +136,8 @@ class ModelFactoryTests(unittest.TestCase):
         Tests if weights file exists
         """
         self.ae.save_best_weights('cub_demo_data')
-        self.assertTrue(path.isfile('sec_best_model_cub_demo_data.h5'))
-        remove('sec_best_model_cub_demo_data.h5')
+        self.assertTrue(path.isfile('best_model_cub_demo_data.h5'))
+        remove('best_model_cub_demo_data.h5')
 
     def test_save_best_weights_error(self):
         """
@@ -146,16 +145,16 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
         self.assertRaises(Exception, ae.save_best_weights, 'cub_demo_data')
 
     def test_save_data(self):
         """
         Tests if model weights and json file was saved
         """
-        self.ae.save_data('cub_demo_data', 'sec_cub_demo_data.json')
-        self.assertTrue(path.isfile('sec_best_model_cub_demo_data.h5'))
-        self.assertTrue(path.isfile('sec_cub_demo_data.json'))
+        self.ae.save_data('cub_demo_data', 'cub_demo_data.json')
+        self.assertTrue(path.isfile('best_model_cub_demo_data.h5'))
+        self.assertTrue(path.isfile('cub_demo_data.json'))
 
     def test_save_data_error(self):
         """
@@ -163,15 +162,15 @@ class ModelFactoryTests(unittest.TestCase):
         """
         data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
         input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Autoencoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
-        self.assertRaises(Exception, ae.save_data, 'cub_demo_data', 'sec_cub_demo_data.json')
+        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE, 5)
+        self.assertRaises(Exception, ae.save_data, 'cub_demo_data', 'cub_demo_data.json')
 
     @classmethod
     def tearDownClass(cls):
         """
         Deletes files created in tests
         """
-        if path.isfile('sec_best_model_cub_demo_data.h5'):
-            remove('sec_best_model_cub_demo_data.h5')
-        if path.isfile('sec_cub_demo_data.json'):
-            remove('sec_cub_demo_data.json')
+        if path.isfile('best_model_cub_demo_data.h5'):
+            remove('best_model_cub_demo_data.h5')
+        if path.isfile('cub_demo_data.json'):
+            remove('cub_demo_data.json')
