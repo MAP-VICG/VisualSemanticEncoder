@@ -10,14 +10,8 @@ array dimensionality and creating a new feature space with the merged data.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-import os
-import json
 import numpy as np
 from enum import Enum
-from sklearn.svm import SVC
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import balanced_accuracy_score
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import LambdaCallback
@@ -109,7 +103,7 @@ class Encoder:
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
         self.history = dict()
 
-    def _fit(self, tr_vis_data, tr_sem_data, tr_labels):
+    def _fit(self, tr_vis_data, tr_sem_data):
         """
         Trains AE model for the specified number of epochs based on the input data. In each epoch,
         the classification accuracy is computed for the training set. Input and output of the model
@@ -117,102 +111,36 @@ class Encoder:
 
         :param tr_vis_data: 2D numpy array with training visual data
         :param tr_sem_data: 2D numpy array with training semantic data
-        :param tr_labels: training labels
         :return: None
         """
-        def svm_callback(epoch, logs):
-            clf.fit(self.encoder.predict(x_train), tr_labels.reshape(-1))
-            prediction = clf.predict(self.encoder.predict(x_train))
-            accuracies[epoch] = balanced_accuracy_score(prediction, tr_labels.reshape(-1))
-
+        def ae_callback(epoch, logs):
             if logs['loss'] < self.history['best_loss'][0]:
                 self.history['best_loss'] = (logs['loss'], epoch)
-                self.history['best_model_weights'] = self.model.get_weights()
-            elif logs['loss'] == self.history['best_loss'][0] and accuracies[epoch] > self.history['best_accuracy'][0]:
-                self.history['best_model_weights'] = self.model.get_weights()
+                self.history['best_weights'] = self.model.get_weights()
 
-            if accuracies[epoch] > self.history['best_accuracy'][0]:
-                self.history['best_accuracy'] = (accuracies[epoch], epoch)
-
-        self.history['best_accuracy'] = (0, 0)
-        self.history['best_model_weights'] = None
+        self.history['best_weights'] = None
         self.history['best_loss'] = (float('inf'), 0)
-        accuracies = np.zeros(self.epochs)
 
         x_train = np.hstack((tr_vis_data, tr_sem_data))
-        clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-        classification = LambdaCallback(on_epoch_end=svm_callback)
-
         result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
-                                validation_split=0.2, callbacks=[classification])
+                                validation_split=0.2, callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
 
         self.history['loss'] = result.history['loss']
         self.history['val_loss'] = result.history['val_loss']
-        self.history['acc'] = accuracies
 
-    def estimate_semantic_data(self, tr_vis_data, tr_sem_data, te_vis_data, te_sem_data, tr_labels):
+    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data):
         """
         Estimates semantic data for the test set based on the best model computed in the AE training.
 
         :param tr_vis_data: training visual data
-        :param tr_sem_data: training semantic data
         :param te_vis_data: test visual data
+        :param tr_sem_data: training semantic data
         :param te_sem_data: test semantic data
-        :param tr_labels: training labels
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
-        self._fit(tr_vis_data, tr_sem_data, tr_labels)
-        self.model.set_weights(self.history['best_model_weights'])
+        self._fit(tr_vis_data, tr_sem_data)
+        self.model.set_weights(self.history['best_weights'])
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
         return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
                self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))
-
-    def save_data(self, label, filename):
-        """
-        Writes best weights to h5 file and training history to json file
-
-        :param label: string with identification of weights file
-        :param filename: string with history file name and path
-        :return: None
-        """
-        self.save_best_weights(label)
-        json_dict = self.get_summary()
-
-        json_string = json.dumps(json_dict)
-        with open(filename, 'w+') as f:
-            json.dump(json_string, f)
-
-    def get_summary(self):
-        """
-        Retrieves the dictionary with summary with results for the AE training
-        :return: dictionary with results summary
-        """
-        try:
-            summary = dict()
-            summary['best_accuracy'] = ', '.join(list(map(str, self.history['best_accuracy'])))
-            summary['best_loss'] = ', '.join(list(map(str, self.history['best_loss'])))
-
-            summary['loss'] = ', '.join(list(map(str, self.history['loss'])))
-            summary['val_loss'] = ', '.join(list(map(str, self.history['val_loss'])))
-            summary['acc'] = ', '.join(list(map(str, self.history['acc'])))
-            return summary
-        except KeyError:
-            raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
-
-    def save_best_weights(self, label, path='.'):
-        """
-        Saves the best weights of the AE training into h5 file
-
-        :param label: string with identification of weights file
-        :param path: string with path to save weights file
-        :return: None
-        """
-        try:
-            if not os.path.isdir(path):
-                os.mkdir(path)
-
-            self.model.set_weights(self.history['best_model_weights'])
-            self.model.save_weights(os.path.join(path, 'best_model_%s.h5' % label))
-        except KeyError:
-            raise Exception('AE model was not trained yet. Please check "estimate_semantic_data" method')
