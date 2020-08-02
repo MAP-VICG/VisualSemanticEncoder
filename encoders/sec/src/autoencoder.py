@@ -10,6 +10,8 @@ array dimensionality and creating a new feature space with the merged data.
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
+import json
 import numpy as np
 from enum import Enum
 
@@ -88,7 +90,7 @@ class ModelFactory:
 
 
 class Encoder:
-    def __init__(self, input_length, encoding_length, output_length, ae_type, epochs):
+    def __init__(self, input_length, encoding_length, output_length, ae_type, epochs, results_path='.'):
         """
         Instantiates model object and initializes auxiliary variables
 
@@ -97,13 +99,17 @@ class Encoder:
         :param output_length:  length of AE output
         :param ae_type: type of AE
         :param epochs: number of epochs to run training
+        :param results_path: string with path to save results to
         """
         self.epochs = epochs
         self.model = ModelFactory(input_length, encoding_length, output_length)(ae_type)
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
-        self.history = dict()
 
-    def _fit(self, tr_vis_data, tr_sem_data):
+        self.history = dict()
+        self.best_weights = None
+        self.results_path = results_path
+
+    def _fit(self, tr_vis_data, tr_sem_data, save_results=False):
         """
         Trains AE model for the specified number of epochs based on the input data. In each epoch,
         the classification accuracy is computed for the training set. Input and output of the model
@@ -111,24 +117,36 @@ class Encoder:
 
         :param tr_vis_data: 2D numpy array with training visual data
         :param tr_sem_data: 2D numpy array with training semantic data
+        :param save_results: if True, saves training results
         :return: None
         """
+        if save_results and self.results_path != '.' and not os.path.isdir(self.results_path):
+            os.mkdir(self.results_path)
+
         def ae_callback(epoch, logs):
             if logs['loss'] < self.history['best_loss'][0]:
+                self.best_weights = self.model.get_weights()
                 self.history['best_loss'] = (logs['loss'], epoch)
-                self.history['best_weights'] = self.model.get_weights()
 
-        self.history['best_weights'] = None
+                if save_results:
+                    idx = str(epoch) if epoch > 10 else '0' + str(epoch)
+                    self.model.save_weights(os.path.join(self.results_path, 'ae_model_%s.h5' % idx))
+
+        self.best_weights = None
         self.history['best_loss'] = (float('inf'), 0)
 
         x_train = np.hstack((tr_vis_data, tr_sem_data))
         result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
                                 validation_split=0.2, callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
 
-        self.history['loss'] = result.history['loss']
-        self.history['val_loss'] = result.history['val_loss']
+        self.history['loss'] = list(result.history['loss'])
+        self.history['val_loss'] = list(result.history['val_loss'])
 
-    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data):
+        if save_results:
+            with open(os.path.join(self.results_path, 'ae_training_history.json'), 'w+') as f:
+                json.dump(self.history, f, indent=4, sort_keys=True)
+
+    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results=False):
         """
         Estimates semantic data for the test set based on the best model computed in the AE training.
 
@@ -136,10 +154,11 @@ class Encoder:
         :param te_vis_data: test visual data
         :param tr_sem_data: training semantic data
         :param te_sem_data: test semantic data
+        :param save_results: if True, saves training results
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
-        self._fit(tr_vis_data, tr_sem_data)
-        self.model.set_weights(self.history['best_weights'])
+        self._fit(tr_vis_data, tr_sem_data, save_results)
+        self.model.set_weights(self.best_weights)
         self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
         return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \

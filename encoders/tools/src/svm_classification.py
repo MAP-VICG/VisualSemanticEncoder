@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from enum import Enum
 from scipy.io import loadmat
@@ -29,9 +30,11 @@ class SVMClassifier:
         elif self.data_type == DataType.CUB:
             self.lambda_ = .2
 
+        self.history = dict()
+
     def get_te_sem_data(self, data):
         if self.data_type == DataType.AWA:
-            lbs = {data['param']['testclasses_id'][0][0][i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
+            lbs = {data['param']['testclasses_id'][0][0][i][0]: attrs for i, attrs in enumerate(data['S_te_pro'])}
             return np.array([lbs[label[0]] for label in data['param']['test_labels'][0][0]])
         elif self.data_type == DataType.CUB:
             lbs = {data['te_cl_id'][i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
@@ -145,26 +148,31 @@ class SVMClassifier:
 
         return accuracies
 
-    @staticmethod
-    def estimate_sec_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs):
+    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs, save_results, res_path):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1)
         te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.SIMPLE_AE, n_epochs)
-        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data)
+        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.SIMPLE_AE, n_epochs, res_path)
+        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results)
 
+        self.history['sec'] = ae.history
         return tr_sem, te_sem
 
-    def classify_sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs):
+    def classify_sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs, save_results, results_path='.'):
+        fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+
+        if save_results and results_path != '.' and not os.path.isdir(results_path):
+            os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
+            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 10 else 'f0' + str(fold))
             tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
-                                                    sem_data[te_idx], n_epochs)
+                                                    sem_data[te_idx], n_epochs, save_results, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)

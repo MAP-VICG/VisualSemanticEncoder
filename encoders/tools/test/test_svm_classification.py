@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 from scipy.io import loadmat
-from encoders.tools.src.utils import ZSL
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
 
@@ -157,7 +156,15 @@ class ClassificationTests(unittest.TestCase):
 
     def test_classify_sec_data_cub(self):
         vis_data, lbs_data, sem_data = self.svm_cub.get_data('../../Datasets/SAE/cub_demo_data.mat')
-        accuracies = self.svm_cub.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5)
+        accuracies = self.svm_cub.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+
+        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_cub.history['sec'].keys()))
+        self.assertEqual(5, len(self.svm_cub.history['sec']['loss']))
+        self.assertEqual(5, len(self.svm_cub.history['sec']['val_loss']))
+
+        idx = self.svm_cub.history['sec']['best_loss'][1]
+        self.assertTrue(self.svm_cub.history['sec']['best_loss'][0] in self.svm_cub.history['sec']['loss'])
+        self.assertEqual(self.svm_cub.history['sec']['best_loss'][0], self.svm_cub.history['sec']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
@@ -165,7 +172,15 @@ class ClassificationTests(unittest.TestCase):
 
     def test_classify_sec_data_awa(self):
         vis_data, lbs_data, sem_data = self.svm_awa.get_data('../../Datasets/SAE/awa_demo_data.mat')
-        accuracies = self.svm_awa.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5)
+        accuracies = self.svm_awa.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+
+        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_awa.history['sec'].keys()))
+        self.assertEqual(5, len(self.svm_awa.history['sec']['loss']))
+        self.assertEqual(5, len(self.svm_awa.history['sec']['val_loss']))
+
+        idx = self.svm_awa.history['sec']['best_loss'][1]
+        self.assertTrue(self.svm_awa.history['sec']['best_loss'][0] in self.svm_awa.history['sec']['loss'])
+        self.assertEqual(self.svm_awa.history['sec']['best_loss'][0], self.svm_awa.history['sec']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
