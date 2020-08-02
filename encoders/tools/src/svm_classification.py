@@ -3,12 +3,14 @@ from enum import Enum
 from scipy.io import loadmat
 
 from sklearn.svm import SVC
-from encoders.tools.src.utils import ZSL
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import normalize
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
+
+from encoders.tools.src.utils import ZSL
+from encoders.sec.src.autoencoder import ModelType, Encoder
 
 
 class DataType(Enum):
@@ -134,6 +136,35 @@ class SVMClassifier:
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
             tr_sem, te_sem = self.estimate_sae_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx], tr_labels)
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(tr_sem, tr_labels)
+            prediction = clf.predict(te_sem)
+
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
+
+    @staticmethod
+    def estimate_sec_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs):
+        tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1)
+        te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
+
+        input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
+        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.SIMPLE_AE, n_epochs)
+        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data)
+
+        return tr_sem, te_sem
+
+    def classify_sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs):
+        accuracies = []
+        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+
+        for tr_idx, te_idx in skf.split(vis_data, labels):
+            tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
+
+            tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
+                                                    sem_data[te_idx], n_epochs)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)

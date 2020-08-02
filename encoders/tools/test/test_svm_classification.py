@@ -154,3 +154,19 @@ class ClassificationTests(unittest.TestCase):
 
         _, sem_data = self.svm_awa.estimate_sae_data(input_data['X_tr'], input_data['X_te'], input_data['S_tr'], labels)
         self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
+
+    def test_classify_sec_data_cub(self):
+        vis_data, lbs_data, sem_data = self.svm_cub.get_data('../../Datasets/SAE/cub_demo_data.mat')
+        accuracies = self.svm_cub.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5)
+
+        for acc in accuracies:
+            self.assertTrue(0 <= acc <= 1)
+        self.assertEqual(2, len(accuracies))
+
+    def test_classify_sec_data_awa(self):
+        vis_data, lbs_data, sem_data = self.svm_awa.get_data('../../Datasets/SAE/awa_demo_data.mat')
+        accuracies = self.svm_awa.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5)
+
+        for acc in accuracies:
+            self.assertTrue(0 <= acc <= 1)
+        self.assertEqual(2, len(accuracies))
