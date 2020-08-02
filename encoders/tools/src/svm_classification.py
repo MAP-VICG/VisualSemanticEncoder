@@ -178,6 +178,7 @@ class SVMClassifier:
             clf.fit(tr_sem, tr_labels)
             prediction = clf.predict(te_sem)
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
