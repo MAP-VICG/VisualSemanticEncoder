@@ -22,6 +22,10 @@ class SVMClassifier:
             raise ValueError("Invalid data type.")
 
         self.data_type = data_type
+        if self.data_type == DataType.AWA:
+            self.lambda_ = 500000
+        elif self.data_type == DataType.CUB:
+            self.lambda_ = .2
 
     def get_te_sem_data(self, data):
         if self.data_type == DataType.AWA:
@@ -101,6 +105,39 @@ class SVMClassifier:
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_data, tr_labels)
             prediction = clf.predict(te_data)
+
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
+
+    def estimate_sae_data(self, tr_vis_data, te_vis_data, tr_sem_data, tr_labels):
+        if self.data_type == DataType.CUB:
+            tr_vis, te_vis = ZSL.dimension_reduction(tr_vis_data, te_vis_data, tr_labels)
+            tr_sem = normalize(tr_sem_data, norm='l2', axis=1)
+
+            sae_w = ZSL.sae(tr_vis.transpose(), tr_sem.transpose(), self.lambda_).transpose()
+            tr_sem, te_sem = tr_vis.dot(sae_w), te_vis.dot(sae_w)
+        else:
+            tr_vis = normalize(tr_vis_data.transpose(), norm='l2', axis=1).transpose()
+            sae_w = ZSL.sae(tr_vis.transpose(), tr_sem_data.transpose(), self.lambda_)
+
+            tr_sem = tr_vis.dot(normalize(sae_w, norm='l2', axis=1).transpose())
+            te_sem = te_vis_data.dot(normalize(sae_w, norm='l2', axis=1).transpose())
+
+        return tr_sem, te_sem
+
+    def classify_sae_data(self, vis_data, sem_data, labels, n_folds):
+        accuracies = []
+        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+
+        for tr_idx, te_idx in skf.split(vis_data, labels):
+            tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
+
+            tr_sem, te_sem = self.estimate_sae_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx], tr_labels)
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(tr_sem, tr_labels)
+            prediction = clf.predict(te_sem)
 
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 

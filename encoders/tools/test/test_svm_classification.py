@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 from scipy.io import loadmat
-from ..src.svm_classification import SVMClassifier, DataType
+from encoders.tools.src.utils import ZSL
+from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
 
 class ClassificationTests(unittest.TestCase):
@@ -121,3 +122,35 @@ class ClassificationTests(unittest.TestCase):
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
+
+    def test_classify_sae_data_cub(self):
+        vis_data, lbs_data, sem_data = self.svm_cub.get_data('../../Datasets/SAE/cub_demo_data.mat')
+        accuracies = self.svm_cub.classify_sae_data(vis_data, sem_data, lbs_data, 2)
+
+        for acc in accuracies:
+            self.assertTrue(0 <= acc <= 1)
+        self.assertEqual(2, len(accuracies))
+
+    def test_classify_sae_data_awa(self):
+        vis_data, lbs_data, sem_data = self.svm_awa.get_data('../../Datasets/SAE/awa_demo_data.mat')
+        accuracies = self.svm_awa.classify_sae_data(vis_data, sem_data, lbs_data, 2)
+
+        for acc in accuracies:
+            self.assertTrue(0 <= acc <= 1)
+        self.assertEqual(2, len(accuracies))
+
+    def test_estimate_sae_data_cub(self):
+        input_data = loadmat('../../Datasets/SAE/cub_demo_data.mat')
+        template = loadmat('tools/test/mockfiles/cub_est_sem_data.mat')
+        labels = list(map(int, input_data['train_labels_cub']))
+
+        _, sem_data = self.svm_cub.estimate_sae_data(input_data['X_tr'], input_data['X_te'], input_data['S_tr'], labels)
+        self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
+
+    def test_estimate_sae_data_awa(self):
+        input_data = loadmat('../../Datasets/SAE/awa_demo_data.mat')
+        template = loadmat('tools/test/mockfiles/awa_est_sem_data.mat')
+        labels = list(map(int, input_data['param']['train_labels'][0][0]))
+
+        _, sem_data = self.svm_awa.estimate_sae_data(input_data['X_tr'], input_data['X_te'], input_data['S_tr'], labels)
+        self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
