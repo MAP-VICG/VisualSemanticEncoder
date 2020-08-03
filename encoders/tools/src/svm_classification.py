@@ -171,7 +171,7 @@ class SVMClassifier:
         for tr_idx, te_idx in skf.split(vis_data, labels):
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
-            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 10 else 'f0' + str(fold))
+            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
             tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
                                                     sem_data[te_idx], n_epochs, save_results, res_path)
 

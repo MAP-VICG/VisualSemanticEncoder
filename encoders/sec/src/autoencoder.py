@@ -193,7 +193,7 @@ class Encoder:
                 self.history['best_loss'] = (logs['loss'], epoch)
 
                 if save_results:
-                    idx = str(epoch) if epoch > 10 else '0' + str(epoch)
+                    idx = str(epoch) if epoch > 9 else '0' + str(epoch)
                     self.model.save_weights(os.path.join(self.results_path, 'ae_model_%s.h5' % idx))
 
         self.best_weights = None
