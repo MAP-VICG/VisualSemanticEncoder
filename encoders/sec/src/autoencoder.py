@@ -15,9 +15,11 @@ import json
 import numpy as np
 from enum import Enum
 
+import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import LambdaCallback
-from tensorflow.keras.layers import Input, Dense, Dropout
+from tensorflow.keras.layers import Input, Dense, Dropout, Layer
 
 
 class ModelType(Enum):
@@ -26,6 +28,48 @@ class ModelType(Enum):
     """
     SIMPLE_AE = "SIMPLE_AE"
     SIMPLE_VAE = "SIMPLE_VAE"
+
+
+class Sampling(Layer):
+    """
+    Uses (z_mean, z_log_var) to sample z, the vector encoding a digit.
+    """
+    def call(self, inputs):
+        z_mean, z_log_var = inputs
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
+class VAE(keras.Model):
+    def __init__(self, encoder, decoder, input_length, **kwargs):
+        super(VAE, self).__init__(**kwargs)
+        self.encoder = encoder
+        self.decoder = decoder
+        self.input_length = input_length
+
+    def train_step(self, data):
+        if isinstance(data, tuple):
+            data = data[0]
+        with tf.GradientTape() as tape:
+            z_mean, z_log_var, z = self.encoder(data)
+            reconstruction = self.decoder(z)
+            reconstruction_loss = tf.reduce_mean(
+                keras.losses.binary_crossentropy(data, reconstruction)
+            )
+            reconstruction_loss *= self.input_length
+            kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
+            kl_loss = tf.reduce_mean(kl_loss)
+            kl_loss *= -0.5
+            total_loss = reconstruction_loss + kl_loss
+        grads = tape.gradient(total_loss, self.trainable_weights)
+        self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+        return {
+            "loss": total_loss,
+            "reconstruction_loss": reconstruction_loss,
+            "kl_loss": kl_loss,
+        }
 
 
 class ModelFactory:
@@ -86,7 +130,26 @@ class ModelFactory:
 
         @return: object with VAE model
         """
-        pass
+        encoder_inputs = keras.Input(shape=(self.input_length,), name='ae_input')
+        x = Dense(self.input_length - round(0.3 * self.input_length), activation='relu')(encoder_inputs)
+        x = Dense(self.input_length - round(0.6 * self.input_length), activation='relu')(x)
+        x = Dense(self.input_length - round(0.9 * self.input_length), activation='relu')(x)
+
+        z_mean = Dense(self.encoding_length, name="z_mean")(x)
+        z_log_var = Dense(self.encoding_length, name="z_log_var")(x)
+        z = Sampling(name="code")([z_mean, z_log_var])
+        encoder = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+
+        latent_inputs = keras.Input(shape=(self.encoding_length,))
+        x = Dense(self.input_length - round(0.9 * self.input_length), activation='relu')(latent_inputs)
+        x = Dense(self.input_length - round(0.6 * self.input_length), activation='relu')(x)
+        x = Dense(self.input_length - round(0.3 * self.input_length), activation='relu')(x)
+        decoder_outputs = Dense(self.output_length, activation='relu', name='ae_output')(x)
+        decoder = keras.Model(latent_inputs, decoder_outputs, name="decoder")
+
+        vae = VAE(encoder, decoder, self.input_length)
+        vae.compile(optimizer=keras.optimizers.Adam())
+        return vae
 
 
 class Encoder:
@@ -103,8 +166,9 @@ class Encoder:
         """
         self.epochs = epochs
         self.model = ModelFactory(input_length, encoding_length, output_length)(ae_type)
-        self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
+        self.encoder = None
+        self.ae_type = ae_type
         self.history = dict()
         self.best_weights = None
         self.results_path = results_path
@@ -136,11 +200,17 @@ class Encoder:
         self.history['best_loss'] = (float('inf'), 0)
 
         x_train = np.hstack((tr_vis_data, tr_sem_data))
-        result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
-                                validation_split=0.2, callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
-
-        self.history['loss'] = list(result.history['loss'])
-        self.history['val_loss'] = list(result.history['val_loss'])
+        if self.ae_type == ModelType.SIMPLE_AE:
+            result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
+                                    validation_split=0.2, callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
+            self.history['loss'] = list(result.history['loss'])
+            self.history['val_loss'] = list(result.history['val_loss'])
+        else:
+            result = self.model.fit(x_train, x_train, epochs=self.epochs, batch_size=256, shuffle=True, verbose=1,
+                                    callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
+            self.history['loss'] = list(result.history['loss'])
+            self.history['kl_loss'] = list(result.history['kl_loss'])
+            self.history['reconstruction_loss'] = list(result.history['reconstruction_loss'])
 
         if save_results:
             with open(os.path.join(self.results_path, 'ae_training_history.json'), 'w+') as f:
@@ -159,7 +229,12 @@ class Encoder:
         """
         self._fit(tr_vis_data, tr_sem_data, save_results)
         self.model.set_weights(self.best_weights)
-        self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
 
-        return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
-               self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))
+        if self.ae_type == ModelType.SIMPLE_AE:
+            self.encoder = Model(self.model.input, outputs=[self.model.get_layer('code').output])
+            return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data))), \
+                   self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))
+        else:
+            self.encoder = self.model.encoder
+            return self.encoder.predict(np.hstack((tr_vis_data, tr_sem_data)))[2], \
+                   self.encoder.predict(np.hstack((te_vis_data, te_sem_data)))[2]

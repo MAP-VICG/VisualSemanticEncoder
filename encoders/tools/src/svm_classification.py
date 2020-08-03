@@ -11,7 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
-from encoders.sec.src.autoencoder import ModelType, Encoder
+from encoders.sec.src.autoencoder import Encoder
 
 
 class DataType(Enum):
@@ -20,7 +20,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type):
+    def __init__(self, data_type, ae_type):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
@@ -31,6 +31,7 @@ class SVMClassifier:
             self.lambda_ = .2
 
         self.history = dict()
+        self.ae_type = ae_type
 
     def get_te_sem_data(self, data):
         if self.data_type == DataType.AWA:
@@ -153,7 +154,7 @@ class SVMClassifier:
         te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.SIMPLE_AE, n_epochs, res_path)
+        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, n_epochs, res_path)
         tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results)
 
         self.history['sec'] = ae.history
