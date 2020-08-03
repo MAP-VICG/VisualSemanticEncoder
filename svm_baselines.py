@@ -2,8 +2,8 @@ import json
 from encoders.sec.src.autoencoder import ModelType
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
-n_folds = 5
-n_epochs = 50
+n_folds = 2
+n_epochs = 5
 result = {'i_cub': dict(), 'r_cub': dict(), 'i_awa': dict(), 'r_awa': dict()}
 
 svm_cub = SVMClassifier(DataType.CUB, ModelType.SIMPLE_VAE)
