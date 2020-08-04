@@ -185,3 +185,29 @@ class SVMClassifier:
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
+
+    def classify_sae2sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs, save_results, results_path='.'):
+        fold = 0
+        accuracies = []
+        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+
+        if save_results and results_path != '.' and not os.path.isdir(results_path):
+            os.mkdir(results_path)
+
+        for tr_idx, te_idx in skf.split(vis_data, labels):
+            tr_vis, te_vis = vis_data[tr_idx], vis_data[te_idx]
+            tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
+
+            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
+
+            tr_sem, te_sem = self.estimate_sae_data(tr_vis, te_vis, sem_data[tr_idx], tr_labels)
+            tr_sem, te_sem = self.estimate_sec_data(tr_vis, te_vis, tr_sem, te_sem, n_epochs, save_results, res_path)
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(tr_sem, tr_labels)
+            prediction = clf.predict(te_sem)
+
+            fold += 1
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
