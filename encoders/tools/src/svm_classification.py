@@ -152,6 +152,8 @@ class SVMClassifier:
     def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs, save_results, res_path):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1)
         te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
+        tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1)
+        te_vis_data = normalize(te_vis_data, norm='l2', axis=1)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
         ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, n_epochs, res_path)
