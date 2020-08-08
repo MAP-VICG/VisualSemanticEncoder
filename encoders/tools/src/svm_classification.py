@@ -21,7 +21,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type, ae_type, degradation_rate=0):
+    def __init__(self, data_type, ae_type, degradation_rate=0.0):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
