@@ -12,6 +12,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
 from encoders.sec.src.autoencoder import Encoder
+from encoders.tools.src.sem_degradation import SemanticDegradation
 
 
 class DataType(Enum):
@@ -20,7 +21,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type, ae_type):
+    def __init__(self, data_type, ae_type, degradation_rate=0):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
@@ -32,6 +33,7 @@ class SVMClassifier:
 
         self.history = dict()
         self.ae_type = ae_type
+        self.degradation_rate = degradation_rate
 
     def get_te_sem_data(self, data):
         if self.data_type == DataType.AWA:
@@ -77,14 +79,15 @@ class SVMClassifier:
 
         return accuracies
 
-    @staticmethod
-    def classify_sem_data(sem_data, labels, n_folds):
+    def classify_sem_data(self, sem_data, labels, n_folds):
         accuracies = []
         skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(sem_data, labels):
             tr_data = normalize(sem_data[train_index], norm='l2', axis=1)
-            te_data = normalize(sem_data[test_index], norm='l2', axis=1)
+            te_data = SemanticDegradation.kill_semantic_attributes(sem_data[test_index], self.degradation_rate)
+
+            te_data = normalize(te_data, norm='l2', axis=1)
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
@@ -95,15 +98,16 @@ class SVMClassifier:
 
         return accuracies
 
-    @staticmethod
-    def classify_concat_data(vis_data, sem_data, labels, n_folds):
+    def classify_concat_data(self, vis_data, sem_data, labels, n_folds):
         accuracies = []
         skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
             tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1)
-            te_sem = normalize(sem_data[test_index], norm='l2', axis=1)
+
+            te_sem = SemanticDegradation.kill_semantic_attributes(sem_data[test_index], self.degradation_rate)
+            te_sem = normalize(te_sem, norm='l2', axis=1)
 
             tr_data, te_data = np.hstack((tr_vis, tr_sem)), np.hstack((te_vis, te_sem))
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
@@ -151,9 +155,11 @@ class SVMClassifier:
 
     def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs, save_results, res_path):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1)
-        te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
         tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1)
         te_vis_data = normalize(te_vis_data, norm='l2', axis=1)
+
+        te_sem_data = SemanticDegradation.kill_semantic_attributes(te_sem_data, self.degradation_rate)
+        te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
         ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, n_epochs, res_path)
