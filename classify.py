@@ -35,7 +35,7 @@ class Classification:
         rate_label = str(int(rate * 100))
         self.run_classification('../Datasets/SAE/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
         self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'results', DataType.AWA, rate=rate)
+        self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
         self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
 
         with open(os.path.join(self.results_path, 'classification_results_%s.json' % rate_label.zfill(3)), 'w+') as f:
