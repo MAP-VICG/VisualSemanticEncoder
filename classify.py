@@ -15,7 +15,7 @@ class Classification:
         self.result = {'i_cub': dict(), 'r_cub': dict(), 'i_awa': dict(), 'r_awa': dict()}
 
     def run_classification(self, data_path, label, data_type, rate=0.0):
-        rate_label = str(rate * 100)
+        rate_label = str(int(rate * 100))
         results_path = os.path.join(self.results_path, rate_label)
 
         if self.save and not os.path.join(results_path, label):
@@ -32,7 +32,7 @@ class Classification:
         self.result[label]['s2s'] = svm.classify_sae2sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
 
     def classify_all(self, rate):
-        rate_label = str(rate * 100)
+        rate_label = str(int(rate * 100))
         self.run_classification('../Datasets/SAE/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
         self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
         self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'results', DataType.AWA, rate=rate)
