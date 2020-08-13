@@ -42,6 +42,7 @@ class Classification:
             json.dump(self.result, f, indent=4, sort_keys=True)
 
 
-for degradation_rate in [0.1]:
-    klass = Classification(5, 50, 'results', ModelType.SIMPLE_AE)
-    klass.classify_all(degradation_rate)
+if __name__ == '__main__':
+    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
+        klass = Classification(5, 50, 'results', ModelType.SIMPLE_AE)
+        klass.classify_all(degradation_rate)
