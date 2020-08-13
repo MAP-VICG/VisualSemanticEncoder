@@ -21,7 +21,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type, ae_type, degradation_rate=0.0):
+    def __init__(self, data_type, ae_type, folds, epochs, degradation_rate=0.0):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
@@ -31,6 +31,8 @@ class SVMClassifier:
         elif self.data_type == DataType.CUB:
             self.lambda_ = .2
 
+        self.n_folds = folds
+        self.epochs = epochs
         self.history = dict()
         self.ae_type = ae_type
         self.degradation_rate = degradation_rate
@@ -59,10 +61,9 @@ class SVMClassifier:
 
         return vis_data, lbs_data, sem_data
 
-    @staticmethod
-    def classify_vis_data(vis_data, labels, n_folds, reduce_dim=False):
+    def classify_vis_data(self, vis_data, labels, reduce_dim=False):
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
             tr_data, te_data = vis_data[train_index], vis_data[test_index]
@@ -79,9 +80,9 @@ class SVMClassifier:
 
         return accuracies
 
-    def classify_sem_data(self, sem_data, labels, n_folds):
+    def classify_sem_data(self, sem_data, labels):
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(sem_data, labels):
             tr_data = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
@@ -100,9 +101,9 @@ class SVMClassifier:
 
         return accuracies
 
-    def classify_concat_data(self, vis_data, sem_data, labels, n_folds):
+    def classify_concat_data(self, vis_data, sem_data, labels):
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
             tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
@@ -139,9 +140,9 @@ class SVMClassifier:
 
         return tr_sem, te_sem
 
-    def classify_sae_data(self, vis_data, sem_data, labels, n_folds):
+    def classify_sae_data(self, vis_data, sem_data, labels):
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
@@ -156,7 +157,7 @@ class SVMClassifier:
 
         return accuracies
 
-    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs, save_results, res_path):
+    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results, res_path):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
         tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1, copy=True)
         te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
@@ -166,16 +167,16 @@ class SVMClassifier:
         te_sem_data = normalize(te_sem_data, norm='l2', axis=1, copy=True)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, n_epochs, res_path)
+        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, self.epochs, res_path)
         tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results)
 
         self.history['sec'] = ae.history
         return tr_sem, te_sem
 
-    def classify_sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs, save_results, results_path='.'):
+    def classify_sec_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
         fold = 0
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         if save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
@@ -185,7 +186,7 @@ class SVMClassifier:
 
             res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
             tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
-                                                    sem_data[te_idx], n_epochs, save_results, res_path)
+                                                    sem_data[te_idx], save_results, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)
@@ -196,10 +197,10 @@ class SVMClassifier:
 
         return accuracies
 
-    def classify_sae2sec_data(self, vis_data, sem_data, labels, n_folds, n_epochs, save_results, results_path='.'):
+    def classify_sae2sec_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
         fold = 0
         accuracies = []
-        skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         if save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
@@ -211,7 +212,7 @@ class SVMClassifier:
             res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
 
             tr_sem, te_sem = self.estimate_sae_data(tr_vis, te_vis, sem_data[tr_idx], tr_labels)
-            tr_sem, te_sem = self.estimate_sec_data(tr_vis, te_vis, tr_sem, te_sem, n_epochs, save_results, res_path)
+            tr_sem, te_sem = self.estimate_sec_data(tr_vis, te_vis, tr_sem, te_sem, save_results, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)
