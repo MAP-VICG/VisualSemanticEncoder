@@ -84,10 +84,12 @@ class SVMClassifier:
         skf = StratifiedKFold(n_splits=n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(sem_data, labels):
-            tr_data = normalize(sem_data[train_index], norm='l2', axis=1)
-            te_data = SemanticDegradation.kill_semantic_attributes(sem_data[test_index], self.degradation_rate)
+            tr_data = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
-            te_data = normalize(te_data, norm='l2', axis=1)
+            te_data = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
+            te_data = SemanticDegradation.kill_semantic_attributes(te_data, self.degradation_rate)
+            te_data = normalize(te_data, norm='l2', axis=1, copy=True)
+
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
@@ -104,10 +106,11 @@ class SVMClassifier:
 
         for train_index, test_index in skf.split(vis_data, labels):
             tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
-            tr_sem = normalize(sem_data[train_index], norm='l2', axis=1)
+            tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
-            te_sem = SemanticDegradation.kill_semantic_attributes(sem_data[test_index], self.degradation_rate)
-            te_sem = normalize(te_sem, norm='l2', axis=1)
+            te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
+            te_sem = SemanticDegradation.kill_semantic_attributes(te_sem, self.degradation_rate)
+            te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
 
             tr_data, te_data = np.hstack((tr_vis, tr_sem)), np.hstack((te_vis, te_sem))
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
@@ -123,16 +126,16 @@ class SVMClassifier:
     def estimate_sae_data(self, tr_vis_data, te_vis_data, tr_sem_data, tr_labels):
         if self.data_type == DataType.CUB:
             tr_vis, te_vis = ZSL.dimension_reduction(tr_vis_data, te_vis_data, tr_labels)
-            tr_sem = normalize(tr_sem_data, norm='l2', axis=1)
+            tr_sem = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
 
             sae_w = ZSL.sae(tr_vis.transpose(), tr_sem.transpose(), self.lambda_).transpose()
             tr_sem, te_sem = tr_vis.dot(sae_w), te_vis.dot(sae_w)
         else:
-            tr_vis = normalize(tr_vis_data.transpose(), norm='l2', axis=1).transpose()
+            tr_vis = normalize(tr_vis_data.transpose(), norm='l2', axis=1, copy=True).transpose()
             sae_w = ZSL.sae(tr_vis.transpose(), tr_sem_data.transpose(), self.lambda_)
 
-            tr_sem = tr_vis.dot(normalize(sae_w, norm='l2', axis=1).transpose())
-            te_sem = te_vis_data.dot(normalize(sae_w, norm='l2', axis=1).transpose())
+            tr_sem = tr_vis.dot(normalize(sae_w, norm='l2', axis=1, copy=True).transpose())
+            te_sem = te_vis_data.dot(normalize(sae_w, norm='l2', axis=1, copy=True).transpose())
 
         return tr_sem, te_sem
 
@@ -154,12 +157,13 @@ class SVMClassifier:
         return accuracies
 
     def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, n_epochs, save_results, res_path):
-        tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1)
-        tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1)
-        te_vis_data = normalize(te_vis_data, norm='l2', axis=1)
+        tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
+        tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1, copy=True)
+        te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
 
+        te_sem_data = normalize(te_sem_data, norm='l2', axis=1, copy=True)
         te_sem_data = SemanticDegradation.kill_semantic_attributes(te_sem_data, self.degradation_rate)
-        te_sem_data = normalize(te_sem_data, norm='l2', axis=1)
+        te_sem_data = normalize(te_sem_data, norm='l2', axis=1, copy=True)
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
         ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, n_epochs, res_path)
