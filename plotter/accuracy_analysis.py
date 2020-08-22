@@ -3,12 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 fig = plt.figure(figsize=(11, 6.5))
-dataset_names = {'i_awa': 'AwA GoogleNet', 'r_awa': 'Awa2 ResNet', 'i_cub': 'CUB GoogleNet', 'r_cub': 'CUB ResNet'}
+dataset_names = {'i_awa': 'AwA GoogleNet', 'r_awa': 'AwA2 ResNet', 'i_cub': 'CUB GoogleNet', 'r_cub': 'CUB ResNet'}
 result_files = ['../results/classification_results_000.json', '../results/classification_results_010.json',
                 '../results/classification_results_020.json', '../results/classification_results_030.json',
                 '../results/classification_results_040.json', '../results/classification_results_050.json',
                 '../results/classification_results_060.json', '../results/classification_results_070.json',
-                '../results/classification_results_080.json']
+                '../results/classification_results_080.json', '../results/classification_results_090.json',
+                '../results/classification_results_100.json']
 
 for p, dataset in enumerate(['i_awa', 'r_awa', 'i_cub', 'r_cub']):
     rates = []
@@ -32,15 +33,6 @@ for p, dataset in enumerate(['i_awa', 'r_awa', 'i_cub', 'r_cub']):
         curves['sec']['mean'][i], curves['sec']['std'][i] = np.mean(data[dataset]['sec']), np.std(data[dataset]['sec'])
         curves['sem']['mean'][i], curves['sem']['std'][i] = np.mean(data[dataset]['sem']), np.std(data[dataset]['sem'])
         curves['vis']['mean'][i], curves['vis']['std'][i] = np.mean(data[dataset]['vis']), np.std(data[dataset]['vis'])
-
-        # if rates[-1] == 0:
-        #     print(dataset)
-        #     print(np.round(curves['cat']['mean'][i], decimals=4))
-        #     print(np.round(curves['s2s']['mean'][i], decimals=4))
-        #     print(np.round(curves['sae']['mean'][i], decimals=4))
-        #     print(np.round(curves['sec']['mean'][i], decimals=4))
-        #     print(np.round(curves['sem']['mean'][i], decimals=4))
-        #     print(np.round(curves['vis']['mean'][i], decimals=4))
 
     plt.subplot(2, 2, p + 1)
     for key in curves.keys():
