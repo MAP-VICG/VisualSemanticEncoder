@@ -110,7 +110,7 @@ class ModelFactory:
         encoded = Dense(self.input_length - round(0.6 * self.input_length), activation='relu', name='e_dense2')(encoded)
         encoded = Dense(self.input_length - round(0.9 * self.input_length), activation='relu', name='e_dense3')(encoded)
 
-        encoded = Dropout(0.2)(encoded)
+        # encoded = Dropout(0.2)(encoded)
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
 
         decoded = Dense(self.input_length - round(0.9 * self.input_length), activation='relu', name='d_dense4')(code)
