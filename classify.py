@@ -18,7 +18,7 @@ class Classification:
         rate_label = str(int(rate * 100))
         results_path = os.path.join(self.results_path, rate_label)
 
-        if self.save and not os.path.join(results_path, label):
+        if self.save and not os.path.isdir(os.path.join(results_path, label)):
             os.makedirs(os.path.join(results_path, label))
 
         svm = SVMClassifier(data_type, self.model_type, self.folds, self.epochs, degradation_rate=rate)
@@ -30,6 +30,7 @@ class Classification:
         self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
         self.result[label]['sec'] = svm.classify_sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
         self.result[label]['s2s'] = svm.classify_sae2sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
+        self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
 
     def classify_all(self, rate):
         rate_label = str(int(rate * 100))
@@ -43,6 +44,6 @@ class Classification:
 
 
 if __name__ == '__main__':
-    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
-        klass = Classification(5, 50, 'results', ModelType.SIMPLE_AE)
+    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        klass = Classification(5, 50, 'results_pca_sem_norm', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)

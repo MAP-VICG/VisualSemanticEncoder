@@ -4,6 +4,7 @@ from enum import Enum
 from scipy.io import loadmat
 
 from sklearn.svm import SVC
+from sklearn.decomposition import PCA
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import normalize
 from sklearn.preprocessing import StandardScaler
@@ -119,6 +120,30 @@ class SVMClassifier:
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_data, tr_labels)
             prediction = clf.predict(te_data)
+
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
+
+    def classify_concat_pca_data(self, vis_data, sem_data, labels):
+        accuracies = []
+        pca = PCA(n_components=sem_data.shape[1])
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+
+        for train_index, test_index in skf.split(vis_data, labels):
+            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
+
+            te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
+            te_sem = SemanticDegradation.kill_semantic_attributes(te_sem, self.degradation_rate)
+            te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
+
+            tr_data, te_data = np.hstack((tr_vis, tr_sem)), np.hstack((te_vis, te_sem))
+            tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(pca.fit_transform(tr_data), tr_labels)
+            prediction = clf.predict(pca.fit_transform(te_data))
 
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
