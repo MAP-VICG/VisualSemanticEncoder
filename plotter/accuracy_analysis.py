@@ -16,7 +16,8 @@ for p, dataset in enumerate(['i_awa', 'r_awa', 'i_cub', 'r_cub']):
     k = len(result_files)
     curves = {'cat': {'mean': np.zeros(k), 'std': np.zeros(k)}, 's2s': {'mean': np.zeros(k), 'std': np.zeros(k)},
               'sae': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'sec': {'mean': np.zeros(k), 'std': np.zeros(k)},
-              'sem': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'vis': {'mean': np.zeros(k), 'std': np.zeros(k)}}
+              'sem': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'vis': {'mean': np.zeros(k), 'std': np.zeros(k)},
+              'pca': {'mean': np.zeros(k), 'std': np.zeros(k)}}
 
     for i, file in enumerate(result_files):
         if file.split('_')[-1].split('.')[0] == '2':
@@ -33,6 +34,7 @@ for p, dataset in enumerate(['i_awa', 'r_awa', 'i_cub', 'r_cub']):
         curves['sec']['mean'][i], curves['sec']['std'][i] = np.mean(data[dataset]['sec']), np.std(data[dataset]['sec'])
         curves['sem']['mean'][i], curves['sem']['std'][i] = np.mean(data[dataset]['sem']), np.std(data[dataset]['sem'])
         curves['vis']['mean'][i], curves['vis']['std'][i] = np.mean(data[dataset]['vis']), np.std(data[dataset]['vis'])
+        curves['pca']['mean'][i], curves['pca']['std'][i] = np.mean(data[dataset]['pca']), np.std(data[dataset]['pca'])
 
     plt.subplot(2, 2, p + 1)
     for key in curves.keys():
