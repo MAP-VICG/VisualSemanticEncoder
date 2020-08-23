@@ -45,5 +45,5 @@ class Classification:
 
 if __name__ == '__main__':
     for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-        klass = Classification(5, 50, 'results_pca_sem_norm', ModelType.SIMPLE_AE)
+        klass = Classification(5, 50, 'results', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)
