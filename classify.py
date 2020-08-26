@@ -44,6 +44,6 @@ class Classification:
 
 
 if __name__ == '__main__':
-    for degradation_rate in [0.0, 0.1, 0.2]:#, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-        klass = Classification(5, 50, 'results_dropout', ModelType.SIMPLE_AE)
+    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        klass = Classification(2, 5, 'results_concat', ModelType.CONCAT_AE)
         klass.classify_all(degradation_rate)
