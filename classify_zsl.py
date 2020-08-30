@@ -3,8 +3,8 @@ from scipy.io import loadmat
 from encoders.tools.src.utils import ZSL
 from sklearn.preprocessing import normalize
 
-from encoders.sec.src.autoencoder import Encoder
-from encoders.sec.src.autoencoder import ModelType
+from encoders.sec.src.encoder import Encoder
+from encoders.sec.src.encoder import ModelType
 
 
 def estimate_sem_data(tr_vis_data, te_vis_data, tr_sem_data, res_path):

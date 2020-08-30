@@ -12,15 +12,18 @@ array dimensionality and creating a new feature space with the merged data.
 """
 from enum import Enum
 
-from encoders.sec.src.autoencoders import Simple3Layers, Concat3Layers
+from encoders.sec.src.autoencoders import Simple1Layer, Simple2Layers, Simple3Layers, Simple4Layers, Concat3Layers
 
 
 class ModelType(Enum):
     """
     Enum for model type
     """
-    SIMPLE_AE = "SIMPLE_AE"
     CONCAT_AE = "CONCAT_AE"
+    SIMPLE_AE_1L = "SIMPLE_AE_1L"
+    SIMPLE_AE_2L = "SIMPLE_AE_2L"
+    SIMPLE_AE_3L = "SIMPLE_AE_3L"
+    SIMPLE_AE_4L = "SIMPLE_AE_4L"
 
 
 class ModelFactory:
@@ -43,8 +46,14 @@ class ModelFactory:
         @param ae_type: auto encoder type
         @return: object with auto encoder model
         """
-        if ae_type == ModelType.SIMPLE_AE:
+        if ae_type == ModelType.SIMPLE_AE_1L:
+            return Simple1Layer(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_2L:
+            return Simple2Layers(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L:
             return Simple3Layers(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_4L:
+            return Simple4Layers(self.input_length, self.encoding_length, self.output_length)
         if ae_type == ModelType.CONCAT_AE:
             return Concat3Layers(self.input_length, self.encoding_length, self.output_length)
 
