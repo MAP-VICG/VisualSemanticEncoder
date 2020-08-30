@@ -1,46 +1,46 @@
 import unittest
 import numpy as np
 from scipy.io import loadmat
-from encoders.sec.src.autoencoder import ModelType
+from encoders.sec.src.encoder import ModelType
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
 
 class ClassificationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.svm_cub_ae = SVMClassifier(DataType.CUB, ModelType.SIMPLE_AE)
-        cls.svm_awa_ae = SVMClassifier(DataType.AWA, ModelType.SIMPLE_AE)
+        cls.svm_cub_ae = SVMClassifier(DataType.CUB, ModelType.SIMPLE_AE_1L)
+        cls.svm_awa_ae = SVMClassifier(DataType.AWA, ModelType.SIMPLE_AE_1L)
 
     def test_get_te_sem_data_awa(self):
-        sem_data = self.svm_awa_ae.get_te_sem_data(loadmat('../../Datasets/SAE/awa_demo_data.mat'))
+        sem_data = self.svm_awa_ae.get_te_sem_data(loadmat('../../Datasets/SEM/awa_demo_data.mat'))
         self.assertEqual((6180, 85), sem_data.shape)
         self.assertEqual(94.6, np.max(sem_data))
         self.assertEqual(0.0, np.min(sem_data))
         self.assertEqual(21.63002965924234, np.mean(sem_data))
 
     def test_get_te_sem_data_awa_resnet(self):
-        sem_data = self.svm_awa_ae.get_te_sem_data(loadmat('../../Datasets/SAE/awa_demo_data_resnet.mat'))
+        sem_data = self.svm_awa_ae.get_te_sem_data(loadmat('../../Datasets/SEM/awa_demo_data_resnet.mat'))
         self.assertEqual((6985, 85), sem_data.shape)
         self.assertEqual(94.6, np.max(sem_data))
         self.assertEqual(0.0, np.min(sem_data))
         self.assertEqual(21.353158836161526, np.mean(sem_data))
 
     def test_get_te_sem_data_cub_resnet(self):
-        sem_data = self.svm_cub_ae.get_te_sem_data(loadmat('../../Datasets/SAE/cub_demo_data_resnet.mat'))
+        sem_data = self.svm_cub_ae.get_te_sem_data(loadmat('../../Datasets/SEM/cub_demo_data_resnet.mat'))
         self.assertEqual((2933, 312), sem_data.shape)
         self.assertEqual(100.0, np.max(sem_data))
         self.assertEqual(0.0, np.min(sem_data))
         self.assertEqual(11.275272524447784, np.mean(sem_data))
 
     def test_get_te_sem_data_cub(self):
-        sem_data = self.svm_cub_ae.get_te_sem_data(loadmat('../../Datasets/SAE/cub_demo_data.mat'))
+        sem_data = self.svm_cub_ae.get_te_sem_data(loadmat('../../Datasets/SEM/cub_demo_data.mat'))
         self.assertEqual((2933, 312), sem_data.shape)
         self.assertEqual(100.0, np.max(sem_data))
         self.assertEqual(0.0, np.min(sem_data))
         self.assertEqual(11.275272524447782, np.mean(sem_data))
 
     def test_get_data_awa(self):
-        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SAE/awa_demo_data.mat')
+        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SEM/awa_demo_data.mat')
         self.assertEqual((30475, 1024), vis_data.shape)
         self.assertEqual((30475, 1), lbs_data.shape)
         self.assertEqual((30475, 85), sem_data.shape)
@@ -55,7 +55,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(20.947125740481585, np.mean(sem_data))
 
     def test_get_data_awa_resnet(self):
-        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SAE/awa_demo_data_resnet.mat')
+        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SEM/awa_demo_data_resnet.mat')
         self.assertEqual((37322, 2048), vis_data.shape)
         self.assertEqual((37322, 1), lbs_data.shape)
         self.assertEqual((37322, 85), sem_data.shape)
@@ -70,7 +70,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(20.950078502822805, np.mean(sem_data))
 
     def test_get_data_cub(self):
-        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
+        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
         self.assertEqual((11788, 1024), vis_data.shape)
         self.assertEqual((11788, 1), lbs_data.shape)
         self.assertEqual((11788, 312), sem_data.shape)
@@ -85,7 +85,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(2.8263371728213316, np.mean(sem_data))
 
     def test_get_data_cub_resnet(self):
-        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data_resnet.mat')
+        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data_resnet.mat')
         self.assertEqual((11788, 2048), vis_data.shape)
         self.assertEqual((11788, 1), lbs_data.shape)
         self.assertEqual((11788, 312), sem_data.shape)
@@ -100,47 +100,47 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(11.389787361488784, np.mean(sem_data))
 
     def test_classify_vis_data(self):
-        vis_data, lbs_data, _ = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
-        accuracies = self.svm_cub_ae.classify_vis_data(vis_data, lbs_data, 2, True)
+        vis_data, lbs_data, _ = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
+        accuracies = self.svm_cub_ae.classify_vis_data(vis_data, lbs_data)
 
         for acc in accuracies:
             self.assertTrue(0 < acc < 1)
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sem_data(self):
-        _, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
-        accuracies = self.svm_cub_ae.classify_sem_data(sem_data, lbs_data, 2)
+        _, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
+        accuracies = self.svm_cub_ae.classify_sem_data(sem_data, lbs_data)
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
     def test_classify_concat_data(self):
-        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
-        accuracies = self.svm_cub_ae.classify_concat_data(vis_data, sem_data, lbs_data, 2)
+        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
+        accuracies = self.svm_cub_ae.classify_concat_data(vis_data, sem_data, lbs_data)
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sae_data_cub(self):
-        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
-        accuracies = self.svm_cub_ae.classify_sae_data(vis_data, sem_data, lbs_data, 2)
+        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
+        accuracies = self.svm_cub_ae.classify_sae_data(vis_data, sem_data, lbs_data)
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sae_data_awa(self):
-        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SAE/awa_demo_data.mat')
-        accuracies = self.svm_awa_ae.classify_sae_data(vis_data, sem_data, lbs_data, 2)
+        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SEM/awa_demo_data.mat')
+        accuracies = self.svm_awa_ae.classify_sae_data(vis_data, sem_data, lbs_data)
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
     def test_estimate_sae_data_cub(self):
-        input_data = loadmat('../../Datasets/SAE/cub_demo_data.mat')
+        input_data = loadmat('../../Datasets/SEM/cub_demo_data.mat')
         template = loadmat('tools/test/mockfiles/cub_est_sem_data.mat')
         labels = list(map(int, input_data['train_labels_cub']))
 
@@ -156,7 +156,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
 
     def test_classify_sec_data_cub_ae(self):
-        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SAE/cub_demo_data.mat')
+        vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
         accuracies = self.svm_cub_ae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
         self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_cub_ae.history['sec'].keys()))
@@ -172,7 +172,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sec_data_awa_ae(self):
-        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SAE/awa_demo_data.mat')
+        vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SEM/awa_demo_data.mat')
         accuracies = self.svm_awa_ae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
         self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_awa_ae.history['sec'].keys()))
@@ -188,8 +188,8 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sec_data_cub_vae(self):
-        svm_cub_vae = SVMClassifier(DataType.CUB, ModelType.SIMPLE_VAE)
-        vis_data, lbs_data, sem_data = svm_cub_vae.get_data('../../Datasets/SAE/cub_demo_data.mat')
+        svm_cub_vae = SVMClassifier(DataType.CUB, ModelType.SIMPLE_AE_1L)
+        vis_data, lbs_data, sem_data = svm_cub_vae.get_data('../../Datasets/SEM/cub_demo_data.mat')
         accuracies = svm_cub_vae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
         self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_cub_vae.history['sec'].keys()))
@@ -206,8 +206,8 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(2, len(accuracies))
 
     def test_classify_sec_data_awa_vae(self):
-        svm_awa_vae = SVMClassifier(DataType.AWA, ModelType.SIMPLE_VAE)
-        vis_data, lbs_data, sem_data = svm_awa_vae.get_data('../../Datasets/SAE/awa_demo_data.mat')
+        svm_awa_vae = SVMClassifier(DataType.AWA, ModelType.SIMPLE_AE_1L)
+        vis_data, lbs_data, sem_data = svm_awa_vae.get_data('../../Datasets/SEM/awa_demo_data.mat')
         accuracies = svm_awa_vae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
         self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_awa_vae.history['sec'].keys()))

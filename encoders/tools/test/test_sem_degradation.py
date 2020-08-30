@@ -7,7 +7,7 @@ from encoders.tools.src.sem_degradation import SemanticDegradation
 class SemanticDegradationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
+        cls.data = loadmat('../../../../Datasets/SEM/cub_demo_data.mat')
 
     def test_kill_semantic_attributes_25(self):
         """
