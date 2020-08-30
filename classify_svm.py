@@ -1,7 +1,7 @@
 import os
 import json
 
-from encoders.sec.src.autoencoder import ModelType
+from encoders.sec.src.encoder import ModelType
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
 
@@ -24,20 +24,20 @@ class Classification:
         svm = SVMClassifier(data_type, self.model_type, self.folds, self.epochs, degradation_rate=rate)
         vis_data, lbs_data, sem_data = svm.get_data(data_path)
 
-        self.result[label]['sem'] = svm.classify_sem_data(sem_data, lbs_data)
-        self.result[label]['vis'] = svm.classify_vis_data(vis_data, lbs_data)
-        self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
-        self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['sem'] = svm.classify_sem_data(sem_data, lbs_data)
+        # self.result[label]['vis'] = svm.classify_vis_data(vis_data, lbs_data)
+        # self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
         self.result[label]['sec'] = svm.classify_sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
         self.result[label]['s2s'] = svm.classify_sae2sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
-        self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
 
     def classify_all(self, rate):
         rate_label = str(int(rate * 100))
         self.run_classification('../Datasets/SAE/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
+        # self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
         self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
-        self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
+        # self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
 
         with open(os.path.join(self.results_path, 'classification_results_%s.json' % rate_label.zfill(3)), 'w+') as f:
             json.dump(self.result, f, indent=4, sort_keys=True)

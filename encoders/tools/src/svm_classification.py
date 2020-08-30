@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
-from encoders.sec.src.autoencoder import Encoder
+from encoders.sec.src.encoder import Encoder
 from encoders.tools.src.sem_degradation import SemanticDegradation
 
 
@@ -34,7 +34,6 @@ class SVMClassifier:
 
         self.n_folds = folds
         self.epochs = epochs
-        self.history = dict()
         self.ae_type = ae_type
         self.degradation_rate = degradation_rate
 
@@ -182,7 +181,7 @@ class SVMClassifier:
 
         return accuracies
 
-    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results, res_path):
+    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, res_path):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
         tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1, copy=True)
         te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
@@ -193,9 +192,8 @@ class SVMClassifier:
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
         ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, self.epochs, res_path)
-        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_results)
+        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights)
 
-        self.history['sec'] = ae.history
         return tr_sem, te_sem
 
     def classify_sec_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
