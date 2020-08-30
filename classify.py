@@ -15,11 +15,11 @@ class Classification:
         self.result = {'i_cub': dict(), 'r_cub': dict(), 'i_awa': dict(), 'r_awa': dict()}
 
     def run_classification(self, data_path, label, data_type, rate=0.0):
-        rate_label = str(int(rate * 100))
-        results_path = os.path.join(self.results_path, rate_label)
+        rate_label = str(int(rate * 100)).zfill(3)
+        results_path = os.sep.join([self.results_path, label, rate_label])
 
-        if self.save and not os.path.isdir(os.path.join(results_path, label)):
-            os.makedirs(os.path.join(results_path, label))
+        if self.save and not os.path.isdir(results_path):
+            os.makedirs(results_path)
 
         svm = SVMClassifier(data_type, self.model_type, self.folds, self.epochs, degradation_rate=rate)
         vis_data, lbs_data, sem_data = svm.get_data(data_path)
@@ -35,15 +35,15 @@ class Classification:
     def classify_all(self, rate):
         rate_label = str(int(rate * 100))
         self.run_classification('../Datasets/SAE/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
+        # self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
         self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
-        self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
+        # self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
 
         with open(os.path.join(self.results_path, 'classification_results_%s.json' % rate_label.zfill(3)), 'w+') as f:
             json.dump(self.result, f, indent=4, sort_keys=True)
 
 
 if __name__ == '__main__':
-    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-        klass = Classification(5, 50, 'results_concat', ModelType.CONCAT_AE)
+    for degradation_rate in [0.0, 0.1, 0.2, 0.3]:
+        klass = Classification(5, 50, 'results_2', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)

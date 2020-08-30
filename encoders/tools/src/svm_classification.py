@@ -203,13 +203,14 @@ class SVMClassifier:
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
+        results_path = os.path.join(results_path, 'sec')
         if save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
-            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
+            res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
             tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
                                                     sem_data[te_idx], save_results, res_path)
 
@@ -227,6 +228,7 @@ class SVMClassifier:
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
+        results_path = os.path.join(results_path, 's2s')
         if save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
 
@@ -234,7 +236,7 @@ class SVMClassifier:
             tr_vis, te_vis = vis_data[tr_idx], vis_data[te_idx]
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
-            res_path = os.path.join(results_path, 'f' + str(fold) if fold > 9 else 'f0' + str(fold))
+            res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
             tr_sem, te_sem = self.estimate_sae_data(tr_vis, te_vis, sem_data[tr_idx], tr_labels)
             tr_sem, te_sem = self.estimate_sec_data(tr_vis, te_vis, tr_sem, te_sem, save_results, res_path)

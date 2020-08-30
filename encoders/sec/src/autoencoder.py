@@ -148,16 +148,16 @@ class ModelFactory:
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
         reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
+        encoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='e_dense2')(encoded)
+        # encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
         code = Dropout(0.1)(code)
 
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
+        # decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
+        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense5')(code)
+        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense6')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         autoencoder = Model(inputs=input_fts, outputs=output_fts)
