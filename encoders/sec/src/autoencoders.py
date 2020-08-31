@@ -62,7 +62,7 @@ class Simple1Layer:
                 self.history['best_loss'] = (logs['loss'], epoch)
 
                 if save_weights:
-                    self.ae.save_weights(os.path.join(results_path, 'ae_model_%s.h5' % str(epoch).zfill(3)))
+                    self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
         self.ae = self.define_ae()
 
@@ -245,7 +245,7 @@ class Concat3Layers:
                 self.history['best_loss'] = (logs['loss'], epoch)
 
                 if save_weights:
-                    self.ae.save_weights(os.path.join(results_path, 'ae_model_%s.h5' % str(epoch).zfill(3)))
+                    self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
         self.ae = self.define_ae()
         self.history['best_loss'] = (float('inf'), 0)
