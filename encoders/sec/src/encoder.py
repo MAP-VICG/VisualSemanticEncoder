@@ -12,13 +12,14 @@ array dimensionality and creating a new feature space with the merged data.
 """
 from enum import Enum
 
-from encoders.sec.src.autoencoders import Simple1Layer, Simple2Layers, Simple3Layers, Simple4Layers, Concat3Layers
+from encoders.sec.src.autoencoders import *
 
 
 class ModelType(Enum):
     """
     Enum for model type
     """
+    ZSL_AE = "ZSL_AE"
     CONCAT_AE = "CONCAT_AE"
     SIMPLE_AE_1L = "SIMPLE_AE_1L"
     SIMPLE_AE_2L = "SIMPLE_AE_2L"
@@ -56,6 +57,8 @@ class ModelFactory:
             return Simple4Layers(self.input_length, self.encoding_length, self.output_length)
         if ae_type == ModelType.CONCAT_AE:
             return Concat3Layers(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.ZSL_AE:
+            return SimpleZSL(self.input_length, self.encoding_length, self.output_length)
 
 
 class Encoder:
@@ -92,5 +95,21 @@ class Encoder:
         model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
         model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
         tr_est, te_est = model.predict(tr_vis_data, tr_sem_data, te_vis_data, te_sem_data)
+
+        return tr_est, te_est
+
+    def estimate_semantic_data_zsl(self, tr_vis_data, te_vis_data, tr_sem_data, save_weights=False):
+        """
+        Estimates semantic data for the test set based on the best model computed in the AE training.
+
+        :param tr_vis_data: training visual data
+        :param te_vis_data: test visual data
+        :param tr_sem_data: training semantic data
+        :param save_weights: if True, saves training weights
+        :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
+        """
+        model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
+        model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
+        tr_est, te_est = model.predict(tr_vis_data, te_vis_data)
 
         return tr_est, te_est

@@ -14,14 +14,14 @@ def estimate_sem_data(tr_vis_data, te_vis_data, tr_sem_data, res_path):
     te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
 
     input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-    ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.ZSL_AE, 200, res_path)
-    tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, None, False)
+    ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.ZSL_AE, 10, res_path)
+    tr_sem, te_sem = ae.estimate_semantic_data_zsl(tr_vis_data, te_vis_data, tr_sem_data, False)
 
-    return tr_sem, te_sem, ae.history
+    return tr_sem, te_sem
 
 
-data = loadmat('../Datasets/SAE/cub_demo_data.mat')
-tr_est, te_est, history = estimate_sem_data(data['X_tr'], data['X_te'], data['S_tr'], '.')
+data = loadmat('../Datasets/SEM/cub_demo_data.mat')
+tr_est, te_est = estimate_sem_data(data['X_tr'], data['X_te'], data['S_tr'], '.')
 
 template_labels = np.array([int(x) for x in data['te_cl_id']])
 test_labels = np.array([int(x) for x in data['test_labels_cub']])
