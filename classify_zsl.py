@@ -14,7 +14,7 @@ def estimate_sem_data(tr_vis_data, te_vis_data, tr_sem_data, res_path):
     te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
 
     input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-    ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.ZSL_AE, 10, res_path)
+    ae = Encoder(input_length, tr_sem_data.shape[1], output_length, ModelType.ZSL_AE, 20, res_path)
     tr_sem, te_sem = ae.estimate_semantic_data_zsl(tr_vis_data, te_vis_data, tr_sem_data, False)
 
     return tr_sem, te_sem

@@ -27,12 +27,12 @@ class Simple1Layer:
         """
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
-        encoded = Dense(self.input_length - round(0.5 * self.encoding_length), activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(round(0.5 * self.input_length), activation='relu', name='e_dense1')(input_fts)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
         code = Dropout(0.1)(code)
 
-        decoded = Dense(self.input_length - round(0.5 * self.encoding_length), activation='relu', name='d_dense6')(code)
+        decoded = Dense(round(0.5 * self.output_length), activation='relu', name='d_dense2')(code)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         ae = Model(inputs=input_fts, outputs=output_fts)
@@ -107,8 +107,8 @@ class Simple2Layers(Simple1Layer):
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
         code = Dropout(0.1)(code)
 
-        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense5')(decoded)
+        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense3')(code)
+        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense4')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         ae = Model(inputs=input_fts, outputs=output_fts)
@@ -160,15 +160,15 @@ class Simple4Layers(Simple1Layer):
         encoded = Dense(self.input_length - round(0.2 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
         encoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='e_dense2')(encoded)
         encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-        encoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='e_dense3')(encoded)
+        encoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='e_dense4')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
         code = Dropout(0.1)(code)
 
-        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.2 * reduction_factor), activation='relu', name='d_dense6')(decoded)
+        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense5')(code)
+        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense6')(decoded)
+        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense7')(decoded)
+        decoded = Dense(self.input_length - round(0.2 * reduction_factor), activation='relu', name='d_dense8')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         ae = Model(inputs=input_fts, outputs=output_fts)
@@ -302,26 +302,14 @@ class SimpleZSL:
         output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
 
         ae = Model(inputs=[input_vis, input_sem], outputs=output_vis)
-        loss = 1000000 * K.mean(mse(output_vis, input_vis) + lambda_ * mse(input_sem, code))
+        loss = 100000 * K.mean(2 * mse(input_vis, output_vis) + lambda_ * mse(input_sem, code))
         ae.add_loss(loss)
 
-        ae.compile(optimizer='adam')
+        ae.compile(optimizer='adamax')
 
         return ae
 
     def fit(self, tr_vis_data, tr_sem_data, epochs, results_path='.', save_weights=False):
-        """
-        Trains AE model for the specified number of epochs based on the input data. In each epoch,
-        the classification accuracy is computed for the training set. Input and output of the model
-        is the concatenation of the visual data with the semantic data.
-
-        :param tr_vis_data: 2D numpy array with training visual data
-        :param tr_sem_data: 2D numpy array with training semantic data
-        :param epochs: number of epochs to train model
-        :param results_path: string with path to save results
-        :param save_weights: if True, saves training best weights
-        :return: None
-        """
         if results_path and results_path != '.' and not os.path.isdir(results_path):
             os.makedirs(results_path)
 
