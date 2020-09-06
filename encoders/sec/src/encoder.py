@@ -24,6 +24,12 @@ class ModelType(Enum):
     SIMPLE_AE_1L = "SIMPLE_AE_1L"
     SIMPLE_AE_2L = "SIMPLE_AE_2L"
     SIMPLE_AE_3L = "SIMPLE_AE_3L"
+    SIMPLE_AE_3L_DB = "SIMPLE_AE_3L_DB"
+    SIMPLE_AE_3L_DB2 = "SIMPLE_AE_3L_DB2"
+    SIMPLE_AE_3L_DA2 = "SIMPLE_AE_3L_DA2"
+    SIMPLE_AE_3L_DAB = "SIMPLE_AE_3L_DAB"
+    SIMPLE_AE_3L_DAB2 = "SIMPLE_AE_3L_DAB2"
+    SIMPLE_AE_3L_0 = "SIMPLE_AE_3L_0"
     SIMPLE_AE_4L = "SIMPLE_AE_4L"
 
 
@@ -59,6 +65,18 @@ class ModelFactory:
             return Concat3Layers(self.input_length, self.encoding_length, self.output_length)
         if ae_type == ModelType.ZSL_AE:
             return SimpleZSL(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_0:
+            return Simple3Layers0(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_DA2:
+            return Simple3LayersDA2(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_DB:
+            return Simple3LayersDB(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_DB2:
+            return Simple3LayersDB2(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_DAB2:
+            return Simple3LayersDAB2(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.SIMPLE_AE_3L_DAB:
+            return Simple3LayersDAB(self.input_length, self.encoding_length, self.output_length)
 
 
 class Encoder:
