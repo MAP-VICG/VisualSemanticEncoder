@@ -3,12 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 dataset_names = {'i_awa': 'AwA GoogleNet', 'r_awa': 'AwA2 ResNet', 'i_cub': 'CUB GoogleNet', 'r_cub': 'CUB ResNet'}
-result_files = ['../results/classification_results_000.json', '../results/classification_results_010.json',
-                '../results/classification_results_020.json', '../results/classification_results_030.json',
-                '../results/classification_results_040.json', '../results/classification_results_050.json',
-                '../results/classification_results_060.json', '../results/classification_results_070.json',
-                '../results/classification_results_080.json', '../results/classification_results_090.json',
-                '../results/classification_results_100.json']
+result_files = ['../results/accuracy/classification_results_000.json',
+                '../results/accuracy/classification_results_010.json',
+                '../results/accuracy/classification_results_020.json',
+                '../results/accuracy/classification_results_030.json',
+                '../results/accuracy/classification_results_040.json',
+                '../results/accuracy/classification_results_050.json',
+                '../results/accuracy/classification_results_060.json',
+                '../results/accuracy/classification_results_070.json',
+                '../results/accuracy/classification_results_080.json',
+                '../results/accuracy/classification_results_090.json',
+                '../results/accuracy/classification_results_100.json']
 
 
 def plot_classification_results():
@@ -52,9 +57,9 @@ def plot_classification_results():
         else:
             plt.legend(loc='upper right')
 
-        plt.ylabel('Accuracy')
-        plt.xlabel('Degradation Rate (%)')
-        plt.title('SVM - %s' % dataset_names[dataset])
+        plt.ylabel('Accuracy', weight='bold')
+        plt.xlabel('Degradation Rate (%)', weight='bold')
+        plt.title('SVM - %s' % dataset_names[dataset], weight='bold')
         plt.tight_layout()
 
     plt.show()
@@ -91,9 +96,9 @@ def plot_v1_vs_v2():
         else:
             plt.legend(loc='upper right')
 
-        plt.ylabel('Accuracy')
-        plt.xlabel('Degradation Rate (%)')
-        plt.title('SVM - %s' % dataset_names[dataset])
+        plt.ylabel('Accuracy', weight='bold')
+        plt.xlabel('Degradation Rate (%)', weight='bold')
+        plt.title('SVM - %s' % dataset_names[dataset], weight='bold')
         plt.tight_layout()
 
     plt.show()
