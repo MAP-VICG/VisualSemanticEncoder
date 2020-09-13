@@ -67,7 +67,7 @@ def plot_classification_results():
             plt.tight_layout()
 
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', ncol=5, bbox_to_anchor=(0.5, 0.02))
+    fig.legend(handles, labels, loc='lower center', ncol=10, bbox_to_anchor=(0.5, 0.05))
     plt.show()
 
 
