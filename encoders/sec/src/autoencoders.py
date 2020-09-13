@@ -9,7 +9,7 @@ from tensorflow.keras.callbacks import LambdaCallback
 from tensorflow.keras.layers import Input, Dense, Dropout, Concatenate
 
 
-class Simple1Layer:
+class SimpleAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
         self.ae = None
         self.history = dict()
@@ -27,12 +27,17 @@ class Simple1Layer:
         """
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
-        encoded = Dense(round(0.5 * self.input_length), activation='relu', name='e_dense1')(input_fts)
+        reduction_factor = (self.input_length - 2 * self.encoding_length)
+        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
+        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
+        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
         code = Dropout(0.1)(code)
 
-        decoded = Dense(round(0.5 * self.output_length), activation='relu', name='d_dense2')(code)
+        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
+        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
+        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         ae = Model(inputs=input_fts, outputs=output_fts)
@@ -90,269 +95,7 @@ class Simple1Layer:
         raise AttributeError('Cannot estimate values before training the model. Please run fit function first.')
 
 
-class Simple2Layers(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 2 encoding layer2 and 2 decoding layer2. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
-
-        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense3')(code)
-        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense4')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3Layers(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3LayersDB(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        encoded = Dropout(0.1)(encoded)
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3LayersDB2(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        encoded = Dropout(0.2)(encoded)
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3LayersDA2(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.2)(code)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3LayersDAB(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        encoded = Dropout(0.1)(encoded)
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3LayersDAB2(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        encoded = Dropout(0.2)(encoded)
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.2)(code)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple3Layers0(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
-        decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Simple4Layers(Simple1Layer):
-    def define_ae(self):
-        """
-        Builds a simple auto encoder model with 4 encoding layers and 4 decoding layers. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
-
-        @return: object with auto encoder model
-        """
-        input_fts = Input(shape=(self.input_length,), name='ae_input')
-
-        reduction_factor = (self.input_length - 2 * self.encoding_length)
-        encoded = Dense(self.input_length - round(0.2 * reduction_factor), activation='relu', name='e_dense1')(input_fts)
-        encoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='e_dense2')(encoded)
-        encoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='e_dense3')(encoded)
-        encoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='e_dense4')(encoded)
-
-        code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
-
-        decoded = Dense(self.input_length - round(0.8 * reduction_factor), activation='relu', name='d_dense5')(code)
-        decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense6')(decoded)
-        decoded = Dense(self.input_length - round(0.4 * reduction_factor), activation='relu', name='d_dense7')(decoded)
-        decoded = Dense(self.input_length - round(0.2 * reduction_factor), activation='relu', name='d_dense8')(decoded)
-        output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
-
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
-
-        return ae
-
-
-class Concat3Layers:
+class ConcatAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
         self.ae = None
         self.history = dict()
@@ -448,7 +191,7 @@ class Concat3Layers:
         raise AttributeError('Cannot estimate values before training the model. Please run fit function first.')
 
 
-class SimpleZSL:
+class ZSLAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
         self.ae = None
         self.history = dict()

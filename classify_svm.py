@@ -26,11 +26,11 @@ class Classification:
         svm = SVMClassifier(data_type, self.model_type, self.folds, self.epochs, degradation_rate=rate)
         vis_data, lbs_data, sem_data = svm.get_data(data_path)
 
-        # self.result[label]['sem'] = svm.classify_sem_data(sem_data, lbs_data)
-        # self.result[label]['vis'] = svm.classify_vis_data(vis_data, lbs_data)
-        # self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
+        self.result[label]['sem'] = svm.classify_sem_data(sem_data, lbs_data)
+        self.result[label]['vis'] = svm.classify_vis_data(vis_data, lbs_data)
+        self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
+        self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
+        self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
         self.result[label]['sec'] = svm.classify_sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
         self.result[label]['s2s'] = svm.classify_sae2sec_data(vis_data, sem_data, lbs_data, self.save, results_path)
 
@@ -53,5 +53,5 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-        klass = Classification(5, 50, 'results_1l', ModelType.SIMPLE_AE_1L)
+        klass = Classification(5, 50, 'results', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)
