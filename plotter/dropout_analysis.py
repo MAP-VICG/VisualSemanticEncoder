@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 dataset_names = {'i_awa': 'AwA GoogleNet', 'r_awa': 'AwA2 ResNet', 'i_cub': 'CUB GoogleNet', 'r_cub': 'CUB ResNet'}
-result_files = ['../results/dropout/' + file for file in os.listdir('../results/dropout') if file.endswith('.json')]
+result_files = sorted(['../results/dropout/' + file for file in os.listdir('../results/dropout') if file.endswith('.json')])
 
 
 def plot_classification_results():
