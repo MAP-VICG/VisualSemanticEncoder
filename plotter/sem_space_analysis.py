@@ -30,7 +30,7 @@ x_data = np.hstack((vis_fts[mask, :], sem_fts[mask, :]))
 del sem_fts, vis_fts, labels
 
 model = Simple3Layers(x_data.shape[1], sem_length, x_data.shape[1]).define_ae()
-model.save_weights('../../../Desktop/ae_model.h5')
+model.load_weights('../../../Desktop/ae_model.h5')
 encoder = Model(model.input, outputs=[model.get_layer('code').output])
 
 
@@ -48,7 +48,6 @@ def plot_pca_space(data):
     plt.axis('off')
 
 
-np.random.seed(19680801)
 pca = PCA(n_components=2)
 
 colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#34a02c', '#fb9a99', '#e31a1c',
@@ -56,19 +55,19 @@ colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#34a02c', '#fb9a99', '#e31a1c',
 
 fig = plt.figure(figsize=(14, 4))
 
-plt.subplot(141)
+ax = fig.add_subplot(141)
 color_mask = np.array([1 if i in [0, 1, 2, 3, 4, 5, 6, 7] else 0 for i in range(sem_length)])
 data_est = encoder.predict(x_data * np.hstack((vis_mask, color_mask)))
 plot_pca_space(data_est)
 plt.title('PCA of COLOR Features', weight='bold', size=10)
 
-plt.subplot(142)
+ax = fig.add_subplot(142)
 texture_mask = np.array([1 if i in [8, 9, 10, 11, 12, 13] else 0 for i in range(sem_length)])
 data_est = encoder.predict(x_data * np.hstack((vis_mask, texture_mask)))
 plot_pca_space(data_est)
 plt.title('PCA of TEXTURE Features', weight='bold', size=10)
 
-plt.subplot(143)
+ax = fig.add_subplot(143)
 shape_mask = np.array([1 if i in [16, 17, 23, 24, 44, 45] else 0 for i in range(sem_length)])
 data_est = encoder.predict(x_data * np.hstack((vis_mask, shape_mask)))
 plot_pca_space(data_est)

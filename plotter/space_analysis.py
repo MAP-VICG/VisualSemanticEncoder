@@ -30,7 +30,7 @@ x_data = np.hstack((x_vis, x_sem))
 del sem_fts, vis_fts, labels
 
 model = Simple3Layers(x_data.shape[1], x_data.shape[1] - 2048, x_data.shape[1]).define_ae()
-model.save_weights('../../../Desktop/ae_model.h5')
+model.load_weights('../../../Desktop/ae_model.h5')
 encoder = Model(model.input, outputs=[model.get_layer('code').output])
 data_est = encoder.predict(x_data)
 
@@ -45,11 +45,13 @@ def plot_pca_space(data):
                     label=class_dict[target],
                     c=color)
 
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 - 0.1, box.width * 0.9, box.height * 0.9])
+
     plt.tight_layout()
     plt.axis('off')
 
 
-np.random.seed(19680801)
 pca = PCA(n_components=2)
 
 colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#34a02c', '#fb9a99', '#e31a1c',
@@ -57,11 +59,11 @@ colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#34a02c', '#fb9a99', '#e31a1c',
 
 fig = plt.figure(figsize=(10, 4))
 
-plt.subplot(131)
+ax = fig.add_subplot(131)
 plot_pca_space(x_vis)
 plt.title('PCA of Visual Features', weight='bold', size=10)
 
-plt.subplot(132)
+ax = fig.add_subplot(132)
 plot_pca_space(x_sem)
 plt.title('PCA of Semantic Features', weight='bold', size=10)
 
