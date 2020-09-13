@@ -2,10 +2,15 @@ import os
 import json
 import numpy as np
 
+from sklearn.svm import SVC
 import tensorflow.keras.backend as K
 from tensorflow.keras.losses import mse
 from tensorflow.keras.models import Model
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import balanced_accuracy_score
 from tensorflow.keras.callbacks import LambdaCallback
+from sklearn.model_selection import StratifiedShuffleSplit
 from tensorflow.keras.layers import Input, Dense, Dropout, Concatenate
 
 
@@ -45,14 +50,16 @@ class SimpleAutoEncoder:
 
         return ae
 
-    def fit(self, tr_vis_data, tr_sem_data, epochs, results_path='.', save_weights=False):
+    def fit(self, tr_data, tr_labels, te_data, te_labels, epochs, results_path='.', save_weights=False):
         """
         Trains AE model for the specified number of epochs based on the input data. In each epoch,
         the classification accuracy is computed for the training set. Input and output of the model
         is the concatenation of the visual data with the semantic data.
 
-        :param tr_vis_data: 2D numpy array with training visual data
-        :param tr_sem_data: 2D numpy array with training semantic data
+        :param tr_data: 2D numpy array with training visual and semantic data
+        :param tr_labels: 1D numpy array with training labels
+        :param te_data: 2D numpy array with test visual and semantic data
+        :param te_labels: 1D numpy array with test labels
         :param epochs: number of epochs to train model
         :param results_path: string with path to save results
         :param save_weights: if True, saves training best weights
@@ -69,15 +76,29 @@ class SimpleAutoEncoder:
                 if save_weights:
                     self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
-        self.ae = self.define_ae()
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(x_train, y_train)
 
+            self.history['svm_val'].append(balanced_accuracy_score(y_val, clf.predict(x_val)))
+            self.history['svm_test'].append(balanced_accuracy_score(te_labels, clf.predict(te_data)))
+
+        self.ae = self.define_ae()
+        self.history['svm_val'] = []
+        self.history['svm_test'] = []
         self.history['best_loss'] = (float('inf'), 0)
-        x_train = np.hstack((tr_vis_data, tr_sem_data))
+
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+        train_index, val_index = next(sss.split(tr_data, tr_labels))
+        x_train, x_val = tr_data[train_index], tr_data[val_index]
+        y_train, y_val = tr_labels[train_index], tr_labels[val_index]
+
         result = self.ae.fit(x_train, x_train, epochs=epochs, batch_size=256, shuffle=True, verbose=1,
-                             validation_split=0.2, callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
+                             validation_data=(x_val, x_val), callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])
+        self.history['acc'] = list(result.history['acc'])
+        self.history['val_acc'] = list(result.history['val_acc'])
 
         if results_path and os.path.isdir(results_path):
             with open(os.path.join(results_path, 'ae_training_history.json'), 'w+') as f:

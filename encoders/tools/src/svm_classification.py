@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
-from encoders.sec.src.encoder import Encoder
+from encoders.sec.src.encoder import Encoder, ModelType
 from encoders.tools.src.sem_degradation import SemanticDegradation
 
 
@@ -181,7 +181,7 @@ class SVMClassifier:
 
         return accuracies
 
-    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, res_path):
+    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, res_path, y_train=None, y_test=None):
         tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
         tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1, copy=True)
         te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
@@ -192,7 +192,8 @@ class SVMClassifier:
 
         input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
         ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, self.epochs, res_path)
-        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights)
+
+        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, y_train, y_test)
 
         return tr_sem, te_sem
 
@@ -209,8 +210,14 @@ class SVMClassifier:
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
-            tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
-                                                    sem_data[te_idx], save_results, res_path)
+
+            if self.ae_type == ModelType.SIMPLE_AE:
+                tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
+                                                        sem_data[te_idx], save_results, res_path, y_train=tr_labels,
+                                                        y_test=te_labels)
+            else:
+                tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
+                                                        sem_data[te_idx], save_results, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)

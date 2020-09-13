@@ -72,7 +72,7 @@ class Encoder:
         self.output_length = output_length
         self.encoding_length = encoding_length
 
-    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights=False):
+    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights=False, y_train=None, y_test=None):
         """
         Estimates semantic data for the test set based on the best model computed in the AE training.
 
@@ -81,10 +81,19 @@ class Encoder:
         :param tr_sem_data: training semantic data
         :param te_sem_data: test semantic data
         :param save_weights: if True, saves training weights
+        :param y_train: training labels to get svm classification training results (NOT USED TO TRAIN THE MODEL)
+        :param y_test: test labels to get svm classification test results (NOT USED TO TRAIN THE MODEL)
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
         model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
-        model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
+
+        if self.ae_type == ModelType.SIMPLE_AE:
+            x_train = np.hstack((tr_vis_data, tr_sem_data))
+            x_test = np.hstack((te_vis_data, te_sem_data))
+            model.fit(x_train, y_train, x_test, y_test, self.epochs, self.results_path, save_weights)
+        else:
+            model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
+
         tr_est, te_est = model.predict(tr_vis_data, tr_sem_data, te_vis_data, te_sem_data)
 
         return tr_est, te_est
