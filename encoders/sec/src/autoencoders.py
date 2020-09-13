@@ -76,11 +76,12 @@ class SimpleAutoEncoder:
                 if save_weights:
                     self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
-            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(x_train, y_train)
+            encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
+            svm = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
 
-            self.history['svm_val'].append(balanced_accuracy_score(y_val, clf.predict(x_val)))
-            self.history['svm_test'].append(balanced_accuracy_score(te_labels, clf.predict(te_data)))
+            svm.fit(encoder.predict(x_train), y_train)
+            self.history['svm_val'].append(balanced_accuracy_score(y_val, svm.predict(encoder.predict(x_val))))
+            self.history['svm_test'].append(balanced_accuracy_score(te_labels, svm.predict(encoder.predict(te_data))))
 
         self.ae = self.define_ae()
         self.history['svm_val'] = []

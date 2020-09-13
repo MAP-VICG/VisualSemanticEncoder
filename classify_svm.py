@@ -53,5 +53,5 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     for degradation_rate in [0.0]:
-        klass = Classification(2, 10, 'results_test', ModelType.SIMPLE_AE)
+        klass = Classification(5, 50, 'results_test', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)
