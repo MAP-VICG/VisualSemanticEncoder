@@ -46,7 +46,7 @@ class SimpleAutoEncoder:
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
         ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse', metrics=['mae', 'acc'])
+        ae.compile(optimizer='adam', loss='mse')
 
         return ae
 
@@ -98,8 +98,6 @@ class SimpleAutoEncoder:
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])
-        self.history['acc'] = list(result.history['acc'])
-        self.history['val_acc'] = list(result.history['val_acc'])
 
         if results_path and os.path.isdir(results_path):
             with open(os.path.join(results_path, 'ae_training_history.json'), 'w+') as f:
@@ -157,9 +155,9 @@ class ConcatAutoEncoder:
 
         ae = Model(inputs=[input_vis, input_sem], outputs=[output_vis, output_sem])
         loss = K.mean(mse(output_vis, input_vis) + lambda_ * mse(output_sem, input_sem))
-        ae.add_loss(loss)
 
-        ae.compile(optimizer='adam', metrics=['mae', 'acc'])
+        ae.add_loss(loss)
+        ae.compile(optimizer='adam')
 
         return ae
 
@@ -217,8 +215,6 @@ class ConcatAutoEncoder:
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])
-        self.history['acc'] = list(result.history['acc'])
-        self.history['val_acc'] = list(result.history['val_acc'])
 
         if results_path and os.path.isdir(results_path):
             with open(os.path.join(results_path, 'ae_training_history.json'), 'w+') as f:
