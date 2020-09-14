@@ -87,7 +87,7 @@ class Encoder:
         """
         model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
 
-        if self.ae_type == ModelType.SIMPLE_AE:
+        if self.ae_type in (ModelType.SIMPLE_AE, ModelType.CONCAT_AE):
             x_train = np.hstack((tr_vis_data, tr_sem_data))
             x_test = np.hstack((te_vis_data, te_sem_data))
             model.fit(x_train, y_train, x_test, y_test, self.epochs, self.results_path, save_weights)

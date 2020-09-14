@@ -211,7 +211,7 @@ class SVMClassifier:
 
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
-            if self.ae_type == ModelType.SIMPLE_AE:
+            if self.ae_type in (ModelType.SIMPLE_AE, ModelType.CONCAT_AE):
                 tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
                                                         sem_data[te_idx], save_results, res_path, y_train=tr_labels,
                                                         y_test=te_labels)
