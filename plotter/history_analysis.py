@@ -3,7 +3,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-# keys = ['acc', 'val_acc', 'loss', 'val_loss', 'svm_test', 'svm_val']
+# keys = ['loss', 'val_loss', 'svm_test', 'svm_val']
 # data_types = ['i_awa', 'r_awa', 'i_cub', 'r_cub']
 # svm_dict = {key: dict() for key in keys}
 #
@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 #         for key in svm_dict.keys():
 #             svm_dict[key][file.split('_')[-1].split('.')[0].strip()] = data[key]
 #
-#     with open('../results/history/history_%s.json' % data_type, 'w+') as f:
+#     with open('../results/history/v1_history_%s.json' % data_type, 'w+') as f:
 #         json.dump(svm_dict, f, indent=4, sort_keys=True)
 
 
 def plot_history(results, id_w, title):
     for data_type in results.keys():
-        with open('../results/history/history_%s.json' % data_type) as f:
+        with open('../results/history/v1_history_%s.json' % data_type) as f:
             data = json.load(f)
 
         for key in data.keys():
@@ -37,7 +37,7 @@ def plot_history(results, id_w, title):
             values = np.array(values)
             results[data_type][key]['mean'], results[data_type][key]['std'] = np.mean(values, axis=0), np.std(values, axis=0)
 
-    plt.subplot(2, 3, id_w * 3 + 1)
+    plt.subplot(2, 2, id_w * 2 + 1)
     x = np.linspace(1, 50, 50)
     for dt in results.keys():
         plt.errorbar(x, results[dt]['loss']['mean'], yerr=results[dt]['loss']['std'], label='%s_trn_loss' % dt)
@@ -49,18 +49,7 @@ def plot_history(results, id_w, title):
     plt.legend(loc='upper right', prop={'size': 9})
     plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
 
-    plt.subplot(2, 3, id_w * 3 + 2)
-    x = np.linspace(1, 50, 50)
-    for dt in results.keys():
-        plt.errorbar(x, results[dt]['acc']['mean'], yerr=results[dt]['acc']['std'], label='%s_trn_acc' % dt)
-        plt.errorbar(x, results[dt]['val_acc']['mean'], yerr=results[dt]['val_acc']['std'], label='%s_val_acc' % dt)
-
-    plt.title('%s Reconstruction Accuracy' % title, weight='bold', size=10)
-    plt.ylabel('Accuracy', weight='bold', size=9)
-    plt.xlabel('Epochs', weight='bold', size=9)
-    plt.legend(loc='lower right', prop={'size': 9})
-
-    plt.subplot(2, 3, id_w * 3 + 3)
+    plt.subplot(2, 2, id_w * 2 + 2)
     x = np.linspace(1, 50, 50)
     for dt in results.keys():
         plt.errorbar(x, results[dt]['svm_val']['mean'], yerr=results[dt]['svm_val']['std'], label='%s_val_svm' % dt)
