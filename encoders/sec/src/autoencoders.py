@@ -38,7 +38,7 @@ class SimpleAutoEncoder:
         encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
+        #code = Dropout(0.1)(code)
 
         decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
         decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
@@ -79,22 +79,17 @@ class SimpleAutoEncoder:
             encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
             svm = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
 
-            svm.fit(encoder.predict(x_train), y_train)
-            self.history['svm_val'].append(balanced_accuracy_score(y_val, svm.predict(encoder.predict(x_val))))
+            svm.fit(encoder.predict(tr_data), tr_labels)
+            self.history['svm_train'].append(balanced_accuracy_score(tr_labels, svm.predict(encoder.predict(tr_data))))
             self.history['svm_test'].append(balanced_accuracy_score(te_labels, svm.predict(encoder.predict(te_data))))
 
         self.ae = self.define_ae()
-        self.history['svm_val'] = []
+        self.history['svm_train'] = []
         self.history['svm_test'] = []
         self.history['best_loss'] = (float('inf'), 0)
 
-        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-        train_index, val_index = next(sss.split(tr_data, tr_labels))
-        x_train, x_val = tr_data[train_index], tr_data[val_index]
-        y_train, y_val = tr_labels[train_index], tr_labels[val_index]
-
-        result = self.ae.fit(x_train, x_train, epochs=epochs, batch_size=256, shuffle=True, verbose=1,
-                             validation_data=(x_val, x_val), callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
+        result = self.ae.fit(tr_data, tr_data, epochs=epochs, batch_size=256, shuffle=True, verbose=1,
+                             validation_data=(te_data, te_data), callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])

@@ -41,9 +41,9 @@ class Classification:
     def classify_all(self, rate):
         logging.info('Running classification for degradation rate of %.2f' % rate)
         self.run_classification('../Datasets/SEM/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/SEM/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
-        self.run_classification('../Datasets/SEM/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/SEM/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
+        #self.run_classification('../Datasets/SEM/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
+        #self.run_classification('../Datasets/SEM/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
+        #self.run_classification('../Datasets/SEM/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
 
 
 if __name__ == '__main__':
@@ -53,5 +53,5 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     for degradation_rate in [0.0]:
-        klass = Classification(5, 50, 'results_test_concat', ModelType.CONCAT_AE)
+        klass = Classification(2, 2, 'results_test', ModelType.SIMPLE_AE)
         klass.classify_all(degradation_rate)
