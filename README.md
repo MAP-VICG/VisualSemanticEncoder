@@ -1,4 +1,4 @@
-# VisualSemanticEncoder
+# VSE - Visual Semantic Encoder
 
 This project aims to verify the feasibility of using an autoencoder to learn a new distribution for a set of image's 
 visual features, associated with semantic features, that better represent each image and improve discriminalty among 
