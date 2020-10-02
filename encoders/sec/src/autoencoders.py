@@ -49,7 +49,7 @@ class SimpleAutoEncoder:
         data concatenated in one single 2D array, where rows are different examples and columns the attributes
         definition.
 
-        @return: object with auto encoder model
+        @return: None
         """
         input_fts = Input(shape=(self.input_length,), name='ae_input')
 
@@ -65,10 +65,8 @@ class SimpleAutoEncoder:
         decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
         output_fts = Dense(self.output_length, activation='relu', name='ae_output')(decoded)
 
-        ae = Model(inputs=input_fts, outputs=output_fts)
-        ae.compile(optimizer='adam', loss='mse')
-
-        return ae
+        self.ae = Model(inputs=input_fts, outputs=output_fts)
+        self.ae.compile(optimizer='adam', loss='mse')
 
     def fit(self, tr_data, tr_labels, te_data, te_labels, epochs, results_path='.', save_weights=False):
         """
@@ -103,7 +101,9 @@ class SimpleAutoEncoder:
             self.history['svm_train'].append(balanced_accuracy_score(tr_labels, svm.predict(encoder.predict(tr_data))))
             self.history['svm_test'].append(balanced_accuracy_score(te_labels, svm.predict(encoder.predict(te_data))))
 
-        self.ae = self.define_ae()
+        if self.ae is None:
+            self.define_ae()
+
         self.history['svm_train'] = []
         self.history['svm_test'] = []
         self.history['best_loss'] = (float('inf'), 0)
@@ -161,7 +161,7 @@ class ConcatAutoEncoder:
         features. Inputs is the visual data and semantic data separately into two 2D array, where rows are different
         examples and columns the attributes definition.
 
-        @return: object with auto encoder model
+        @return: None
         """
         input_vis = Input(shape=(self.input_length - self.encoding_length,), name='ae_input_vis')
         input_sem = Input(shape=(self.encoding_length,), name='ae_input_sem')
@@ -179,16 +179,14 @@ class ConcatAutoEncoder:
         decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
         decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
 
-        output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
         output_sem = Dense(self.encoding_length, activation='relu', name='ae_output_sem')(decoded)
+        output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
 
-        ae = Model(inputs=[input_vis, input_sem], outputs=[output_vis, output_sem])
+        self.ae = Model(inputs=[input_vis, input_sem], outputs=[output_sem, output_vis])
         loss = backend.mean(mse(output_vis, input_vis) + lambda_ * mse(output_sem, input_sem))
 
-        ae.add_loss(loss)
-        ae.compile(optimizer='adam')
-
-        return ae
+        self.ae.add_loss(loss)
+        self.ae.compile(optimizer='adam')
 
     def fit(self, tr_data, tr_labels, te_data, te_labels, epochs, results_path='.', save_weights=False):
         """
@@ -218,29 +216,26 @@ class ConcatAutoEncoder:
 
             encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
             svm = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            svm.fit(encoder.predict([x_train[:, :limit], x_train[:, limit:]]), y_train)
+            svm.fit(encoder.predict([tr_data[:, :limit], tr_data[:, limit:]]), tr_labels)
 
-            prediction = svm.predict(encoder.predict([x_val[:, :limit], x_val[:, limit:]]))
-            self.history['svm_val'].append(balanced_accuracy_score(y_val, prediction))
+            prediction = svm.predict(encoder.predict([te_data[:, :limit], te_data[:, limit:]]))
+            self.history['svm_train'].append(balanced_accuracy_score(te_labels, prediction))
 
             prediction = svm.predict(encoder.predict([te_data[:, :limit], te_data[:, limit:]]))
             self.history['svm_test'].append(balanced_accuracy_score(te_labels, prediction))
 
-        self.ae = self.define_ae()
-        self.history['svm_val'] = []
+        if self.ae is None:
+            self.define_ae()
+
+        self.history['svm_train'] = []
         self.history['svm_test'] = []
         self.history['best_loss'] = (float('inf'), 0)
 
-        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-        train_index, val_index = next(sss.split(tr_data, tr_labels))
-        x_train, x_val = tr_data[train_index], tr_data[val_index]
-        y_train, y_val = tr_labels[train_index], tr_labels[val_index]
-        limit = x_train.shape[1] - self.encoding_length
-
-        result = self.ae.fit([x_train[:, :limit], x_train[:, limit:]], [x_train[:, :limit], x_train[:, limit:]],
+        limit = tr_data.shape[1] - self.encoding_length
+        result = self.ae.fit([tr_data[:, :limit], tr_data[:, limit:]], [tr_data[:, :limit], tr_data[:, limit:]],
                              epochs=epochs, batch_size=256, shuffle=True,
                              verbose=1, callbacks=[LambdaCallback(on_epoch_end=ae_callback)],
-                             validation_data=([x_val[:, :limit], x_val[:, limit:]], [x_val[:, :limit], x_val[:, limit:]]))
+                             validation_data=([te_data[:, :limit], te_data[:, limit:]], [te_data[:, :limit], te_data[:, limit:]]))
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])
@@ -294,7 +289,7 @@ class ZSLAutoEncoder:
         part of reconstruction, it defines the code, so the task changes from reconstruction the semantic and visual
         data to projecting the visual space to the semantic space.
 
-        @return: object with auto encoder model
+        @return: None
         """
         input_vis = Input(shape=(self.input_length - self.encoding_length,), name='ae_input_vis')
         input_sem = Input(shape=(self.encoding_length,), name='ae_input_sem')
@@ -313,13 +308,11 @@ class ZSLAutoEncoder:
 
         output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
 
-        ae = Model(inputs=[input_vis, input_sem], outputs=output_vis)
+        self.ae = Model(inputs=[input_vis, input_sem], outputs=output_vis)
         loss = 10000 * backend.mean(mse(input_vis, output_vis) + lambda_ * mse(input_sem, code))
-        ae.add_loss(loss)
+        self.ae.add_loss(loss)
 
-        ae.compile(optimizer='adamax')
-
-        return ae
+        self.ae.compile(optimizer='adamax')
 
     def fit(self, tr_vis_data, tr_sem_data, epochs, results_path='.', save_weights=False):
         """
@@ -345,7 +338,9 @@ class ZSLAutoEncoder:
                 if save_weights:
                     self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
-        self.ae = self.define_ae()
+        if self.ae is None:
+            self.define_ae()
+
         self.history['best_loss'] = (float('inf'), 0)
 
         result = self.ae.fit([tr_vis_data, tr_sem_data], tr_vis_data, epochs=epochs, batch_size=256,

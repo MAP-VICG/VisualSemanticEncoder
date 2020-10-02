@@ -1,5 +1,5 @@
 """
-Tests for module autoencoder
+Tests for module autoencoders
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -9,78 +9,120 @@ Tests for module autoencoder
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import unittest
 import numpy as np
 from scipy.io import loadmat
 
-from encoders.sec.src.encoder import ModelFactory, ModelType, Encoder
+from encoders.sec.src.autoencoders import SimpleAutoEncoder, ConcatAutoEncoder, ZSLAutoEncoder
 
 
-class EncoderTests(unittest.TestCase):
+class AutoencodersTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
         Builds and train AE model
         """
-        data = loadmat('../../../../Datasets/SEM/cub_demo_data.mat')
-        input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        cls.ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE_1L, 5)
-
-        labels = data['te_cl_id']
-        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
+        data = loadmat('../../../../Datasets/SAE/cub_demo_data.mat')
+        labels_dict = {data['te_cl_id'][i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
         s_te = np.array([labels_dict[label[0]] for label in data['test_labels_cub']])
-        cls.ae.estimate_semantic_data(data['X_tr'], data['X_te'], data['S_tr'], s_te)
+
+        cls.code_length = data['S_tr'].shape[1]
+        cls.test_labels = data['test_labels_cub']
+        cls.train_labels = data['train_labels_cub']
+        cls.test_data = np.hstack((data['X_te'], s_te))
+        cls.train_data = np.hstack((data['X_tr'], data['S_tr']))
 
     def test_simple_ae(self):
         """
-        Tests if auto encoder model is build with the correct size fo input, output and encoding
+        Tests if simple autoencoder model is build with the correct size for input, output and encoding
         """
-        model = ModelFactory(2048, 128, 2048)(ModelType.SIMPLE_AE_1L)
+        model = SimpleAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model.define_ae()
 
-        self.assertEqual([(None, 2048)], model.layers[0].input_shape)
-        self.assertEqual((None, 128), model.layers[5].output_shape)
-        self.assertEqual((None, 2048), model.layers[-1].output_shape)
+        self.assertEqual([None, 2048 + 85], model.ae.input.shape.as_list())
+        self.assertEqual([None, 2048 + 85], model.ae.output.shape.as_list())
 
-    def test_factory_call_ae(self):
+        self.assertEqual([(None, 2048 + 85)], model.ae.get_layer('ae_input').input_shape)
+        self.assertEqual((None, 85), model.ae.get_layer('code').output_shape)
+        self.assertEqual((None, 2048 + 85), model.ae.get_layer('ae_output').output_shape)
+
+    def test_concat_ae(self):
         """
-        Tests if the correct type of AE is returned in call method
+        Tests if concat autoencoder model is build with the correct size for input, output and encoding
         """
-        model = ModelFactory(2048, 128, 2048)(ModelType.SIMPLE_AE_1L)
+        model = ConcatAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model.define_ae()
 
-        self.assertEqual([(None, 2048)], model.get_layer('ae_input').input_shape)
-        self.assertEqual((None, 128), model.get_layer('code').output_shape)
-        self.assertEqual((None, 2048), model.get_layer('ae_output').output_shape)
+        self.assertEqual([None, 2048], model.ae.input[0].shape.as_list())
+        self.assertEqual([None, 85], model.ae.input[1].shape.as_list())
+        self.assertEqual([None, 85], model.ae.output[0].shape.as_list())
+        self.assertEqual([None, 2048], model.ae.output[1].shape.as_list())
 
-    def test_estimate_semantic_data_awa_ae(self):
+        self.assertEqual([(None, 2048)], model.ae.get_layer('ae_input_vis').input_shape)
+        self.assertEqual([(None, 85)], model.ae.get_layer('ae_input_sem').input_shape)
+        self.assertEqual((None, 85), model.ae.get_layer('code').output_shape)
+        self.assertEqual((None, 85), model.ae.get_layer('ae_output_sem').output_shape)
+        self.assertEqual((None, 2048), model.ae.get_layer('ae_output_vis').output_shape)
+
+    def test_zsl_ae(self):
         """
-        Tests if result from semantic data estimation is in the correct shape for awa
+        Tests if zsl autoencoder model is build with the correct size for input, output and encoding
         """
-        data = loadmat('../../../../Datasets/SEM/awa_demo_data.mat')
-        input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE_1L, 1)
+        model = ZSLAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model.define_ae()
 
-        labels = data['param']['testclasses_id'][0][0]
-        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
-        s_te = np.array([labels_dict[label[0]] for label in data['param']['test_labels'][0][0]])
+        self.assertEqual([None, 2048], model.ae.input[0].shape.as_list())
+        self.assertEqual([None, 85], model.ae.input[1].shape.as_list())
+        self.assertEqual([None, 2048], model.ae.output.shape.as_list())
 
-        sem_tr, sem_te = ae.estimate_semantic_data(data['X_tr'], data['X_te'], data['S_tr'], s_te)
+        self.assertEqual([(None, 2048)], model.ae.get_layer('ae_input_vis').input_shape)
+        self.assertEqual([(None, 85)], model.ae.get_layer('ae_input_sem').input_shape)
+        self.assertEqual((None, 85), model.ae.get_layer('code').output_shape)
+        self.assertEqual((None, 2048), model.ae.get_layer('ae_output_vis').output_shape)
 
-        self.assertEqual((data['X_tr'].shape[0], data['S_tr'].shape[1]), sem_tr.shape)
-        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_te.shape)
-
-    def test_estimate_semantic_data_cub_ae(self):
+    def test_simple_ae_fitting(self):
         """
-        Tests if result from semantic data estimation is in the correct shape for cub
+        Tests if simple autoencoder model trains as expected
         """
-        data = loadmat('../../../../Datasets/SEM/cub_demo_data.mat')
-        input_length = output_length = data['X_tr'].shape[1] + data['S_tr'].shape[1]
-        ae = Encoder(input_length, data['S_tr'].shape[1], output_length, ModelType.SIMPLE_AE_1L, 1)
+        model = SimpleAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
 
-        labels = data['te_cl_id']
-        labels_dict = {labels[i][0]: attributes for i, attributes in enumerate(data['S_te_pro'])}
-        s_te = np.array([labels_dict[label[0]] for label in data['test_labels_cub']])
+        for key in model.history.keys():
+            for value in model.history[key]:
+                if 'loss' in key:
+                    self.assertTrue(value >= 0)
+                else:
+                    self.assertTrue(0 <= value <= 1)
+            self.assertEqual(2, len(model.history[key]))
 
-        sem_tr, sem_te = ae.estimate_semantic_data(data['X_tr'], data['X_te'], data['S_tr'], s_te)
+        self.assertTrue(os.path.isfile('ae_training_history.json'))
+        keys = sorted(['svm_train', 'svm_test', 'best_loss', 'loss', 'val_loss'])
+        self.assertEqual(keys, sorted(list(model.history.keys())))
 
-        self.assertEqual((data['X_tr'].shape[0], data['S_tr'].shape[1]), sem_tr.shape)
-        self.assertEqual((data['X_te'].shape[0], data['S_tr'].shape[1]), sem_te.shape)
+    def test_concat_ae_fitting(self):
+        """
+        Tests if concat autoencoder model trains as expected
+        """
+        model = ConcatAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
+
+        for key in model.history.keys():
+            for value in model.history[key]:
+                if 'loss' in key:
+                    self.assertTrue(value >= 0)
+                else:
+                    self.assertTrue(0 <= value <= 1)
+            self.assertEqual(2, len(model.history[key]))
+
+        self.assertTrue(os.path.isfile('ae_training_history.json'))
+        keys = sorted(['svm_train', 'svm_test', 'best_loss', 'loss', 'val_loss'])
+        self.assertTrue(keys, sorted(list(model.history.keys())))
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Deletes files that were written by the tests
+        """
+        if os.path.isfile('ae_training_history.json'):
+            os.remove('ae_training_history.json')
