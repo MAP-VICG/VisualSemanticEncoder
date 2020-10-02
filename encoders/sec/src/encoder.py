@@ -1,5 +1,5 @@
 """
-Builds auto encoder that concatenates visual and semantic attributes by reducing the input
+Builds an autoencoder that concatenates visual and semantic attributes by reducing the input
 array dimensionality and creating a new feature space with the merged data.
 
 @author: Damares Resende
@@ -39,7 +39,7 @@ class ModelFactory:
 
     def __call__(self, ae_type):
         """
-        Builds an auto encoder model based on the given type
+        Builds an autoencoder model based on the given type
 
         @param ae_type: auto encoder type
         @return: object with auto encoder model

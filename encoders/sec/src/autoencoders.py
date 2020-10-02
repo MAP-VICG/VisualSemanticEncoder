@@ -1,21 +1,40 @@
+"""
+Has methods to define, train and predict different types of autoencoders.
+
+@author: Damares Resende
+@contact: damaresresende@usp.br
+@since: June 16, 2020
+
+@organization: University of Sao Paulo (USP)
+    Institute of Mathematics and Computer Science (ICMC)
+    Laboratory of Visualization, Imaging and Computer Graphics (VICG)
+"""
 import os
 import json
 import numpy as np
 
-from sklearn.svm import SVC
-import tensorflow.keras.backend as K
+from tensorflow.keras import backend
 from tensorflow.keras.losses import mse
 from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import LambdaCallback
+from tensorflow.keras.layers import Input, Dense, Concatenate
+
+from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import balanced_accuracy_score
-from tensorflow.keras.callbacks import LambdaCallback
 from sklearn.model_selection import StratifiedShuffleSplit
-from tensorflow.keras.layers import Input, Dense, Dropout, Concatenate
 
 
 class SimpleAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
+        """
+        Initializes main variables
+
+        @param input_length: length of input for auto encoder
+        @param encoding_length: length of auto encoder's code
+        @param output_length: length of output or auto encoder
+        """
         self.ae = None
         self.history = dict()
         self.best_weights = None
@@ -25,8 +44,10 @@ class SimpleAutoEncoder:
 
     def define_ae(self):
         """
-        Builds a simple auto encoder model with 1 encoding layer and 1 decoding layer. Layers are
-        dense and use relu activation function. The optimizer is defined to be adam and the loss to be mse.
+        Builds an autoencoder with 3 encoding layers and 3 decoding layers. Layers are dense and use ReLu activation
+        function. The optimizer is defined to be Adam and the loss to be MSE. Inputs is the visual data and semantic
+        data concatenated in one single 2D array, where rows are different examples and columns the attributes
+        definition.
 
         @return: object with auto encoder model
         """
@@ -38,7 +59,6 @@ class SimpleAutoEncoder:
         encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        #code = Dropout(0.1)(code)
 
         decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
         decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
@@ -53,7 +73,7 @@ class SimpleAutoEncoder:
     def fit(self, tr_data, tr_labels, te_data, te_labels, epochs, results_path='.', save_weights=False):
         """
         Trains AE model for the specified number of epochs based on the input data. In each epoch,
-        the classification accuracy is computed for the training set. Input and output of the model
+        the classification accuracy is computed for the training and test sets. Input and output of the model
         is the concatenation of the visual data with the semantic data.
 
         :param tr_data: 2D numpy array with training visual and semantic data
@@ -99,6 +119,14 @@ class SimpleAutoEncoder:
                 json.dump(self.history, f, indent=4, sort_keys=True)
 
     def predict(self, tr_vis_data, tr_sem_data, te_vis_data, te_sem_data):
+        """
+        Projects training and test data in a new subspace using the best encoder built during training
+
+        :param tr_vis_data: 2D numpy array with training visual data
+        :param tr_sem_data: 2D numpy array with training semantic data
+        :param te_vis_data: 2D numpy array with test visual data
+        :param te_sem_data: 2D numpy array with test semantic data
+        """
         if self.ae and self.best_weights:
             self.ae.set_weights(self.best_weights)
             encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
@@ -112,6 +140,13 @@ class SimpleAutoEncoder:
 
 class ConcatAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
+        """
+        Initializes main variables
+
+        @param input_length: length of input for auto encoder
+        @param encoding_length: length of auto encoder's code
+        @param output_length: length of output or auto encoder
+        """
         self.ae = None
         self.history = dict()
         self.best_weights = None
@@ -121,10 +156,10 @@ class ConcatAutoEncoder:
 
     def define_ae(self):
         """
-        Builds a simple auto encoder model with 3 encoding layers and 3 decoding layers. Layers are
-        dense and use relu activation function. Visual and semantic data are provided separately
-        and concatenated inside the model. The optimizer is defined to be adam and the loss to be
-        a weighted mse.
+        Builds an autoencoder with 3 encoding layers and 3 decoding layers. Layers are dense and use ReLu activation
+        function. The optimizer is defined to be Adam and loss as the MSE of visual features plus the MSE of semantic
+        features. Inputs is the visual data and semantic data separately into two 2D array, where rows are different
+        examples and columns the attributes definition.
 
         @return: object with auto encoder model
         """
@@ -139,7 +174,6 @@ class ConcatAutoEncoder:
         encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        code = Dropout(0.1)(code)
 
         decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
         decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
@@ -149,7 +183,7 @@ class ConcatAutoEncoder:
         output_sem = Dense(self.encoding_length, activation='relu', name='ae_output_sem')(decoded)
 
         ae = Model(inputs=[input_vis, input_sem], outputs=[output_vis, output_sem])
-        loss = K.mean(mse(output_vis, input_vis) + lambda_ * mse(output_sem, input_sem))
+        loss = backend.mean(mse(output_vis, input_vis) + lambda_ * mse(output_sem, input_sem))
 
         ae.add_loss(loss)
         ae.compile(optimizer='adam')
@@ -158,9 +192,9 @@ class ConcatAutoEncoder:
 
     def fit(self, tr_data, tr_labels, te_data, te_labels, epochs, results_path='.', save_weights=False):
         """
-        Trains AE model for the specified number of epochs based on the input data. In each epoch,
-        the classification accuracy is computed for the training set. Input and output of the model
-        is the concatenation of the visual data with the semantic data.
+        Trains AE model for the specified number of epochs based on the input data. In each epoch, the classification
+        accuracy is computed for the training and test sets. Input of the model are the visual and semantic data in
+        separate arrays. Output is the concatenation of the visual data with the semantic data.
 
         :param tr_data: 2D numpy array with training visual and semantic data
         :param tr_labels: 1D numpy array with training labels
@@ -216,6 +250,14 @@ class ConcatAutoEncoder:
                 json.dump(self.history, f, indent=4, sort_keys=True)
 
     def predict(self, tr_vis_data, tr_sem_data, te_vis_data, te_sem_data):
+        """
+        Projects training and test data in a new subspace using the best encoder built during training
+
+        :param tr_vis_data: 2D numpy array with training visual data
+        :param tr_sem_data: 2D numpy array with training semantic data
+        :param te_vis_data: 2D numpy array with test visual data
+        :param te_sem_data: 2D numpy array with test semantic data
+        """
         if self.ae and self.best_weights:
             self.ae.set_weights(self.best_weights)
             encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
@@ -229,6 +271,13 @@ class ConcatAutoEncoder:
 
 class ZSLAutoEncoder:
     def __init__(self, input_length, encoding_length, output_length):
+        """
+        Initializes main variables
+
+        @param input_length: length of input for auto encoder
+        @param encoding_length: length of auto encoder's code
+        @param output_length: length of output or auto encoder
+        """
         self.ae = None
         self.history = dict()
         self.best_weights = None
@@ -237,6 +286,16 @@ class ZSLAutoEncoder:
         self.encoding_length = encoding_length
 
     def define_ae(self):
+        """
+        Builds an autoencoder with 3 encoding layers and 3 decoding layers. Layers are dense and use ReLu activation
+        function. The optimizer is defined to be Adamax and loss as the MSE of visual features plus the MSE of
+        semantic features. Inputs is the visual data and semantic data separately into two 2D array, where rows are
+        different examples and columns the attributes definition, however, in this case, the semantic data is not
+        part of reconstruction, it defines the code, so the task changes from reconstruction the semantic and visual
+        data to projecting the visual space to the semantic space.
+
+        @return: object with auto encoder model
+        """
         input_vis = Input(shape=(self.input_length - self.encoding_length,), name='ae_input_vis')
         input_sem = Input(shape=(self.encoding_length,), name='ae_input_sem')
 
@@ -247,16 +306,15 @@ class ZSLAutoEncoder:
         encoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='e_dense3')(encoded)
 
         code = Dense(self.encoding_length, activation='relu', name='code')(encoded)
-        dropout = Dropout(0.1)(code)
 
-        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(dropout)
+        decoded = Dense(self.input_length - round(0.9 * reduction_factor), activation='relu', name='d_dense4')(code)
         decoded = Dense(self.input_length - round(0.6 * reduction_factor), activation='relu', name='d_dense5')(decoded)
         decoded = Dense(self.input_length - round(0.3 * reduction_factor), activation='relu', name='d_dense6')(decoded)
 
         output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
 
         ae = Model(inputs=[input_vis, input_sem], outputs=output_vis)
-        loss = 10000 * K.mean(mse(input_vis, output_vis) + lambda_ * mse(input_sem, code))
+        loss = 10000 * backend.mean(mse(input_vis, output_vis) + lambda_ * mse(input_sem, code))
         ae.add_loss(loss)
 
         ae.compile(optimizer='adamax')
@@ -264,6 +322,18 @@ class ZSLAutoEncoder:
         return ae
 
     def fit(self, tr_vis_data, tr_sem_data, epochs, results_path='.', save_weights=False):
+        """
+        Trains AE model for the specified number of epochs based on the input data. Inputs of the model are the visual
+        and semantic data in separate arrays, but only visual data is used for reconstruction. Encoder is set to define
+        the semantic data from the visual data and decoder to define the visual data from the semantic data in the code.
+
+        :param tr_vis_data: 2D numpy array with training visual data
+        :param tr_sem_data: 12D numpy array with training semantic data
+        :param epochs: number of epochs to train model
+        :param results_path: string with path to save results
+        :param save_weights: if True, saves training best weights
+        :return: None
+        """
         if results_path and results_path != '.' and not os.path.isdir(results_path):
             os.makedirs(results_path)
 
@@ -288,6 +358,13 @@ class ZSLAutoEncoder:
                 json.dump(self.history, f, indent=4, sort_keys=True)
 
     def predict(self, tr_vis_data, te_vis_data):
+        """
+        Projects training and test data in a new subspace using the best encoder built during training.
+        This new subspace should was training to be the same as the semantic data
+
+        :param tr_vis_data: 2D numpy array with training visual data
+        :param te_vis_data: 2D numpy array with test visual data
+        """
         if self.ae and self.best_weights:
             self.ae.set_weights(self.best_weights)
             encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
