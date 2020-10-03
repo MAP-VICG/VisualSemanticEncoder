@@ -119,6 +119,61 @@ class AutoencodersTests(unittest.TestCase):
         keys = sorted(['svm_train', 'svm_test', 'best_loss', 'loss', 'val_loss'])
         self.assertTrue(keys, sorted(list(model.history.keys())))
 
+    def test_zsl_ae_fitting(self):
+        """
+        Tests if concat autoencoder model trains as expected
+        """
+        model = ZSLAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        vis_length = self.train_data.shape[1] - self.code_length
+        model.fit(self.train_data[:, :vis_length], self.train_data[:, vis_length:], 2)
+
+        for key in model.history.keys():
+            for value in model.history[key]:
+                self.assertTrue(value >= 0)
+            self.assertEqual(2, len(model.history[key]))
+
+        self.assertTrue(os.path.isfile('ae_training_history.json'))
+        keys = sorted(['best_loss', 'loss'])
+        self.assertTrue(keys, sorted(list(model.history.keys())))
+
+    def test_simple_ae_predict(self):
+        """
+        Tests if simple autoencoder model predicts semantic features as expected
+        """
+        vis_length = self.train_data.shape[1] - self.code_length
+        model = SimpleAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
+        tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.train_data[:, vis_length:],
+                                       self.test_data[:, :vis_length], self.test_data[:, vis_length:])
+
+        self.assertEqual((self.train_data.shape[0], self.code_length), tr_est.shape)
+        self.assertEqual((self.test_data.shape[0], self.code_length), te_est.shape)
+
+    def test_concat_ae_predict(self):
+        """
+        Tests if concat autoencoder model predicts semantic features as expected
+        """
+        vis_length = self.train_data.shape[1] - self.code_length
+        model = ConcatAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
+        tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.train_data[:, vis_length:],
+                                       self.test_data[:, :vis_length], self.test_data[:, vis_length:])
+
+        self.assertEqual((self.train_data.shape[0], self.code_length), tr_est.shape)
+        self.assertEqual((self.test_data.shape[0], self.code_length), te_est.shape)
+
+    def test_zsl_ae_predict(self):
+        """
+        Tests if zsl autoencoder model predicts semantic features as expected
+        """
+        vis_length = self.train_data.shape[1] - self.code_length
+        model = ZSLAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model.fit(self.train_data[:, :vis_length], self.train_data[:, vis_length:], 2)
+        tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.test_data[:, :vis_length])
+
+        self.assertEqual((self.train_data.shape[0], self.code_length), tr_est.shape)
+        self.assertEqual((self.test_data.shape[0], self.code_length), te_est.shape)
+
     @classmethod
     def tearDownClass(cls):
         """
