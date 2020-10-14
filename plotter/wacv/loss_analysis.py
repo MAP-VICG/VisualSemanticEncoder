@@ -26,9 +26,9 @@ def plot_loss(file, title, y_label, idx):
     ax = plt.subplot(2, 4, idx)
     x_values = np.linspace(1, 50, 50)
 
-    loss_mean, loss_std, val_loss_mean, val_loss_std = get_loss_details(file, 'sec')
-    plt.errorbar(x_values, loss_mean, yerr=loss_std, label='loss_sec')
-    plt.errorbar(x_values, val_loss_mean, yerr=val_loss_std, label='val_loss_sec')
+    loss_mean, loss_std, val_loss_mean, val_loss_std = get_loss_details(file, 'vse')
+    plt.errorbar(x_values, loss_mean, yerr=loss_std, label='loss_vse')
+    plt.errorbar(x_values, val_loss_mean, yerr=val_loss_std, label='val_loss_vse')
 
     loss_mean, loss_std, val_loss_mean, val_loss_std = get_loss_details(file, 's2s')
     plt.errorbar(x_values, loss_mean, yerr=loss_std, label='loss_s2s')
@@ -49,15 +49,15 @@ def plot_loss(file, title, y_label, idx):
 
 fig = plt.figure(figsize=(14, 6.5))
 
-plot_loss('../../results/wacv/losses/v1_loss_i_cub.json', 'SEC V1 - CUB200 GN', 'MSE', 1)
-plot_loss('../../results/wacv/losses/v1_loss_r_cub.json', 'SEC V1 - CUB200 RN', 'MSE', 2)
-plot_loss('../../results/wacv/losses/v1_loss_i_awa.json', 'SEC V1 - AwA GN', 'MSE', 3)
-plot_loss('../../results/wacv/losses/v1_loss_r_awa.json', 'SEC V1 - AwA2 RN', 'MSE', 4)
+plot_loss('../../results/wacv/losses/v1_loss_i_cub.json', 'vse V1 - CUB200 GN', 'MSE', 1)
+plot_loss('../../results/wacv/losses/v1_loss_r_cub.json', 'vse V1 - CUB200 RN', 'MSE', 2)
+plot_loss('../../results/wacv/losses/v1_loss_i_awa.json', 'vse V1 - AwA GN', 'MSE', 3)
+plot_loss('../../results/wacv/losses/v1_loss_r_awa.json', 'vse V1 - AwA2 RN', 'MSE', 4)
 
-plot_loss('../../results/wacv/losses/v2_loss_i_cub.json', 'SEC V2 - CUB200 GN', 'MSE(vis) + L * MSE(sem)', 5)
-plot_loss('../../results/wacv/losses/v2_loss_r_cub.json', 'SEC V2 - CUB200 RN', 'MSE(vis) + L * MSE(sem)', 6)
-plot_loss('../../results/wacv/losses/v2_loss_i_awa.json', 'SEC V2 - AwA GN', 'MSE(vis) + L * MSE(sem)', 7)
-hd, lb = plot_loss('../../results/wacv/losses/v2_loss_r_awa.json', 'SEC V2 - AwA2 RN', 'MSE(vis) + L * MSE(sem)', 8)
+plot_loss('../../results/wacv/losses/v2_loss_i_cub.json', 'vse V2 - CUB200 GN', 'MSE(vis) + L * MSE(sem)', 5)
+plot_loss('../../results/wacv/losses/v2_loss_r_cub.json', 'vse V2 - CUB200 RN', 'MSE(vis) + L * MSE(sem)', 6)
+plot_loss('../../results/wacv/losses/v2_loss_i_awa.json', 'vse V2 - AwA GN', 'MSE(vis) + L * MSE(sem)', 7)
+hd, lb = plot_loss('../../results/wacv/losses/v2_loss_r_awa.json', 'vse V2 - AwA2 RN', 'MSE(vis) + L * MSE(sem)', 8)
 
 fig.legend(hd, lb, loc='lower center', ncol=4, bbox_to_anchor=(0.5, 0.05))
 plt.show()

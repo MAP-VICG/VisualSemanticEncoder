@@ -13,7 +13,7 @@ import unittest
 import numpy as np
 from scipy.io import loadmat
 
-from encoders.sec.src.encoder import ModelFactory, ModelType, Encoder
+from encoders.vse.src.encoder import ModelFactory, ModelType, Encoder
 
 
 class EncoderTests(unittest.TestCase):

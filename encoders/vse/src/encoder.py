@@ -12,7 +12,7 @@ array dimensionality and creating a new feature space with the merged data.
 """
 from enum import Enum
 
-from encoders.sec.src.autoencoders import *
+from encoders.vse.src.autoencoders import *
 
 
 class ModelType(Enum):
@@ -72,7 +72,7 @@ class Encoder:
         self.output_length = output_length
         self.encoding_length = encoding_length
 
-    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights=False, y_train=None, y_test=None):
+    def estimate_semantic_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, y_train, y_test, save=False):
         """
         Estimates semantic data for the test set based on the best model computed in the AE training.
 
@@ -80,7 +80,7 @@ class Encoder:
         :param te_vis_data: test visual data
         :param tr_sem_data: training semantic data
         :param te_sem_data: test semantic data
-        :param save_weights: if True, saves training weights
+        :param save: if True, saves training weights
         :param y_train: training labels to get svm classification training results (NOT USED TO TRAIN THE MODEL)
         :param y_test: test labels to get svm classification test results (NOT USED TO TRAIN THE MODEL)
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
@@ -90,9 +90,9 @@ class Encoder:
         if self.ae_type in (ModelType.SIMPLE_AE, ModelType.CONCAT_AE):
             x_train = np.hstack((tr_vis_data, tr_sem_data))
             x_test = np.hstack((te_vis_data, te_sem_data))
-            model.fit(x_train, y_train, x_test, y_test, self.epochs, self.results_path, save_weights)
+            model.fit(x_train, y_train, x_test, y_test, self.epochs, self.results_path, save)
         else:
-            model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
+            model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save)
 
         tr_est, te_est = model.predict(tr_vis_data, tr_sem_data, te_vis_data, te_sem_data)
 

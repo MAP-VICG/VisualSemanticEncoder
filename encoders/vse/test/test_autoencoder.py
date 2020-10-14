@@ -14,7 +14,7 @@ import unittest
 import numpy as np
 from scipy.io import loadmat
 
-from encoders.sec.src.autoencoders import SimpleAutoEncoder, ConcatAutoEncoder, ZSLAutoEncoder
+from encoders.vse.src.autoencoders import SimpleAutoEncoder, ConcatAutoEncoder, ZSLAutoEncoder
 
 
 class AutoencodersTests(unittest.TestCase):

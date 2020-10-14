@@ -10,7 +10,7 @@ result_files = sorted(['../results/layers/' + file for file in os.listdir('../re
 def plot_classification_results():
     ax = None
     fig = plt.figure(figsize=(14, 6.5))
-    for d, klass in enumerate(['sec', 's2s']):
+    for d, klass in enumerate(['vse', 's2s']):
         for p, dataset in enumerate(['i_awa', 'r_awa', 'i_cub', 'r_cub']):
             rates = []
             k = len(result_files)

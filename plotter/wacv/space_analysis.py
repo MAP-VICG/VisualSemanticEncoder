@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from tensorflow.keras.models import Model
 
-from encoders.sec.src.autoencoders import Simple3Layers
+from encoders.vse.src.autoencoders import Simple3Layers
 
 
 classes = [6, 10, 13, 15, 3, 50, 9, 47, 7, 31, 5, 38]
@@ -69,7 +69,7 @@ plt.title('PCA of Semantic Features', weight='bold', size=10)
 
 ax = fig.add_subplot(133)
 plot_pca_space(data_est)
-plt.title('PCA of SEC Features', weight='bold', size=10)
+plt.title('PCA of vse Features', weight='bold', size=10)
 
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels, loc='lower center', ncol=6)

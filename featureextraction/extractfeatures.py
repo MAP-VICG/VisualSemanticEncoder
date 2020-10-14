@@ -74,8 +74,8 @@ def main():
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
-    minutes, seconds = divmod(rem, 60)
-    time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
+    minutes, vseonds = divmod(rem, 60)
+    time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), vseonds)
 
     print('Elapsed time is %s' % time_elapsed)
 

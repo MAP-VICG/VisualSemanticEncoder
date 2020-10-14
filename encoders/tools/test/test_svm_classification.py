@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from scipy.io import loadmat
-from encoders.sec.src.encoder import ModelType
+from encoders.vse.src.encoder import ModelType
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
 
 
@@ -155,69 +155,69 @@ class ClassificationTests(unittest.TestCase):
         _, sem_data = self.svm_awa_ae.estimate_sae_data(input_data['X_tr'], input_data['X_te'], input_data['S_tr'], labels)
         self.assertTrue((np.round(template['S_est'], decimals=5) == np.round(sem_data, decimals=5)).all())
 
-    def test_classify_sec_data_cub_ae(self):
+    def test_classify_vse_data_cub_ae(self):
         vis_data, lbs_data, sem_data = self.svm_cub_ae.get_data('../../Datasets/SEM/cub_demo_data.mat')
-        accuracies = self.svm_cub_ae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+        accuracies = self.svm_cub_ae.classify_vse_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
-        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_cub_ae.history['sec'].keys()))
-        self.assertEqual(5, len(self.svm_cub_ae.history['sec']['loss']))
-        self.assertEqual(5, len(self.svm_cub_ae.history['sec']['val_loss']))
+        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_cub_ae.history['vse'].keys()))
+        self.assertEqual(5, len(self.svm_cub_ae.history['vse']['loss']))
+        self.assertEqual(5, len(self.svm_cub_ae.history['vse']['val_loss']))
 
-        idx = self.svm_cub_ae.history['sec']['best_loss'][1]
-        self.assertTrue(self.svm_cub_ae.history['sec']['best_loss'][0] in self.svm_cub_ae.history['sec']['loss'])
-        self.assertEqual(self.svm_cub_ae.history['sec']['best_loss'][0], self.svm_cub_ae.history['sec']['loss'][idx])
+        idx = self.svm_cub_ae.history['vse']['best_loss'][1]
+        self.assertTrue(self.svm_cub_ae.history['vse']['best_loss'][0] in self.svm_cub_ae.history['vse']['loss'])
+        self.assertEqual(self.svm_cub_ae.history['vse']['best_loss'][0], self.svm_cub_ae.history['vse']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
-    def test_classify_sec_data_awa_ae(self):
+    def test_classify_vse_data_awa_ae(self):
         vis_data, lbs_data, sem_data = self.svm_awa_ae.get_data('../../Datasets/SEM/awa_demo_data.mat')
-        accuracies = self.svm_awa_ae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+        accuracies = self.svm_awa_ae.classify_vse_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
-        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_awa_ae.history['sec'].keys()))
-        self.assertEqual(5, len(self.svm_awa_ae.history['sec']['loss']))
-        self.assertEqual(5, len(self.svm_awa_ae.history['sec']['val_loss']))
+        self.assertEqual(['best_loss', 'loss', 'val_loss'], list(self.svm_awa_ae.history['vse'].keys()))
+        self.assertEqual(5, len(self.svm_awa_ae.history['vse']['loss']))
+        self.assertEqual(5, len(self.svm_awa_ae.history['vse']['val_loss']))
 
-        idx = self.svm_awa_ae.history['sec']['best_loss'][1]
-        self.assertTrue(self.svm_awa_ae.history['sec']['best_loss'][0] in self.svm_awa_ae.history['sec']['loss'])
-        self.assertEqual(self.svm_awa_ae.history['sec']['best_loss'][0], self.svm_awa_ae.history['sec']['loss'][idx])
+        idx = self.svm_awa_ae.history['vse']['best_loss'][1]
+        self.assertTrue(self.svm_awa_ae.history['vse']['best_loss'][0] in self.svm_awa_ae.history['vse']['loss'])
+        self.assertEqual(self.svm_awa_ae.history['vse']['best_loss'][0], self.svm_awa_ae.history['vse']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
-    def test_classify_sec_data_cub_vae(self):
+    def test_classify_vse_data_cub_vae(self):
         svm_cub_vae = SVMClassifier(DataType.CUB, ModelType.SIMPLE_AE_1L)
         vis_data, lbs_data, sem_data = svm_cub_vae.get_data('../../Datasets/SEM/cub_demo_data.mat')
-        accuracies = svm_cub_vae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+        accuracies = svm_cub_vae.classify_vse_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
-        self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_cub_vae.history['sec'].keys()))
-        self.assertEqual(5, len(svm_cub_vae.history['sec']['loss']))
-        self.assertEqual(5, len(svm_cub_vae.history['sec']['kl_loss']))
-        self.assertEqual(5, len(svm_cub_vae.history['sec']['reconstruction_loss']))
+        self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_cub_vae.history['vse'].keys()))
+        self.assertEqual(5, len(svm_cub_vae.history['vse']['loss']))
+        self.assertEqual(5, len(svm_cub_vae.history['vse']['kl_loss']))
+        self.assertEqual(5, len(svm_cub_vae.history['vse']['reconstruction_loss']))
 
-        idx = svm_cub_vae.history['sec']['best_loss'][1]
-        self.assertTrue(svm_cub_vae.history['sec']['best_loss'][0] in svm_cub_vae.history['sec']['loss'])
-        self.assertEqual(svm_cub_vae.history['sec']['best_loss'][0], svm_cub_vae.history['sec']['loss'][idx])
+        idx = svm_cub_vae.history['vse']['best_loss'][1]
+        self.assertTrue(svm_cub_vae.history['vse']['best_loss'][0] in svm_cub_vae.history['vse']['loss'])
+        self.assertEqual(svm_cub_vae.history['vse']['best_loss'][0], svm_cub_vae.history['vse']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)
         self.assertEqual(2, len(accuracies))
 
-    def test_classify_sec_data_awa_vae(self):
+    def test_classify_vse_data_awa_vae(self):
         svm_awa_vae = SVMClassifier(DataType.AWA, ModelType.SIMPLE_AE_1L)
         vis_data, lbs_data, sem_data = svm_awa_vae.get_data('../../Datasets/SEM/awa_demo_data.mat')
-        accuracies = svm_awa_vae.classify_sec_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
+        accuracies = svm_awa_vae.classify_vse_data(vis_data, sem_data, lbs_data, 2, 5, save_results=False)
 
-        self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_awa_vae.history['sec'].keys()))
-        self.assertEqual(5, len(svm_awa_vae.history['sec']['loss']))
-        self.assertEqual(5, len(svm_awa_vae.history['sec']['kl_loss']))
-        self.assertEqual(5, len(svm_awa_vae.history['sec']['reconstruction_loss']))
+        self.assertEqual(['best_loss', 'loss', 'kl_loss', 'reconstruction_loss'], list(svm_awa_vae.history['vse'].keys()))
+        self.assertEqual(5, len(svm_awa_vae.history['vse']['loss']))
+        self.assertEqual(5, len(svm_awa_vae.history['vse']['kl_loss']))
+        self.assertEqual(5, len(svm_awa_vae.history['vse']['reconstruction_loss']))
 
-        idx = svm_awa_vae.history['sec']['best_loss'][1]
-        self.assertTrue(svm_awa_vae.history['sec']['best_loss'][0] in svm_awa_vae.history['sec']['loss'])
-        self.assertEqual(svm_awa_vae.history['sec']['best_loss'][0], svm_awa_vae.history['sec']['loss'][idx])
+        idx = svm_awa_vae.history['vse']['best_loss'][1]
+        self.assertTrue(svm_awa_vae.history['vse']['best_loss'][0] in svm_awa_vae.history['vse']['loss'])
+        self.assertEqual(svm_awa_vae.history['vse']['best_loss'][0], svm_awa_vae.history['vse']['loss'][idx])
 
         for acc in accuracies:
             self.assertTrue(0 <= acc <= 1)

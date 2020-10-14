@@ -29,7 +29,7 @@ A. Ponti, her teacher advisor.
 │   │   │   ├── test_awa_demo.py
 │   │   │   └── test_cub_demo.py
 │   │   └── __init__.py
-│   ├── sec/
+│   ├── vse/
 │   │   ├── src
 │   │   │   ├── __init__.py
 │   │   │   └── autoencoder.py

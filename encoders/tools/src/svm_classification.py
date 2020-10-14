@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
 
 from encoders.tools.src.utils import ZSL
-from encoders.sec.src.encoder import Encoder, ModelType
+from encoders.vse.src.encoder import Encoder, ModelType
 from encoders.tools.src.sem_degradation import SemanticDegradation
 
 
@@ -22,7 +22,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type, ae_type, folds, epochs, degradation_rate=0.0):
+    def __init__(self, data_type, folds, epochs, save=False, results_path='.', degradation_rate=0.0):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
@@ -34,7 +34,8 @@ class SVMClassifier:
 
         self.n_folds = folds
         self.epochs = epochs
-        self.ae_type = ae_type
+        self.save_results = save
+        self.results_path = results_path
         self.degradation_rate = degradation_rate
 
     def get_te_sem_data(self, data):
@@ -181,43 +182,37 @@ class SVMClassifier:
 
         return accuracies
 
-    def estimate_sec_data(self, tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, res_path, y_train=None, y_test=None):
-        tr_sem_data = normalize(tr_sem_data, norm='l2', axis=1, copy=True)
-        tr_vis_data = normalize(tr_vis_data, norm='l2', axis=1, copy=True)
-        te_vis_data = normalize(te_vis_data, norm='l2', axis=1, copy=True)
+    def estimate_vse_data(self, tr_vis, te_vis, tr_sem, te_sem, y_train, y_test, res_path):
+        tr_sem = normalize(tr_sem, norm='l2', axis=1, copy=True)
+        tr_vis = normalize(tr_vis, norm='l2', axis=1, copy=True)
+        te_vis = normalize(te_vis, norm='l2', axis=1, copy=True)
 
-        te_sem_data = normalize(te_sem_data, norm='l2', axis=1, copy=True)
-        te_sem_data = SemanticDegradation.kill_semantic_attributes(te_sem_data, self.degradation_rate)
-        te_sem_data = normalize(te_sem_data, norm='l2', axis=1, copy=True)
+        te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
+        te_sem = SemanticDegradation.kill_semantic_attributes(te_sem, self.degradation_rate)
+        te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
 
-        input_length = output_length = tr_vis_data.shape[1] + tr_sem_data.shape[1]
-        ae = Encoder(input_length, tr_sem_data.shape[1], output_length, self.ae_type, self.epochs, res_path)
+        input_length = output_length = tr_vis.shape[1] + tr_sem.shape[1]
+        ae = Encoder(input_length, tr_sem.shape[1], output_length, ModelType.CONCAT_AE, self.epochs, res_path)
 
-        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis_data, te_vis_data, tr_sem_data, te_sem_data, save_weights, y_train, y_test)
+        tr_sem, te_sem = ae.estimate_semantic_data(tr_vis, te_vis, tr_sem, te_sem, y_train, y_test, self.save_results)
 
         return tr_sem, te_sem
 
-    def classify_sec_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
+    def classify_vse_data(self, vis_data, sem_data, labels):
         fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
-        results_path = os.path.join(results_path, 'sec')
-        if save_results and results_path != '.' and not os.path.isdir(results_path):
+        results_path = os.path.join(self.results_path, 'vse')
+        if self.save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
-
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
-            if self.ae_type in (ModelType.SIMPLE_AE, ModelType.CONCAT_AE):
-                tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
-                                                        sem_data[te_idx], save_results, res_path, y_train=tr_labels,
-                                                        y_test=te_labels)
-            else:
-                tr_sem, te_sem = self.estimate_sec_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
-                                                        sem_data[te_idx], save_results, res_path)
+            tr_sem, te_sem = self.estimate_vse_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx],
+                                                    sem_data[te_idx], tr_labels, te_labels, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)
@@ -228,7 +223,7 @@ class SVMClassifier:
 
         return accuracies
 
-    def classify_sae2sec_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
+    def classify_sae2vse_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
         fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
@@ -244,7 +239,7 @@ class SVMClassifier:
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
             tr_sem, te_sem = self.estimate_sae_data(tr_vis, te_vis, sem_data[tr_idx], tr_labels)
-            tr_sem, te_sem = self.estimate_sec_data(tr_vis, te_vis, tr_sem, te_sem, save_results, res_path)
+            tr_sem, te_sem = self.estimate_vse_data(tr_vis, te_vis, tr_sem, te_sem, save_results, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)

@@ -14,7 +14,7 @@ def plot_classification_results():
         rates = []
         k = len(result_files)
         curves = {'cat': {'mean': np.zeros(k), 'std': np.zeros(k)}, 's2s': {'mean': np.zeros(k), 'std': np.zeros(k)},
-                  'sae': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'sec': {'mean': np.zeros(k), 'std': np.zeros(k)},
+                  'sae': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'vse': {'mean': np.zeros(k), 'std': np.zeros(k)},
                   'sem': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'vis': {'mean': np.zeros(k), 'std': np.zeros(k)},
                   'pca': {'mean': np.zeros(k), 'std': np.zeros(k)}}
 
@@ -30,7 +30,7 @@ def plot_classification_results():
             curves['cat']['mean'][i], curves['cat']['std'][i] = np.mean(data[dataset]['cat']), np.std(data[dataset]['cat'])
             curves['s2s']['mean'][i], curves['s2s']['std'][i] = np.mean(data[dataset]['s2s_v1']), np.std(data[dataset]['s2s_v1'])
             curves['sae']['mean'][i], curves['sae']['std'][i] = np.mean(data[dataset]['sae']), np.std(data[dataset]['sae'])
-            curves['sec']['mean'][i], curves['sec']['std'][i] = np.mean(data[dataset]['sec_v1']), np.std(data[dataset]['sec_v1'])
+            curves['vse']['mean'][i], curves['vse']['std'][i] = np.mean(data[dataset]['vse_v1']), np.std(data[dataset]['vse_v1'])
             curves['sem']['mean'][i], curves['sem']['std'][i] = np.mean(data[dataset]['sem']), np.std(data[dataset]['sem'])
             curves['vis']['mean'][i], curves['vis']['std'][i] = np.mean(data[dataset]['vis']), np.std(data[dataset]['vis'])
             curves['pca']['mean'][i], curves['pca']['std'][i] = np.mean(data[dataset]['pca']), np.std(data[dataset]['pca'])
@@ -65,7 +65,7 @@ def plot_v1_vs_v2():
         rates = []
         k = len(result_files)
         curves = {'s2s_v1': {'mean': np.zeros(k), 'std': np.zeros(k)}, 's2s_v2': {'mean': np.zeros(k), 'std': np.zeros(k)},
-                  'sec_v1': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'sec_v2': {'mean': np.zeros(k), 'std': np.zeros(k)}}
+                  'vse_v1': {'mean': np.zeros(k), 'std': np.zeros(k)}, 'vse_v2': {'mean': np.zeros(k), 'std': np.zeros(k)}}
 
         for i, file in enumerate(result_files):
             if file.split('_')[-1].split('.')[0] == '2':
@@ -78,8 +78,8 @@ def plot_v1_vs_v2():
 
             curves['s2s_v1']['mean'][i], curves['s2s_v1']['std'][i] = np.mean(data[dataset]['s2s_v1']), np.std(data[dataset]['s2s_v1'])
             curves['s2s_v2']['mean'][i], curves['s2s_v2']['std'][i] = np.mean(data[dataset]['s2s_v2']), np.std(data[dataset]['s2s_v2'])
-            curves['sec_v1']['mean'][i], curves['sec_v1']['std'][i] = np.mean(data[dataset]['sec_v1']), np.std(data[dataset]['sec_v1'])
-            curves['sec_v2']['mean'][i], curves['sec_v2']['std'][i] = np.mean(data[dataset]['sec_v2']), np.std(data[dataset]['sec_v2'])
+            curves['vse_v1']['mean'][i], curves['vse_v1']['std'][i] = np.mean(data[dataset]['vse_v1']), np.std(data[dataset]['vse_v1'])
+            curves['vse_v2']['mean'][i], curves['vse_v2']['std'][i] = np.mean(data[dataset]['vse_v2']), np.std(data[dataset]['vse_v2'])
 
         ax = plt.subplot(2, 2, p + 1)
         box = ax.get_position()

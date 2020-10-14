@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from tensorflow.keras.models import Model
 
-from encoders.sec.src.autoencoders import Simple3Layers
+from encoders.vse.src.autoencoders import Simple3Layers
 
 
 classes = [6, 10, 13, 15, 3, 50, 9, 47, 7, 31, 5, 38]
