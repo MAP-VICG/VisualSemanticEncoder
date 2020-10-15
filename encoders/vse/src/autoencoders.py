@@ -23,10 +23,9 @@ from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import balanced_accuracy_score
-from sklearn.model_selection import StratifiedShuffleSplit
 
 
-class SimpleAutoEncoder:
+class StraightAutoencoder:
     def __init__(self, input_length, encoding_length, output_length):
         """
         Initializes main variables
@@ -138,7 +137,7 @@ class SimpleAutoEncoder:
         raise AttributeError('Cannot estimate values before training the model. Please run fit function first.')
 
 
-class ConcatAutoEncoder:
+class BalancedAutoencoder:
     def __init__(self, input_length, encoding_length, output_length):
         """
         Initializes main variables
@@ -183,7 +182,7 @@ class ConcatAutoEncoder:
         output_vis = Dense(self.output_length - self.encoding_length, activation='relu', name='ae_output_vis')(decoded)
 
         self.ae = Model(inputs=[input_vis, input_sem], outputs=[output_sem, output_vis])
-        loss = backend.mean(mse(output_vis, input_vis) + mse(output_sem, input_sem))
+        loss = backend.mean(mse(output_vis, input_vis) + lambda_ * mse(output_sem, input_sem))
 
         self.ae.add_loss(loss)
         self.ae.compile(optimizer='adam')
@@ -264,7 +263,7 @@ class ConcatAutoEncoder:
         raise AttributeError('Cannot estimate values before training the model. Please run fit function first.')
 
 
-class ZSLAutoEncoder:
+class ZSLAutoencoder:
     def __init__(self, input_length, encoding_length, output_length):
         """
         Initializes main variables

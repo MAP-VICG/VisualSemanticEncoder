@@ -192,7 +192,7 @@ class SVMClassifier:
         te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
 
         input_length = output_length = tr_vis.shape[1] + tr_sem.shape[1]
-        ae = Encoder(input_length, tr_sem.shape[1], output_length, ModelType.CONCAT_AE, self.epochs, res_path)
+        ae = Encoder(input_length, tr_sem.shape[1], output_length, ModelType.STRAIGHT_AE, self.epochs, res_path)
 
         tr_sem, te_sem = ae.estimate_semantic_data(tr_vis, te_vis, tr_sem, te_sem, y_train, y_test, self.save_results)
 
@@ -223,13 +223,13 @@ class SVMClassifier:
 
         return accuracies
 
-    def classify_sae2vse_data(self, vis_data, sem_data, labels, save_results, results_path='.'):
+    def classify_sae2vse_data(self, vis_data, sem_data, labels):
         fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
-        results_path = os.path.join(results_path, 's2s')
-        if save_results and results_path != '.' and not os.path.isdir(results_path):
+        results_path = os.path.join(self.results_path, 's2s')
+        if self.save_results and results_path != '.' and not os.path.isdir(results_path):
             os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
@@ -239,7 +239,7 @@ class SVMClassifier:
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
             tr_sem, te_sem = self.estimate_sae_data(tr_vis, te_vis, sem_data[tr_idx], tr_labels)
-            tr_sem, te_sem = self.estimate_vse_data(tr_vis, te_vis, tr_sem, te_sem, save_results, res_path)
+            tr_sem, te_sem = self.estimate_vse_data(tr_vis, te_vis, tr_sem, te_sem, tr_labels, te_labels, res_path)
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(tr_sem, tr_labels)

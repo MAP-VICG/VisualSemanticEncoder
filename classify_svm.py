@@ -29,8 +29,8 @@ class Classification:
         # self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
         # self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
         # self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
-        self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['s2s'] = svm.classify_sae2vse_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
+        self.result[label]['s2s'] = svm.classify_sae2vse_data(vis_data, sem_data, lbs_data)
 
         rate_label = str(int(rate * 100))
         with open(os.path.join(self.results_path, 'classification_results_%s.json' % rate_label.zfill(3)), 'w+') as f:
@@ -51,5 +51,5 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     for degradation_rate in [0.3]:
-        klass = Classification(5, 50, 'results_test_3', save=False)
+        klass = Classification(2, 2, 'results_test', save=False)
         klass.classify_all(degradation_rate)

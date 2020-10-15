@@ -20,8 +20,8 @@ class ModelType(Enum):
     Enum for model type
     """
     ZSL_AE = "ZSL_AE"
-    CONCAT_AE = "CONCAT_AE"
-    SIMPLE_AE = "SIMPLE_AE"
+    BALANCED_AE = "BALANCED_AE"
+    STRAIGHT_AE = "STRAIGHT_AE"
 
 
 class ModelFactory:
@@ -44,12 +44,12 @@ class ModelFactory:
         @param ae_type: auto encoder type
         @return: object with auto encoder model
         """
-        if ae_type == ModelType.SIMPLE_AE:
-            return SimpleAutoEncoder(self.input_length, self.encoding_length, self.output_length)
-        if ae_type == ModelType.CONCAT_AE:
-            return ConcatAutoEncoder(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.STRAIGHT_AE:
+            return StraightAutoencoder(self.input_length, self.encoding_length, self.output_length)
+        if ae_type == ModelType.BALANCED_AE:
+            return BalancedAutoencoder(self.input_length, self.encoding_length, self.output_length)
         if ae_type == ModelType.ZSL_AE:
-            return ZSLAutoEncoder(self.input_length, self.encoding_length, self.output_length)
+            return ZSLAutoencoder(self.input_length, self.encoding_length, self.output_length)
 
 
 class Encoder:
@@ -87,7 +87,7 @@ class Encoder:
         """
         model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
 
-        if self.ae_type in (ModelType.SIMPLE_AE, ModelType.CONCAT_AE):
+        if self.ae_type in (ModelType.STRAIGHT_AE, ModelType.BALANCED_AE):
             x_train = np.hstack((tr_vis_data, tr_sem_data))
             x_test = np.hstack((te_vis_data, te_sem_data))
             model.fit(x_train, y_train, x_test, y_test, self.epochs, self.results_path, save)
