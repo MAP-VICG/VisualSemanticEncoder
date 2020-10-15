@@ -1,4 +1,5 @@
 import os
+import logging
 import numpy as np
 from enum import Enum
 from scipy.io import loadmat
@@ -63,10 +64,13 @@ class SVMClassifier:
         return vis_data, lbs_data, sem_data
 
     def classify_vis_data(self, vis_data, labels, reduce_dim=False):
+        fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
+            logging.info('Running VIS classification for fold %d' % fold)
+
             tr_data, te_data = vis_data[train_index], vis_data[test_index]
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
@@ -77,15 +81,19 @@ class SVMClassifier:
             clf.fit(tr_data, tr_labels)
             prediction = clf.predict(te_data)
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
 
     def classify_sem_data(self, sem_data, labels):
+        fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(sem_data, labels):
+            logging.info('Running SEM classification for fold %d' % fold)
+
             tr_data = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
             te_data = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
@@ -98,15 +106,19 @@ class SVMClassifier:
             clf.fit(tr_data, tr_labels)
             prediction = clf.predict(te_data)
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
 
     def classify_concat_data(self, vis_data, sem_data, labels):
+        fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
+            logging.info('Running CAT classification for fold %d' % fold)
+
             tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
@@ -121,16 +133,20 @@ class SVMClassifier:
             clf.fit(tr_data, tr_labels)
             prediction = clf.predict(te_data)
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
 
     def classify_concat_pca_data(self, vis_data, sem_data, labels):
+        fold = 0
         accuracies = []
         pca = PCA(n_components=sem_data.shape[1])
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
+            logging.info('Running PCA classification for fold %d' % fold)
+
             tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
@@ -145,6 +161,7 @@ class SVMClassifier:
             clf.fit(pca.fit_transform(tr_data), tr_labels)
             prediction = clf.predict(pca.fit_transform(te_data))
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
@@ -166,10 +183,13 @@ class SVMClassifier:
         return tr_sem, te_sem
 
     def classify_sae_data(self, vis_data, sem_data, labels):
+        fold = 0
         accuracies = []
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
+            logging.info('Running SAE classification for fold %d' % fold)
+
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 
             tr_sem, te_sem = self.estimate_sae_data(vis_data[tr_idx], vis_data[te_idx], sem_data[tr_idx], tr_labels)
@@ -178,6 +198,7 @@ class SVMClassifier:
             clf.fit(tr_sem, tr_labels)
             prediction = clf.predict(te_sem)
 
+            fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
 
         return accuracies
@@ -208,6 +229,8 @@ class SVMClassifier:
             os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
+            logging.info('Running VSE classification for fold %d' % fold)
+
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
             res_path = os.path.join(results_path, 'f' + str(fold).zfill(3))
 
@@ -233,6 +256,8 @@ class SVMClassifier:
             os.mkdir(results_path)
 
         for tr_idx, te_idx in skf.split(vis_data, labels):
+            logging.info('Running S2S classification for fold %d' % fold)
+
             tr_vis, te_vis = vis_data[tr_idx], vis_data[te_idx]
             tr_labels, te_labels = labels[tr_idx][:, 0], labels[te_idx][:, 0]
 

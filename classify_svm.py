@@ -29,7 +29,7 @@ class Classification:
         # self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
         # self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
         # self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
+        self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
         self.result[label]['s2s'] = svm.classify_sae2vse_data(vis_data, sem_data, lbs_data)
 
         rate_label = str(int(rate * 100))
@@ -38,10 +38,11 @@ class Classification:
 
     def classify_all(self, rate):
         logging.info('Running classification for degradation rate of %.2f' % rate)
+
         self.run_classification('../Datasets/SAE/cub_demo_data.mat', 'i_cub', DataType.CUB, rate=rate)
-        # self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
-        # self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
-        # self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
+        self.run_classification('../Datasets/SAE/awa_demo_data.mat', 'i_awa', DataType.AWA, rate=rate)
+        self.run_classification('../Datasets/SAE/cub_demo_data_resnet.mat', 'r_cub', DataType.CUB, rate=rate)
+        self.run_classification('../Datasets/SAE/awa_demo_data_resnet.mat', 'r_awa', DataType.AWA, rate=rate)
 
 
 if __name__ == '__main__':
@@ -50,6 +51,6 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)s [%(module)s, %(funcName)s]: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    for degradation_rate in [0.3]:
-        klass = Classification(2, 2, 'results_test', save=False)
+    for degradation_rate in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        klass = Classification(5, 50, 'results', save=True)
         klass.classify_all(degradation_rate)
