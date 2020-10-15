@@ -14,7 +14,7 @@ import unittest
 import numpy as np
 from scipy.io import loadmat
 
-from encoders.vse.src.autoencoders import SimpleAutoEncoder, ConcatAutoEncoder, ZSLAutoEncoder
+from encoders.vse.src.autoencoders import StraightAutoencoder, BalancedAutoencoder, ZSLAutoencoder
 
 
 class AutoencodersTests(unittest.TestCase):
@@ -33,11 +33,11 @@ class AutoencodersTests(unittest.TestCase):
         cls.test_data = np.hstack((data['X_te'], s_te))
         cls.train_data = np.hstack((data['X_tr'], data['S_tr']))
 
-    def test_simple_ae(self):
+    def test_straight_ae(self):
         """
-        Tests if simple autoencoder model is build with the correct size for input, output and encoding
+        Tests if straight autoencoder model is build with the correct size for input, output and encoding
         """
-        model = SimpleAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model = StraightAutoencoder(2048 + 85, 85, 2048 + 85)
         model.define_ae()
 
         self.assertEqual([None, 2048 + 85], model.ae.input.shape.as_list())
@@ -47,17 +47,17 @@ class AutoencodersTests(unittest.TestCase):
         self.assertEqual((None, 85), model.ae.get_layer('code').output_shape)
         self.assertEqual((None, 2048 + 85), model.ae.get_layer('ae_output').output_shape)
 
-    def test_concat_ae(self):
+    def test_balanced_ae(self):
         """
-        Tests if concat autoencoder model is build with the correct size for input, output and encoding
+        Tests if balanced autoencoder model is build with the correct size for input, output and encoding
         """
-        model = ConcatAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model = BalancedAutoencoder(2048 + 85, 85, 2048 + 85)
         model.define_ae()
 
         self.assertEqual([None, 2048], model.ae.input[0].shape.as_list())
         self.assertEqual([None, 85], model.ae.input[1].shape.as_list())
-        self.assertEqual([None, 85], model.ae.output[0].shape.as_list())
-        self.assertEqual([None, 2048], model.ae.output[1].shape.as_list())
+        self.assertEqual([None, 85], model.ae.output[1].shape.as_list())
+        self.assertEqual([None, 2048], model.ae.output[0].shape.as_list())
 
         self.assertEqual([(None, 2048)], model.ae.get_layer('ae_input_vis').input_shape)
         self.assertEqual([(None, 85)], model.ae.get_layer('ae_input_sem').input_shape)
@@ -69,7 +69,7 @@ class AutoencodersTests(unittest.TestCase):
         """
         Tests if zsl autoencoder model is build with the correct size for input, output and encoding
         """
-        model = ZSLAutoEncoder(2048 + 85, 85, 2048 + 85)
+        model = ZSLAutoencoder(2048 + 85, 85, 2048 + 85)
         model.define_ae()
 
         self.assertEqual([None, 2048], model.ae.input[0].shape.as_list())
@@ -83,9 +83,9 @@ class AutoencodersTests(unittest.TestCase):
 
     def test_simple_ae_fitting(self):
         """
-        Tests if simple autoencoder model trains as expected
+        Tests if straight autoencoder model trains as expected
         """
-        model = SimpleAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = StraightAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
 
         for key in model.history.keys():
@@ -102,9 +102,9 @@ class AutoencodersTests(unittest.TestCase):
 
     def test_concat_ae_fitting(self):
         """
-        Tests if concat autoencoder model trains as expected
+        Tests if balanced autoencoder model trains as expected
         """
-        model = ConcatAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = BalancedAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
 
         for key in model.history.keys():
@@ -121,9 +121,9 @@ class AutoencodersTests(unittest.TestCase):
 
     def test_zsl_ae_fitting(self):
         """
-        Tests if concat autoencoder model trains as expected
+        Tests if zsl autoencoder model trains as expected
         """
-        model = ZSLAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = ZSLAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         vis_length = self.train_data.shape[1] - self.code_length
         model.fit(self.train_data[:, :vis_length], self.train_data[:, vis_length:], 2)
 
@@ -138,10 +138,10 @@ class AutoencodersTests(unittest.TestCase):
 
     def test_simple_ae_predict(self):
         """
-        Tests if simple autoencoder model predicts semantic features as expected
+        Tests if straight autoencoder model predicts semantic features as expected
         """
         vis_length = self.train_data.shape[1] - self.code_length
-        model = SimpleAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = StraightAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
         tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.train_data[:, vis_length:],
                                        self.test_data[:, :vis_length], self.test_data[:, vis_length:])
@@ -151,10 +151,10 @@ class AutoencodersTests(unittest.TestCase):
 
     def test_concat_ae_predict(self):
         """
-        Tests if concat autoencoder model predicts semantic features as expected
+        Tests if balanced autoencoder model predicts semantic features as expected
         """
         vis_length = self.train_data.shape[1] - self.code_length
-        model = ConcatAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = BalancedAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         model.fit(self.train_data, self.train_labels, self.test_data, self.test_labels, 2)
         tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.train_data[:, vis_length:],
                                        self.test_data[:, :vis_length], self.test_data[:, vis_length:])
@@ -167,7 +167,7 @@ class AutoencodersTests(unittest.TestCase):
         Tests if zsl autoencoder model predicts semantic features as expected
         """
         vis_length = self.train_data.shape[1] - self.code_length
-        model = ZSLAutoEncoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
+        model = ZSLAutoencoder(self.train_data.shape[1], self.code_length, self.train_data.shape[1])
         model.fit(self.train_data[:, :vis_length], self.train_data[:, vis_length:], 2)
         tr_est, te_est = model.predict(self.train_data[:, :vis_length], self.test_data[:, :vis_length])
 
