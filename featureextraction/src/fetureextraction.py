@@ -11,9 +11,9 @@ Retrieves visual features extracted from an image via ResNet50 neural network bu
 """
 import numpy as np
 from os import path
-from keras.preprocessing import image
-from keras.applications.resnet50 import ResNet50
-from keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input
 
 
 class ResNet50FeatureExtractor:

@@ -14,14 +14,14 @@ import time
 from os import path
 
 from featureextraction.src.matlaparser import Parser
-from featureextraction.src.dataparsing import CUB200Data, AWA2Data, DataIO
+from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData, SUNData, DataIO
 
 
 def extract_features(data_type, src_dir, dst_dir):
     """
     Runs ResNet50 model in the input data to extract its features
 
-    :param data_type: type of data: AWA2 or CUB200
+    :param data_type: type of data: AWA2, CUB200 or aP&Y
     :param src_dir: string with path to the images to load
     :param dst_dir: string with path to where to save the extracted features
     :return: None
@@ -32,24 +32,30 @@ def extract_features(data_type, src_dir, dst_dir):
     elif data_type == 'AWA2':
         data = AWA2Data(src_dir)
         print('Extracting data from AWA2')
+    elif data_type == 'aP&Y':
+        data = PascalYahooData(src_dir)
+        print('Extracting data from aP&Y')
+    elif data_type == 'SUN':
+        data = SUNData(src_dir)
+        print('Extracting data from SUN')
     else:
-        raise ValueError('Wrong value for data set type. Please choose CUB200 or AWA2.')
+        raise ValueError('Wrong value for data set type. Please choose CUB200, AWA2, aP&Y or SUN.')
 
     vis_fts, sem_fts, labels = data.build_data()
-    if data_type == 'AWA2':
-        DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts, x_train_sem=sem_fts, y_train=labels)
-    elif data_type == 'CUB200':
+    if data_type == 'CUB200':
         train_mask, test_mask = data.get_train_test_mask()
         DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts[train_mask], x_test_vis=vis_fts[test_mask],
                           x_train_sem=sem_fts[train_mask], x_test_sem=sem_fts[test_mask],
                           y_train=labels[train_mask], y_test=labels[test_mask])
+    else:
+        DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts, x_train_sem=sem_fts, y_train=labels)
 
 
 def parse_data(data_type, dst_dir):
     """
-    Parses the features extracted and saved in a .txt file to a .mat data sttructure
+    Parses the features extracted and saved in a .txt file to a .mat data structure
 
-    :param data_type: type of data: AWA2 or CUB200
+    :param data_type: type of data: CUB200, AWA2, aP&Y or SUN
     :param dst_dir: string with path to where data was saved in te extraction. It is also where the
     parsed data will be saved
     :return: None
@@ -67,15 +73,15 @@ def main():
     init_time = time.time()
 
     if len(sys.argv) < 3:
-        raise IndexError('Please provide input for data set type, source path and destination path')
+        raise IndexError('Please provide input for dataset type, source path and destination path')
 
     extract_features(sys.argv[1], sys.argv[2], sys.argv[3])
     parse_data(sys.argv[1], sys.argv[3])
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
-    minutes, vseonds = divmod(rem, 60)
-    time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), vseonds)
+    minutes, seconds = divmod(rem, 60)
+    time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
 
     print('Elapsed time is %s' % time_elapsed)
 

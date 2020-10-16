@@ -10,6 +10,7 @@ Retrieves basic information about the CUB200 and AwA2 data sets
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import numpy as np
+from scipy.io import loadmat
 from os import path, listdir, sep
 
 from featureextraction.src.fetureextraction import ResNet50FeatureExtractor
@@ -101,7 +102,6 @@ class AWA2Data(DataParser):
     def _get_images_list(self):
         """
         Retrieves path of each image
-
         @return: integer 1D numpy array
         """
         images_list = [path.join(folder, img) for folder in listdir(self.images_path)
@@ -163,6 +163,104 @@ class CUB200Data(DataParser):
             mask = [int(value.split()[1]) for value in f.readlines()]
 
         return np.array(mask) == 1, np.array(mask) == 0
+
+
+class PascalYahooData(DataParser):
+    def __init__(self, base_path):
+        super(PascalYahooData, self).__init__(base_path)
+        self.images_path = path.join(base_path, 'images')
+        self.semantic_attributes_path = path.join(base_path, 'attribute_data')
+
+    def _get_images_list(self):
+        """
+        Retrieves path of each image
+
+        @return: integer 1D numpy array
+        """
+        with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
+            images_list = [path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()]
+
+        with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
+            images_list.extend([path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()])
+
+        with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
+            images_list.extend([path.join('ayahoo_test_images', line.split()[0]) for line in f.readlines()])
+
+        return np.array(images_list)
+
+    def get_images_class(self):
+        """
+        Retrieves the class of each image
+
+        @return: integer 1D numpy array
+        """
+        with open(path.join(self.semantic_attributes_path, 'class_names.txt')) as f:
+            labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines())}
+
+        with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
+            labels = [labels_dict[line.split()[1].strip()] for line in f.readlines()]
+
+        with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
+            labels.extend([labels_dict[line.split()[1].strip()] for line in f.readlines()])
+
+        with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
+            labels.extend([labels_dict[line.split()[1].strip()] for line in f.readlines()])
+
+        return np.array(labels)
+
+    def get_semantic_attributes(self):
+        """
+        Reads the file of attributes and retrieves the semantic array for each class
+
+        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
+        """
+        try:
+            with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
+                attributes = [list(map(float, line.split()[6:])) for line in f.readlines()]
+
+            with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
+                attributes.extend([list(map(float, line.split()[6:])) for line in f.readlines()])
+
+            with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
+                attributes.extend([list(map(float, line.split()[6:])) for line in f.readlines()])
+
+            return np.array(attributes)
+        except (IOError, FileNotFoundError):
+            return None
+
+
+class SUNData(DataParser):
+    def __init__(self, base_path):
+        super(SUNData, self).__init__(base_path)
+        self.images_path = path.join(base_path, 'images')
+        self.semantic_attributes_path = path.join(base_path, 'SUNAttributeDB')
+
+    def _get_images_list(self):
+        """
+        Retrieves path of each image
+
+        @return: integer 1D numpy array
+        """
+        data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
+        return [image[0][0] for image in data['images']]
+
+    def get_images_class(self):
+        """
+        Retrieves the class of each image
+
+        @return: integer 1D numpy array
+        """
+        data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
+        return [image[0][0].split(sep)[1] for image in data['images']]
+
+    def get_semantic_attributes(self):
+        """
+        Reads the file of attributes and retrieves the semantic array for each class
+
+        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
+        """
+        data = loadmat(path.join(self.semantic_attributes_path, 'attributeLabels_continuous.mat'))
+        return data['labels_cv']
 
 
 class DataIO:
