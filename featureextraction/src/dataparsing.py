@@ -9,6 +9,7 @@ Retrieves basic information about the CUB200 and AwA2 data sets
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import numpy as np
 from scipy.io import loadmat
 from os import path, listdir, sep
@@ -186,7 +187,7 @@ class PascalYahooData(DataParser):
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
             images_list.extend([path.join('ayahoo_test_images', line.split()[0]) for line in f.readlines()])
 
-        return np.array(images_list)
+        return np.array([img for img in images_list if os.path.isfile(img)])
 
     def get_images_class(self):
         """
@@ -194,17 +195,24 @@ class PascalYahooData(DataParser):
 
         @return: integer 1D numpy array
         """
+        labels = []
         with open(path.join(self.semantic_attributes_path, 'class_names.txt')) as f:
             labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines())}
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            labels = [int(labels_dict[line.split()[1].strip()]) for line in f.readlines()]
+            for line in f.readlines():
+                if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            labels.extend([int(labels_dict[line.split()[1].strip()]) for line in f.readlines()])
+            for line in f.readlines():
+                if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            labels.extend([int(labels_dict[line.split()[1].strip()]) for line in f.readlines()])
+            for line in f.readlines():
+                if os.path.isfile(path.join('ayahoo_test_images', line.split()[0])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         return np.array(labels)
 
@@ -215,14 +223,21 @@ class PascalYahooData(DataParser):
         @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
         """
         try:
+            attributes = []
             with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-                attributes = [list(map(float, line.split()[6:])) for line in f.readlines()]
+                for line in f.readlines():
+                    if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
+                        attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-                attributes.extend([list(map(float, line.split()[6:])) for line in f.readlines()])
+                for line in f.readlines():
+                    if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
+                        attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-                attributes.extend([list(map(float, line.split()[6:])) for line in f.readlines()])
+                for line in f.readlines():
+                    if os.path.isfile(path.join('ayahoo_test_images', line.split()[0])):
+                        attributes.append(list(map(float, line.split()[6:])))
 
             return np.array(attributes)
         except (IOError, FileNotFoundError):
