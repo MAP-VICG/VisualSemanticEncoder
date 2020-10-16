@@ -198,13 +198,13 @@ class PascalYahooData(DataParser):
             labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines())}
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            labels = [labels_dict[line.split()[1].strip()] for line in f.readlines()]
+            labels = [int(labels_dict[line.split()[1].strip()]) for line in f.readlines()]
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            labels.extend([labels_dict[line.split()[1].strip()] for line in f.readlines()])
+            labels.extend([int(labels_dict[line.split()[1].strip()]) for line in f.readlines()])
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            labels.extend([labels_dict[line.split()[1].strip()] for line in f.readlines()])
+            labels.extend([int(labels_dict[line.split()[1].strip()]) for line in f.readlines()])
 
         return np.array(labels)
 
@@ -242,7 +242,7 @@ class SUNData(DataParser):
         @return: integer 1D numpy array
         """
         data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
-        return [image[0][0] for image in data['images']]
+        return np.array([image[0][0] for image in data['images']])
 
     def get_images_class(self):
         """
@@ -251,7 +251,10 @@ class SUNData(DataParser):
         @return: integer 1D numpy array
         """
         data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
-        return [image[0][0].split(sep)[1] for image in data['images']]
+        labels = [image[0][0].split(sep)[1] for image in data['images']]
+        labels_dict = {label.strip(): i + 1 for i, label in enumerate(set(labels))}
+
+        return np.array([labels_dict[lb] for lb in labels])
 
     def get_semantic_attributes(self):
         """
