@@ -179,15 +179,15 @@ class PascalYahooData(DataParser):
         @return: integer 1D numpy array
         """
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            images_list = [path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()]
+            images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()]
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            images_list.extend([path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()])
+            images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()])
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            images_list.extend([path.join('ayahoo_test_images', line.split()[0]) for line in f.readlines()])
+            images_list.extend([path.join('Yahoo', line.split()[0]) for line in f.readlines()])
 
-        return np.array([[img] for img in images_list if os.path.isfile(img)])
+        return np.array([img for img in images_list if os.path.isfile(path.join(self.images_path, img))])
 
     def get_images_class(self):
         """
@@ -201,18 +201,18 @@ class PascalYahooData(DataParser):
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
             for line in f.readlines():
-                if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
-                    labels.append([int(labels_dict[line.split()[1].strip()])])
+                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
             for line in f.readlines():
-                if os.path.isfile(path.join('VOC2007', 'JPEGImages', line.split()[0].split('_')[1])):
-                    labels.append([int(labels_dict[line.split()[1].strip()])])
+                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
             for line in f.readlines():
-                if os.path.isfile(path.join('ayahoo_test_images', line.split()[0])):
-                    labels.append([int(labels_dict[line.split()[1].strip()])])
+                if os.path.isfile(path.join(self.images_path, 'Yahoo', line.split()[0])):
+                    labels.append(int(labels_dict[line.split()[1].strip()]))
 
         return np.array(labels)
 
@@ -226,17 +226,17 @@ class PascalYahooData(DataParser):
             attributes = []
             with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
                 for line in f.readlines():
-                    if os.path.isfile(path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1])):
+                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1])):
                         attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
                 for line in f.readlines():
-                    if os.path.isfile(path.join('VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1])):
+                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1])):
                         attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
                 for line in f.readlines():
-                    if os.path.isfile(path.join('Yahoo', line.split()[0])):
+                    if os.path.isfile(path.join(self.images_path, 'Yahoo', line.split()[0])):
                         attributes.append(list(map(float, line.split()[6:])))
 
             return np.array(attributes)
