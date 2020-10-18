@@ -23,7 +23,7 @@ def build_sun_data():
     data_structure['tr_cl_id'] = list(set([int(lb[0]) for lb in sun_labels]))
     data_structure['train_labels'] = np.array([[int(lb[0])] for lb in sun_labels])
     data_structure['labels_dict'] = {label.strip(): i + 1 for i, label in enumerate(set(labels))}
-    data_structure['X_te'] = data_structure['S_tr'] = data_structure['test_labels'] = data_structure['te_cl_id'] = 'none'
+    data_structure['X_te'] = data_structure['S_te'] = data_structure['test_labels'] = data_structure['te_cl_id'] = 'none'
 
     savemat('../sun_data_resnet50.mat', data_structure)
 
@@ -38,7 +38,7 @@ def build_voc_data():
     with open('../aP&Y_y_train.txt') as f:
         voc_labels = np.array([list(map(float, line.split())) for line in f.readlines()])
 
-    images_path = 'store/shared/datasets/aPascalYahoo/images'
+    images_path = '/store/shared/datasets/aPascalYahoo/images'
     with open('/store/shared/datasets/aPascalYahoo/attribute_data/apascal_train.txt') as f:
         images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0]) for line in f.readlines()]
 
@@ -65,7 +65,7 @@ def build_voc_data():
     data_structure['train_labels'] = np.array([[int(lb[0])] for lb in voc_labels[:len(images_list) - limit, :]])
     data_structure['labels_dict'] = labels_dict
     data_structure['X_te'] = voc_vis[limit:, :]
-    data_structure['S_tr'] = voc_sem[limit:, :]
+    data_structure['S_te'] = voc_sem[limit:, :]
     data_structure['test_labels'] = np.array([[int(lb[0])] for lb in voc_labels[limit:, :]])
     data_structure['te_cl_id'] = list(set([int(lb[0]) for lb in voc_labels[limit:, :]]))
 
