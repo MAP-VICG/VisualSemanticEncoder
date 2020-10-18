@@ -76,7 +76,7 @@ def main():
         raise IndexError('Please provide input for dataset type, source path and destination path')
 
     extract_features(sys.argv[1], sys.argv[2], sys.argv[3])
-    parse_data(sys.argv[1], sys.argv[3])
+    # parse_data(sys.argv[1], sys.argv[3])
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
