@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.io import loadmat, savemat
 
+
 def build_sun_data():
     with open('../../../../Desktop/SUN_x_train_sem.txt') as f:
         sun_sem = np.array([list(map(float, line.split())) for line in f.readlines()])

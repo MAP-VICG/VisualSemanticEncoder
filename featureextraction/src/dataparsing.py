@@ -84,7 +84,12 @@ class DataParser:
         classes = self.get_images_class()
 
         sem_msk = self.get_semantic_attributes()
-        vis_fts = []  # self.get_visual_attributes(images)
+
+        if len(images) != 15339:
+            print('Error getting images list')
+            return
+
+        vis_fts = self.get_visual_attributes(images)
 
         sem_fts = []
         for i, fts in enumerate(vis_fts):
@@ -181,17 +186,11 @@ class PascalYahooData(DataParser):
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
             images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()]
 
-        print('Train pascal: %d' % len(images_list))
-
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
             images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()])
 
-        print('+ Test pascal: %d' % len(images_list))
-
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
             images_list.extend([path.join('Yahoo', line.split()[0]) for line in f.readlines()])
-
-        print('+ Test yahoo: %d' % len(images_list))
 
         return np.array([img for img in images_list if os.path.isfile(path.join(self.images_path, img))])
 
