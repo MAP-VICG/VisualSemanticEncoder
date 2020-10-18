@@ -14,11 +14,15 @@ import numpy as np
 from scipy.io import loadmat
 from os import path, listdir, sep
 
-from featureextraction.src.fetureextraction import ResNet50FeatureExtractor
+from featureextraction.src.fetureextraction import ResNet50FeatureExtractor, InceptionV3FeatureExtractor
 
 
 class DataParser:
-    def __init__(self, base_path):
+    def __init__(self, base_path, extractor):
+        if extractor not in ('resnet', 'inception'):
+            raise Exception('Invalid extractor for visual features')
+
+        self.extractor = extractor
         self.images_path = ''
         self.images_list = None
         self.base_path = base_path
@@ -44,7 +48,11 @@ class DataParser:
         @param images_list: list of strings with image's names
         @return: numpy array of shape (X, 2048) where X is the number of images listed
         """
-        vis_data = ResNet50FeatureExtractor(images_list, self.images_path)
+        if self.extractor == 'resnet':
+            vis_data = ResNet50FeatureExtractor(images_list, self.images_path)
+        else:
+            vis_data = InceptionV3FeatureExtractor(images_list, self.images_path)
+
         vis_data.extract_images_list_features()
         return vis_data.features_set
 
@@ -84,11 +92,6 @@ class DataParser:
         classes = self.get_images_class()
 
         sem_msk = self.get_semantic_attributes()
-
-        if len(images) != 15339:
-            print('Error getting images list')
-            return
-
         vis_fts = self.get_visual_attributes(images)
 
         sem_fts = []
@@ -99,8 +102,8 @@ class DataParser:
 
 
 class AWA2Data(DataParser):
-    def __init__(self, base_path):
-        super(AWA2Data, self).__init__(base_path)
+    def __init__(self, base_path, extractor):
+        super(AWA2Data, self).__init__(base_path, extractor)
         self.images_path = path.join(base_path, 'JPEGImages')
         self.semantic_attributes_path = path.join(base_path, 'predicate-matrix-continuous.txt')
         self.images_list = None
@@ -130,8 +133,8 @@ class AWA2Data(DataParser):
 
 
 class CUB200Data(DataParser):
-    def __init__(self, base_path):
-        super(CUB200Data, self).__init__(base_path)
+    def __init__(self, base_path, extractor):
+        super(CUB200Data, self).__init__(base_path, extractor)
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'attributes', 'class_attribute_labels_continuous.txt')
 
@@ -172,8 +175,8 @@ class CUB200Data(DataParser):
 
 
 class PascalYahooData(DataParser):
-    def __init__(self, base_path):
-        super(PascalYahooData, self).__init__(base_path)
+    def __init__(self, base_path, extractor):
+        super(PascalYahooData, self).__init__(base_path, extractor)
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'attribute_data')
 
@@ -184,10 +187,10 @@ class PascalYahooData(DataParser):
         @return: integer 1D numpy array
         """
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()]
+            images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0]) for line in f.readlines()]
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1]) for line in f.readlines()])
+            images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0]) for line in f.readlines()])
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
             images_list.extend([path.join('Yahoo', line.split()[0]) for line in f.readlines()])
@@ -206,12 +209,12 @@ class PascalYahooData(DataParser):
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
             for line in f.readlines():
-                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1])):
+                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0])):
                     labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
             for line in f.readlines():
-                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1])):
+                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0])):
                     labels.append(int(labels_dict[line.split()[1].strip()]))
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
@@ -231,12 +234,12 @@ class PascalYahooData(DataParser):
             attributes = []
             with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
                 for line in f.readlines():
-                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0].split('_')[1])):
+                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0])):
                         attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
                 for line in f.readlines():
-                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0].split('_')[1])):
+                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0])):
                         attributes.append(list(map(float, line.split()[6:])))
 
             with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
@@ -248,10 +251,24 @@ class PascalYahooData(DataParser):
         except (IOError, FileNotFoundError):
             return None
 
+    def build_data(self):
+        """
+        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
+
+        @return: tuple with visual features, semantic features and classes
+        """
+        images = self.get_images_list()
+        classes = self.get_images_class()
+
+        sem_fts = self.get_semantic_attributes()
+        vis_fts = self.get_visual_attributes(images)
+
+        return vis_fts, sem_fts, classes
+
 
 class SUNData(DataParser):
-    def __init__(self, base_path):
-        super(SUNData, self).__init__(base_path)
+    def __init__(self, base_path, extractor):
+        super(SUNData, self).__init__(base_path, extractor)
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'SUNAttributeDB')
 
@@ -284,6 +301,20 @@ class SUNData(DataParser):
         """
         data = loadmat(path.join(self.semantic_attributes_path, 'attributeLabels_continuous.mat'))
         return data['labels_cv']
+
+    def build_data(self):
+        """
+        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
+
+        @return: tuple with visual features, semantic features and classes
+        """
+        images = self.get_images_list()
+        classes = self.get_images_class()
+
+        sem_fts = self.get_semantic_attributes()
+        vis_fts = self.get_visual_attributes(images)
+
+        return vis_fts, sem_fts, classes
 
 
 class DataIO:

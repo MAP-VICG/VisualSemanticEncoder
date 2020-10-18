@@ -11,32 +11,31 @@ Extract features from images and merge them with its respective semantic data
 """
 import sys
 import time
-# from os import path
 
-# from featureextraction.src.matlaparser import Parser
 from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData, SUNData, DataIO
 
 
-def extract_features(data_type, src_dir, dst_dir):
+def extract_features(data_type, src_dir, dst_dir, extractor):
     """
     Runs ResNet50 model in the input data to extract its features
 
     :param data_type: type of data: AWA2, CUB200 or aP&Y
     :param src_dir: string with path to the images to load
     :param dst_dir: string with path to where to save the extracted features
+    :param extractor: extractor for visual features (resnet or inception)
     :return: None
     """
     if data_type == 'CUB200':
-        data = CUB200Data(src_dir)
+        data = CUB200Data(src_dir, extractor)
         print('Extracting data from CUB200')
     elif data_type == 'AWA2':
-        data = AWA2Data(src_dir)
+        data = AWA2Data(src_dir, extractor)
         print('Extracting data from AWA2')
     elif data_type == 'aP&Y':
-        data = PascalYahooData(src_dir)
+        data = PascalYahooData(src_dir, extractor)
         print('Extracting data from aP&Y')
     elif data_type == 'SUN':
-        data = SUNData(src_dir)
+        data = SUNData(src_dir, extractor)
         print('Extracting data from SUN')
     else:
         raise ValueError('Wrong value for data set type. Please choose CUB200, AWA2, aP&Y or SUN.')
@@ -51,32 +50,13 @@ def extract_features(data_type, src_dir, dst_dir):
         DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts, x_train_sem=sem_fts, y_train=labels)
 
 
-# def parse_data(data_type, dst_dir):
-#     """
-#     Parses the features extracted and saved in a .txt file to a .mat data structure
-#
-#     :param data_type: type of data: CUB200, AWA2, aP&Y or SUN
-#     :param dst_dir: string with path to where data was saved in te extraction. It is also where the
-#     parsed data will be saved
-#     :return: None
-#     """
-#     prs = Parser(data_type)
-#     print('Parsing data from %s' % data_type)
-#
-#     vis_data, sem_data, labels = prs.load_data(dst_dir)
-#     prs.split_data(vis_data, sem_data, labels)
-#     prs.save_data(path.join(dst_dir, '%s_demo_data.mat' % data_type))
-#     print('Data saved under %s' % path.join(dst_dir, '%s_demo_data.mat' % data_type))
-
-
 def main():
     init_time = time.time()
 
-    if len(sys.argv) < 3:
-        raise IndexError('Please provide input for dataset type, source path and destination path')
+    if len(sys.argv) < 4:
+        raise IndexError('Please provide input for dataset type, source path, destination path and extractor')
 
-    extract_features(sys.argv[1], sys.argv[2], sys.argv[3])
-#   parse_data(sys.argv[1], sys.argv[3])
+    extract_features(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)

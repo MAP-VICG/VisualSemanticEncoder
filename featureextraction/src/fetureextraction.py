@@ -12,11 +12,11 @@ Retrieves visual features extracted from an image via ResNet50 neural network bu
 import numpy as np
 from os import path
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.applications import resnet50
+from tensorflow.keras.applications import inception_v3
 
 
-class ResNet50FeatureExtractor:
+class FeatureExtractor:
     def __init__(self, images_list, base_path='.'):
         """
         Initializes main variables
@@ -25,7 +25,6 @@ class ResNet50FeatureExtractor:
         @param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
-        self.model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
         self.images_list = images_list
         self.base_path = base_path
         self.features_set = None
@@ -37,11 +36,7 @@ class ResNet50FeatureExtractor:
         @param img_path: string with path to image
         @return: numpy array with image's extracted features
         """
-        img = image.load_img(img_path, target_size=(224, 224))
-        img_data = image.img_to_array(img)
-        img_data = np.expand_dims(img_data, axis=0)
-        img_data = preprocess_input(img_data)
-        return self.model.predict(img_data)
+        pass
 
     def extract_images_list_features(self):
         """
@@ -65,3 +60,55 @@ class ResNet50FeatureExtractor:
         with open(file_path, 'w+') as f:
             for img_feature in self.features_set:
                 f.write(' '.join(list(map(str, img_feature))) + '\n')
+
+
+class ResNet50FeatureExtractor(FeatureExtractor):
+    def __init__(self, images_list, base_path='.'):
+        """
+        Initializes main variables
+
+        @param images_list: list of string with names of images to extract features from
+        @param base_path: string pointing to the path where the images are located. If no string is indicated, the
+            current directory will be considered
+        """
+        super(ResNet50FeatureExtractor, self).__init__(images_list, base_path)
+        self.model = resnet50.ResNet50(weights='imagenet', include_top=False, pooling='avg')
+
+    def extract_image_features(self, img_path):
+        """
+        Loads the indicated image and extracts its visual features with ResNet50 model
+
+        @param img_path: string with path to image
+        @return: numpy array with image's extracted features
+        """
+        img = image.load_img(img_path, target_size=(224, 224))
+        img_data = image.img_to_array(img)
+        img_data = np.expand_dims(img_data, axis=0)
+        img_data = resnet50.preprocess_input(img_data)
+        return self.model.predict(img_data)
+
+
+class InceptionV3FeatureExtractor(FeatureExtractor):
+    def __init__(self, images_list, base_path='.'):
+        """
+        Initializes main variables
+
+        @param images_list: list of string with names of images to extract features from
+        @param base_path: string pointing to the path where the images are located. If no string is indicated, the
+            current directory will be considered
+        """
+        super(InceptionV3FeatureExtractor, self).__init__(images_list, base_path)
+        self.model = inception_v3.InceptionV3(weights='imagenet', include_top=False, pooling='avg')
+
+    def extract_image_features(self, img_path):
+        """
+        Loads the indicated image and extracts its visual features with ResNet50 model
+
+        @param img_path: string with path to image
+        @return: numpy array with image's extracted features
+        """
+        img = image.load_img(img_path, target_size=(224, 224))
+        img_data = image.img_to_array(img)
+        img_data = np.expand_dims(img_data, axis=0)
+        img_data = inception_v3.preprocess_input(img_data)
+        return self.model.predict(img_data)
