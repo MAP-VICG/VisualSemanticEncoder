@@ -35,7 +35,7 @@ def build_voc_data():
     with open('../aP&Y_x_train_vis.txt') as f:
         voc_vis = np.array([list(map(float, line.split())) for line in f.readlines()])
 
-    with open('../Desktop/aP&Y_y_train.txt') as f:
+    with open('../aP&Y_y_train.txt') as f:
         voc_labels = np.array([list(map(float, line.split())) for line in f.readlines()])
 
     images_path = 'store/shared/datasets/aPascalYahoo/images'
