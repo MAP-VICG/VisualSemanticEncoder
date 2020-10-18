@@ -13,7 +13,7 @@ def build_sun_data():
     with open('../SUN_y_train.txt') as f:
         sun_labels = np.array([list(map(float, line.split())) for line in f.readlines()])
 
-    data = loadmat('/store/shared/datasets/SUNAttibutes/images.mat')
+    data = loadmat('/store/shared/datasets/SUNAttibutes/SUNAttributeDB/images.mat')
     labels = [image[0][0].split('/')[1] for image in data['images']]
 
     data_structure = dict()
@@ -39,22 +39,22 @@ def build_voc_data():
         voc_labels = np.array([list(map(float, line.split())) for line in f.readlines()])
 
     images_path = 'store/shared/datasets/aPascalYahoo/images'
-    with open('/store/shared/datasets/aPascalYahoo/apascal_train.txt') as f:
+    with open('/store/shared/datasets/aPascalYahoo/attribute_data/apascal_train.txt') as f:
         images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0]) for line in f.readlines()]
 
-    with open('/store/shared/datasets/aPascalYahoo/apascal_test.txt') as f:
+    with open('/store/shared/datasets/aPascalYahoo/attribute_data/apascal_test.txt') as f:
         images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0]) for line in f.readlines()])
 
-    with open('/store/shared/datasets/aPascalYahoo/ayahoo_test.txt') as f:
+    with open('/store/shared/datasets/aPascalYahoo/attribute_data/ayahoo_test.txt') as f:
         images_list.extend([path.join('Yahoo', line.split()[0]) for line in f.readlines()])
 
-    with open('/store/shared/datasets/aPascalYahoo/ayahoo_test.txt') as f:
+    with open('/store/shared/datasets/aPascalYahoo/attribute_data/ayahoo_test.txt') as f:
         limit = sum([1 for img in f.readlines() if path.isfile(path.join(images_path, 'Yahoo', img.split()[0]))])
 
     images_mask = [True if path.isfile(path.join(images_path, img)) else False for img in images_list]
     images_list = np.array(images_list)[images_mask]
 
-    with open('store/shared/datasets/aPascalYahoo/class_names.txt') as f:
+    with open('/store/shared/datasets/aPascalYahoo/attribute_data/class_names.txt') as f:
         labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines()) if images_mask[i]}
 
     data_structure = dict()
