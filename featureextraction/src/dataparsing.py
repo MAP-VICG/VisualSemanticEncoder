@@ -288,7 +288,7 @@ class SUNData(DataParser):
         @return: integer 1D numpy array
         """
         data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
-        labels = [image[0][0].split('/')[1] for image in data['images']]
+        labels = ['_'.join(image[0][0].split('/')[:-1]) for image in data['images']]
         labels_dict = {label.strip(): i + 1 for i, label in enumerate(set(labels))}
 
         return np.array([labels_dict[lb] for lb in labels])
