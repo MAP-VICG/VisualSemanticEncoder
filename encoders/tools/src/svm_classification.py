@@ -20,6 +20,8 @@ from encoders.tools.src.sem_degradation import SemanticDegradation
 class DataType(Enum):
     CUB = "CUB"
     AWA = "AWA"
+    SUN = "SUN"
+    APY = "APY"
 
 
 class SVMClassifier:
@@ -32,6 +34,8 @@ class SVMClassifier:
             self.lambda_ = 500000
         elif self.data_type == DataType.CUB:
             self.lambda_ = .2
+        else:
+            self.lambda_ = 0
 
         self.n_folds = folds
         self.epochs = epochs
@@ -51,13 +55,19 @@ class SVMClassifier:
 
     def get_data(self, data_path):
         data = loadmat(data_path)
-        vis_data = np.vstack((data['X_tr'], data['X_te']))
-        sem_data = np.vstack((data['S_tr'], self.get_te_sem_data(data)))
+        if self.data_type == DataType.SUN:
+            vis_data = data['X_tr']
+            sem_data = data['S_tr']
+        else:
+            vis_data = np.vstack((data['X_tr'], data['X_te']))
+            sem_data = np.vstack((data['S_tr'], self.get_te_sem_data(data)))
 
         if self.data_type == DataType.AWA:
             lbs_data = np.vstack((data['param']['train_labels'][0][0], data['param']['test_labels'][0][0]))
         elif self.data_type == DataType.CUB:
             lbs_data = np.vstack((data['train_labels_cub'], data['test_labels_cub']))
+        elif self.data_type == DataType.SUN:
+            lbs_data = data['train_labels']
         else:
             raise ValueError("Invalid data type.")
 
