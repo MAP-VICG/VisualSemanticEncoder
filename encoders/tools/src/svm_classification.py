@@ -11,6 +11,7 @@ from sklearn.preprocessing import normalize
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.manifold import Isomap, LocallyLinearEmbedding
 
 from encoders.tools.src.utils import ZSL
 from encoders.vse.src.encoder import Encoder, ModelType
@@ -170,6 +171,62 @@ class SVMClassifier:
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
             clf.fit(pca.fit_transform(tr_data), tr_labels)
             prediction = clf.predict(pca.fit_transform(te_data))
+
+            fold += 1
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
+
+    def classify_concat_isomap_data(self, vis_data, sem_data, labels):
+        fold = 0
+        accuracies = []
+        imap = Isomap(n_components=sem_data.shape[1])
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+
+        for train_index, test_index in skf.split(vis_data, labels):
+            logging.info('Running ISOMAP classification for fold %d' % fold)
+
+            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
+
+            te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
+            te_sem = SemanticDegradation.kill_semantic_attributes(te_sem, self.degradation_rate)
+            te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
+
+            tr_data, te_data = np.hstack((tr_vis, tr_sem)), np.hstack((te_vis, te_sem))
+            tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(imap.fit_transform(tr_data), tr_labels)
+            prediction = clf.predict(imap.fit_transform(te_data))
+
+            fold += 1
+            accuracies.append(balanced_accuracy_score(te_labels, prediction))
+
+        return accuracies
+
+    def classify_concat_lle_data(self, vis_data, sem_data, labels):
+        fold = 0
+        accuracies = []
+        lle = LocallyLinearEmbedding(n_components=sem_data.shape[1])
+        skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
+
+        for train_index, test_index in skf.split(vis_data, labels):
+            logging.info('Running LLE classification for fold %d' % fold)
+
+            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
+
+            te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
+            te_sem = SemanticDegradation.kill_semantic_attributes(te_sem, self.degradation_rate)
+            te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
+
+            tr_data, te_data = np.hstack((tr_vis, tr_sem)), np.hstack((te_vis, te_sem))
+            tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
+
+            clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            clf.fit(lle.fit_transform(tr_data), tr_labels)
+            prediction = clf.predict(lle.fit_transform(te_data))
 
             fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
