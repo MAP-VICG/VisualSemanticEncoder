@@ -59,6 +59,9 @@ class SVMClassifier:
         if self.data_type == DataType.SUN:
             vis_data = data['X_tr']
             sem_data = data['S_tr']
+        elif self.data_type == DataType.APY:
+            vis_data = np.vstack((data['X_tr'], data['X_te']))
+            sem_data = np.vstack((data['S_tr'], data['S_te']))
         else:
             vis_data = np.vstack((data['X_tr'], data['X_te']))
             sem_data = np.vstack((data['S_tr'], self.get_te_sem_data(data)))
@@ -69,6 +72,8 @@ class SVMClassifier:
             lbs_data = np.vstack((data['train_labels_cub'], data['test_labels_cub']))
         elif self.data_type == DataType.SUN:
             lbs_data = data['train_labels']
+        elif self.data_type == DataType.APY:
+            lbs_data = np.vstack((data['train_labels'], data['test_labels']))
         else:
             raise ValueError("Invalid data type.")
 

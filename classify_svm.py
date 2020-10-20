@@ -30,10 +30,10 @@ class Classification:
         # self.result[label]['sae'] = svm.classify_sae_data(vis_data, sem_data, lbs_data)
         # self.result[label]['cat'] = svm.classify_concat_data(vis_data, sem_data, lbs_data)
         # self.result[label]['pca'] = svm.classify_concat_pca_data(vis_data, sem_data, lbs_data)
-        self.result[label]['imp'] = svm.classify_concat_isomap_data(vis_data, sem_data, lbs_data)
-        self.result[label]['lle'] = svm.classify_concat_lle_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
-        # self.result[label]['s2s'] = svm.classify_sae2vse_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['imp'] = svm.classify_concat_isomap_data(vis_data, sem_data, lbs_data)
+        # self.result[label]['lle'] = svm.classify_concat_lle_data(vis_data, sem_data, lbs_data)
+        self.result[label]['vse'] = svm.classify_vse_data(vis_data, sem_data, lbs_data)
+        self.result[label]['s2s'] = svm.classify_sae2vse_data(vis_data, sem_data, lbs_data)
 
         rate_label = str(int(rate * 100))
         with open(os.path.join(self.results_path, 'classification_results_%s.json' % rate_label.zfill(3)), 'w+') as f:
@@ -42,14 +42,14 @@ class Classification:
     def classify_all(self, rate):
         logging.info('Running classification for degradation rate of %.2f' % rate)
 
-        self.run_classification('../Datasets/awa_data_googlenet.mat', 'i_awa', DataType.AWA, rate=rate)
-        self.run_classification('../Datasets/awa2_data_resnet50.mat', 'r_awa', DataType.AWA, rate=rate)
-        self.run_classification('../Datasets/cub_data_googlenet.mat', 'i_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/cub_data_resnet50.mat', 'r_cub', DataType.CUB, rate=rate)
-        self.run_classification('../Datasets/apy_data_inceptionv3.mat', 'i_apy', DataType.SUN, rate=rate)
-        self.run_classification('../Datasets/apy_data_resnet50.mat', 'r_apy', DataType.SUN, rate=rate)
-        self.run_classification('../Datasets/sun_data_inceptionv3.mat', 'i_sun', DataType.SUN, rate=rate)
-        self.run_classification('../Datasets/sun_data_resnet50.mat', 'r_sun', DataType.SUN, rate=rate)
+        # self.run_classification('../Datasets/awa_data_googlenet.mat', 'i_awa', DataType.AWA, rate=rate)
+        # self.run_classification('../Datasets/awa2_data_resnet50.mat', 'r_awa', DataType.AWA, rate=rate)
+        # self.run_classification('../Datasets/cub_data_googlenet.mat', 'i_cub', DataType.CUB, rate=rate)
+        # self.run_classification('../Datasets/cub_data_resnet50.mat', 'r_cub', DataType.CUB, rate=rate)
+        # self.run_classification('../Datasets/apy_data_inceptionv3.mat', 'i_apy', DataType.APY, rate=rate)
+        self.run_classification('../Datasets/apy_data_resnet50.mat', 'r_apy', DataType.APY, rate=rate)
+        # self.run_classification('../Datasets/sun_data_inceptionv3.mat', 'i_sun', DataType.SUN, rate=rate)
+        # self.run_classification('../Datasets/sun_data_resnet50.mat', 'r_sun', DataType.SUN, rate=rate)
 
 
 if __name__ == '__main__':

@@ -57,12 +57,13 @@ def build_voc_data():
     with open('/store/shared/datasets/aPascalYahoo/attribute_data/class_names.txt') as f:
         labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines()) if images_mask[i]}
 
+    limit = len(images_list) - limit
     data_structure = dict()
-    data_structure['S_tr'] = voc_sem[:len(images_list) - limit, :]
-    data_structure['X_tr'] = voc_vis[:len(images_list) - limit, :]
+    data_structure['S_tr'] = voc_sem[:limit, :]
+    data_structure['X_tr'] = voc_vis[:limit, :]
     data_structure['S_te_pro'] = voc_sem[limit:, :]
-    data_structure['tr_cl_id'] = list(set([int(lb[0]) for lb in voc_labels[:len(images_list) - limit, :]]))
-    data_structure['train_labels'] = np.array([[int(lb[0])] for lb in voc_labels[:len(images_list) - limit, :]])
+    data_structure['tr_cl_id'] = list(set([int(lb[0]) for lb in voc_labels[:limit, :]]))
+    data_structure['train_labels'] = np.array([[int(lb[0])] for lb in voc_labels[:limit, :]])
     data_structure['labels_dict'] = labels_dict
     data_structure['X_te'] = voc_vis[limit:, :]
     data_structure['S_te'] = voc_sem[limit:, :]
