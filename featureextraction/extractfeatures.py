@@ -9,61 +9,56 @@ Extract features from images and merge them with its respective semantic data
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-import sys
 import time
+import logging
+import argparse
+from distutils.util import strtobool
 
-from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData, SUNData, DataIO
+from featureextraction.src.fetureextraction import ExtractionType
+from featureextraction.src.dataparsing import DataParserFactory, DataParserType
 
 
-def extract_features(data_type, src_dir, dst_dir, extractor):
+def extract_features(data_type, src_dir, dst_file, extractor, vis_data=True):
     """
     Runs ResNet50 model in the input data to extract its features
 
-    :param data_type: type of data: AWA2, CUB200 or aP&Y
+    :param data_type: type of data: DataParserType
     :param src_dir: string with path to the images to load
-    :param dst_dir: string with path to where to save the extracted features
+    :param dst_file: string with path to where to save the extracted features
     :param extractor: extractor for visual features (resnet or inception)
+    :param vis_data: if True calls visual data extractor
     :return: None
     """
-    if data_type == 'CUB200':
-        data = CUB200Data(src_dir, extractor)
-        print('Extracting data from CUB200')
-    elif data_type == 'AWA2':
-        data = AWA2Data(src_dir, extractor)
-        print('Extracting data from AWA2')
-    elif data_type == 'aP&Y':
-        data = PascalYahooData(src_dir, extractor)
-        print('Extracting data from aP&Y')
-    elif data_type == 'SUN':
-        data = SUNData(src_dir, extractor)
-        print('Extracting data from SUN')
-    else:
-        raise ValueError('Wrong value for data set type. Please choose CUB200, AWA2, aP&Y or SUN.')
-
-    vis_fts, sem_fts, labels = data.build_data()
-    if data_type == 'CUB200':
-        train_mask, test_mask = data.get_train_test_mask()
-        DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts[train_mask], x_test_vis=vis_fts[test_mask],
-                          x_train_sem=sem_fts[train_mask], x_test_sem=sem_fts[test_mask],
-                          y_train=labels[train_mask], y_test=labels[test_mask])
-    else:
-        DataIO.save_files(dst_dir, data_type, x_train_vis=vis_fts, x_train_sem=sem_fts, y_train=labels)
+    data = DataParserFactory()(data_type, src_dir, extractor)
+    data.build_data_structure(dst_file, vis_data)
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG,
+                        filename='extract_features.log',
+                        format='%(asctime)s %(levelname)s [%(module)s, %(funcName)s]: %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
     init_time = time.time()
 
-    if len(sys.argv) < 4:
-        raise IndexError('Please provide input for dataset type, source path, destination path and extractor')
+    prs = argparse.ArgumentParser(description='Extracts semantic and visual features and save results to a .mat file')
+    prs.add_argument('--dtype', help='Database type', choices=[t.value for t in DataParserType])
+    prs.add_argument('--etype', help='Extractor type', choices=[t.value for t in ExtractionType])
+    prs.add_argument('--sdir', help='Folder where database with image and attributes is located')
+    prs.add_argument('--rfile', help='Path and name of results file')
+    prs.add_argument('--vis', default=True, type=lambda x: bool(strtobool(x)), help='Path and name of results file')
 
-    extract_features(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    args = prs.parse_args()
+    args.dtype = DataParserType[args.dtype.upper()]
+    args.etype = ExtractionType[args.etype.upper()]
+    extract_features(args.dtype, args.sdir, args.rfile, args.etype, args.vis)
 
     elapsed = time.time() - init_time
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
     time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
 
-    print('Elapsed time is %s' % time_elapsed)
+    logging.info('Elapsed time is %s' % time_elapsed)
 
 
 if __name__ == '__main__':

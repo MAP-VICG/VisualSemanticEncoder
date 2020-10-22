@@ -12,10 +12,46 @@ and SUN attributes datasets.
 """
 import logging
 import numpy as np
+from enum import Enum
 from os import path, listdir
 from scipy.io import loadmat, savemat
 
 from .fetureextraction import ExtractorFactory, ExtractionType
+
+
+class DataParserType(Enum):
+    CUB = "cub"
+    AWA = "awa"
+    APY = "apy"
+    SUN = "sun"
+
+    def __str__(self):
+        return self.value
+
+    @staticmethod
+    def from_string(s):
+        try:
+            return DataParserType[s]
+        except KeyError:
+            raise ValueError()
+
+
+class DataParserFactory:
+    def __call__(self, data_type, src_dir, extractor):
+        if data_type == DataParserType.CUB:
+            logging.info('Extracting data from CUB200')
+            return CUB200Data(src_dir, extractor)
+        elif data_type == DataParserType.AWA:
+            logging.info('Extracting data from AWA2')
+            return AWA2Data(src_dir, extractor)
+        elif data_type == DataParserType.APY:
+            logging.info('Extracting data from aP&Y')
+            return PascalYahooData(src_dir, extractor)
+        elif data_type == DataParserType.SUN:
+            logging.info('Extracting data from SUN')
+            return SUNData(src_dir, extractor)
+        else:
+            raise ValueError('Wrong value for data set type. Please choose CUB200, AWA2, aP&Y or SUN.')
 
 
 class DataParser:

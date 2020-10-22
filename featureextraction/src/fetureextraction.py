@@ -18,8 +18,18 @@ from tensorflow.keras.applications import inception_v3
 
 
 class ExtractionType(Enum):
-    RESNET = "ResNet"
-    INCEPTION = "Inception"
+    RESNET = "resnet"
+    INCEPTION = "inception"
+
+    def __str__(self):
+        return self.value
+
+    @staticmethod
+    def from_string(s):
+        try:
+            return ExtractionType[s]
+        except KeyError:
+            raise ValueError()
 
 
 class ExtractorFactory:

@@ -13,14 +13,14 @@ import unittest
 from os import path, remove
 from scipy.io import loadmat
 from featureextraction.src.fetureextraction import ExtractionType
-from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData, SUNData
+from featureextraction.src.dataparsing import DataParserFactory, DataParserType
 
 
 class AWA2DataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_path = path.join('mockfiles', 'AWA2')
-        cls.data = AWA2Data(cls.base_path, ExtractionType.RESNET)
+        cls.data = DataParserFactory()(DataParserType.AWA, cls.base_path, ExtractionType.RESNET)
 
     def test_get_visual_attributes(self):
         img_list, _, _ = self.data.get_images_data()
@@ -69,7 +69,7 @@ class CUB200DataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_path = path.join('mockfiles', 'CUB200')
-        cls.data = CUB200Data(cls.base_path, ExtractionType.RESNET)
+        cls.data = DataParserFactory()(DataParserType.CUB, cls.base_path, ExtractionType.RESNET)
 
     def test_get_semantic_attributes(self):
         _, img_class, _ = self.data.get_images_data()
@@ -94,7 +94,7 @@ class PascalYahooDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_path = path.join('mockfiles', 'aPascalYahoo')
-        cls.data = PascalYahooData(cls.base_path, ExtractionType.RESNET)
+        cls.data = DataParserFactory()(DataParserType.APY, cls.base_path, ExtractionType.RESNET)
 
     def test_get_semantic_attributes(self):
         _, img_class, _ = self.data.get_images_data()
@@ -119,7 +119,7 @@ class SUNDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_path = path.join('mockfiles', 'SUNAttributes')
-        cls.data = SUNData(cls.base_path, ExtractionType.RESNET)
+        cls.data = DataParserFactory()(DataParserType.SUN, cls.base_path, ExtractionType.RESNET)
 
     def test_get_semantic_attributes(self):
         _, img_class, _ = self.data.get_images_data()
