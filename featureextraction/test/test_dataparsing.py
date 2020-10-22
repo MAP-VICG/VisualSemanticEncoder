@@ -12,7 +12,7 @@ Tests for module dataparsing
 import unittest
 from os import path, remove
 from scipy.io import loadmat
-from featureextraction.src.dataparsing import CUB200Data, AWA2Data
+from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData
 from featureextraction.src.fetureextraction import ExtractionType
 
 
@@ -89,3 +89,29 @@ class CUB200DataTests(unittest.TestCase):
         self.assertEqual(200, class_dict['Common_Yellowthroat'])
         self.assertEqual('013.Bobolink/Bobolink_0056_9080.jpg', img_list[0])
         self.assertEqual('112.Great_Grey_Shrike/Great_Grey_Shrike_0050_797012.jpg', img_list[14])
+
+
+class PascalYahooDataTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base_path = path.join('mockfiles', 'aPascalYahoo')
+        cls.data = PascalYahooData(cls.base_path, ExtractionType.RESNET)
+
+    def test_get_semantic_attributes(self):
+        _, img_class, _ = self.data.get_images_data()
+        sem_fts, prototypes = self.data.get_semantic_attributes(img_class)
+        self.assertEqual((30, 64), sem_fts.shape)
+        self.assertEqual((30, 64), prototypes.shape)
+
+    def test_get_images_data(self):
+        img_list, img_class, class_dict = self.data.get_images_data()
+        img_list.sort()
+
+        self.assertEqual(30, len(img_class))
+        self.assertEqual(30, len(img_list))
+        self.assertEqual(32, len(class_dict.keys()))
+
+        self.assertEqual([1, 3, 12], img_class[2:5])
+        self.assertEqual(9, class_dict['chair'])
+        self.assertEqual('VOC2012/test/JPEGImages/2008_001078.jpg', img_list[0])
+        self.assertEqual('VOC2012/train/JPEGImages/2008_001238.jpg', img_list[14])

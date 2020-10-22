@@ -130,25 +130,25 @@ class PascalYahooData(DataParser):
         def _build_lists(lines, base_path):
             for line in lines:
                 values = line.split()
-                if path.isfile(path.join(base_path, values[0].strip())):
+                if path.isfile(path.join(self.images_path, base_path, values[0].strip())):
                     img_list.append(path.join(base_path, values[0].strip()))
                     img_class.append(int(class_dict[values[1].strip()]))
                     semantic_data.append(values[6:])
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            _build_lists(f.readlines(), path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages'))
+            _build_lists(f.readlines(), path.join('VOC2012', 'train', 'JPEGImages'))
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            _build_lists(f.readlines(), path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages'))
+            _build_lists(f.readlines(), path.join('VOC2012', 'test', 'JPEGImages'))
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            _build_lists(f.readlines(), path.join(self.images_path, 'Yahoo'))
+            _build_lists(f.readlines(), path.join('Yahoo'))
 
         self.semantic_data = np.array(semantic_data)
         return img_list, img_class, class_dict
 
     def get_semantic_attributes(self, img_class):
-        return self.semantic_data
+        return self.semantic_data, self.semantic_data
 
 
 class SUNData(DataParser):
