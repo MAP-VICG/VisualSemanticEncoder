@@ -1,5 +1,5 @@
 """
-Retrieves visual features extracted from an image via ResNet50 neural network built in Keras
+Retrieves visual features extracted from an image via ResNet50 or InceptionV3 neural networks built in Keras
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -11,23 +11,37 @@ Retrieves visual features extracted from an image via ResNet50 neural network bu
 """
 import numpy as np
 from os import path
+from enum import Enum
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications import resnet50
 from tensorflow.keras.applications import inception_v3
 
 
+class ExtractionType(Enum):
+    RESNET = "ResNet"
+    INCEPTION = "Inception"
+
+
+class ExtractorFactory:
+    def __init__(self, base_path='.'):
+        self.base_path = base_path
+
+    def __call__(self, extractor):
+        if extractor == ExtractionType.RESNET:
+            return ResNet50FeatureExtractor(self.base_path)
+        if extractor == ExtractionType.INCEPTION:
+            return InceptionV3FeatureExtractor(self.base_path)
+
+
 class FeatureExtractor:
-    def __init__(self, images_list, base_path='.'):
+    def __init__(self, base_path='.'):
         """
         Initializes main variables
 
-        @param images_list: list of string with names of images to extract features from
         @param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
-        self.images_list = images_list
         self.base_path = base_path
-        self.features_set = None
 
     def extract_image_features(self, img_path):
         """
@@ -38,40 +52,30 @@ class FeatureExtractor:
         """
         pass
 
-    def extract_images_list_features(self):
+    def extract_images_list_features(self, images_list):
         """
         Extracts the visual features of all images indicated in images_list and saves the array in features_set
 
-        @return: None
+        @param images_list: list of string with names of images to extract features from
+        @return: 2D numpy array with extracted features
         """
-        self.features_set = self.extract_image_features(path.join(self.base_path, self.images_list[0]))
-        for img_path in self.images_list[1:]:
+        features_set = self.extract_image_features(path.join(self.base_path, images_list[0]))
+        for img_path in images_list[1:]:
             features = self.extract_image_features(path.join(self.base_path, img_path))
-            self.features_set = np.vstack((self.features_set, features))
+            features_set = np.vstack((features_set, features))
 
-    def save_features(self, file_path):
-        """
-        Saves the features_set structure into the indicated file path where each row represents the list of features
-        extracted from an image. The values are separated by spaces.
-
-        @param file_path: string indicating the path to the file where the extracted features must be saved
-        @return: None
-        """
-        with open(file_path, 'w+') as f:
-            for img_feature in self.features_set:
-                f.write(' '.join(list(map(str, img_feature))) + '\n')
+        return features_set
 
 
 class ResNet50FeatureExtractor(FeatureExtractor):
-    def __init__(self, images_list, base_path='.'):
+    def __init__(self, base_path='.'):
         """
         Initializes main variables
 
-        @param images_list: list of string with names of images to extract features from
         @param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
-        super(ResNet50FeatureExtractor, self).__init__(images_list, base_path)
+        super(ResNet50FeatureExtractor, self).__init__(base_path)
         self.model = resnet50.ResNet50(weights='imagenet', include_top=False, pooling='avg')
 
     def extract_image_features(self, img_path):
@@ -89,15 +93,14 @@ class ResNet50FeatureExtractor(FeatureExtractor):
 
 
 class InceptionV3FeatureExtractor(FeatureExtractor):
-    def __init__(self, images_list, base_path='.'):
+    def __init__(self, base_path='.'):
         """
         Initializes main variables
 
-        @param images_list: list of string with names of images to extract features from
         @param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
-        super(InceptionV3FeatureExtractor, self).__init__(images_list, base_path)
+        super(InceptionV3FeatureExtractor, self).__init__(base_path)
         self.model = inception_v3.InceptionV3(weights='imagenet', include_top=False, pooling='avg')
 
     def extract_image_features(self, img_path):

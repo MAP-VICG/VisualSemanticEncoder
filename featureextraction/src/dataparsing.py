@@ -1,5 +1,6 @@
 """
-Retrieves basic information about the CUB200 and AwA2 data sets
+Retrieves basic information about the CUB200, AwA2, aPascalYahoo,
+and SUN attributes datasets.
 
 @author: Damares Resende
 @contact: damaresresende@usp.br
@@ -9,96 +10,61 @@ Retrieves basic information about the CUB200 and AwA2 data sets
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-import os
+import logging
 import numpy as np
-from scipy.io import loadmat
-from os import path, listdir, sep
+from os import path, listdir
+from scipy.io import loadmat, savemat
 
-from featureextraction.src.fetureextraction import ResNet50FeatureExtractor, InceptionV3FeatureExtractor
+from .fetureextraction import ExtractorFactory, ExtractionType
 
 
 class DataParser:
     def __init__(self, base_path, extractor):
-        if extractor not in ('resnet', 'inception'):
-            raise Exception('Invalid extractor for visual features')
+        if not isinstance(extractor, ExtractionType):
+            raise ValueError('Invalid extractor type')
 
         self.extractor = extractor
-        self.images_path = ''
-        self.images_list = None
-        self.base_path = base_path
-        self.semantic_attributes_path = ''
+        self.base_path = self.classes_path = self.images_path = self.semantic_attributes_path = base_path
 
-    def get_semantic_attributes(self):
-        """
-        Reads the file of attributes and retrieves the semantic array for each class
+    def build_data_structure(self, file_name, vis_data=True):
+        data = dict()
+        logging.info('Extracting AwA data. Using extractor %s.' % self.extractor.name)
+        data['img_list'], data['img_class'], data['class_dict'] = self.get_images_data()
+        data['class_dict'] = [(key, value) for key, value in data['class_dict'].items()]
 
-        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
-        """
+        logging.info('Images length: %d. Classes length: %d.' % (len(data['img_list']), len(data['img_class'])))
+        logging.info('Number of classes: %d' % len(data['class_dict']))
+
+        data['sem_fts'], data['prototypes'] = self.get_semantic_attributes(data['img_class'])
+        logging.info('Semantic features shape: %s' % str(data['sem_fts'].shape))
+
+        if not vis_data:
+            logging.warning('Visual data will not be extracted')
+        else:
+            data['vis_fts'] = self.get_visual_attributes(data['img_list'])
+            logging.info('Visual features shape: %s' % str(data['vis_fts'].shape))
+
+        savemat(file_name, data)
+
+    def get_images_data(self):
+        return None, None, None
+
+    def get_semantic_attributes(self, img_class_list):
         try:
             with open(self.semantic_attributes_path) as f:
                 attributes = [list(map(float, line.split())) for line in f.readlines()]
-            return np.array(attributes)
+
+            sem_attributes = list()
+            for klass in img_class_list:
+                sem_attributes.append(attributes[klass - 1])
+
+            return np.array(sem_attributes), np.array(attributes)
         except (IOError, FileNotFoundError):
-            return None
+            return None, None
 
     def get_visual_attributes(self, images_list):
-        """
-        Extracts the visual features of every image listed using ResNet50 model
-
-        @param images_list: list of strings with image's names
-        @return: numpy array of shape (X, 2048) where X is the number of images listed
-        """
-        if self.extractor == 'resnet':
-            vis_data = ResNet50FeatureExtractor(images_list, self.images_path)
-        else:
-            vis_data = InceptionV3FeatureExtractor(images_list, self.images_path)
-
-        vis_data.extract_images_list_features()
-        return vis_data.features_set
-
-    def _get_images_list(self):
-        """
-        Retrieves path of each image
-
-        @return: integer 1D numpy array
-        """
-        return None
-
-    def get_images_list(self):
-        """
-        Wrapper method to retrieve path of each image
-
-        @return: integer 1D numpy array
-        """
-        if self.images_list is None:
-            self.images_list = self._get_images_list()
-        return self.images_list
-
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
-
-        @return: integer 1D numpy array
-        """
-        return None
-
-    def build_data(self):
-        """
-        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
-
-        @return: tuple with visual features, semantic features and classes
-        """
-        images = self.get_images_list()
-        classes = self.get_images_class()
-
-        sem_msk = self.get_semantic_attributes()
-        vis_fts = self.get_visual_attributes(images)
-
-        sem_fts = []
-        for i, fts in enumerate(vis_fts):
-            sem_fts.append(sem_msk[classes[i] - 1, :])
-
-        return vis_fts, np.array(sem_fts), classes
+        ext = ExtractorFactory(self.images_path)(self.extractor)
+        return ext.extract_images_list_features(images_list)
 
 
 class AWA2Data(DataParser):
@@ -106,30 +72,22 @@ class AWA2Data(DataParser):
         super(AWA2Data, self).__init__(base_path, extractor)
         self.images_path = path.join(base_path, 'JPEGImages')
         self.semantic_attributes_path = path.join(base_path, 'predicate-matrix-continuous.txt')
-        self.images_list = None
 
-    def _get_images_list(self):
-        """
-        Retrieves path of each image
-        @return: integer 1D numpy array
-        """
-        images_list = [path.join(folder, img) for folder in listdir(self.images_path)
-                       if path.isdir(path.join(self.images_path, folder))
-                       for img in listdir(path.join(self.images_path, folder)) if img.endswith('.jpg')]
-        return np.array(sorted(images_list))
+    def get_images_data(self):
+        img_list = list()
+        img_class = list()
 
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
-
-        @return: integer 1D numpy array
-        """
         with open(path.join(self.base_path, 'classes.txt')) as f:
-            labels_dict = {label.split()[1]: int(label.split()[0]) for label in f.readlines()}
+            class_dict = {name.split()[1]: int(name.split()[0]) for name in f.readlines()}
 
-        labels = [labels_dict[img.strip().split(sep)[0]] for img in self.get_images_list()]
+        for folder in listdir(self.images_path):
+            if path.isdir(path.join(self.images_path, folder)):
+                for img in listdir(path.join(self.images_path, folder)):
+                    if img.endswith('.jpg'):
+                        img_list.append(path.join(folder, img))
+                        img_class.append(class_dict[img.split('_')[0]])
 
-        return np.array(labels)
+        return img_list, img_class, class_dict
 
 
 class CUB200Data(DataParser):
@@ -138,132 +96,59 @@ class CUB200Data(DataParser):
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'attributes', 'class_attribute_labels_continuous.txt')
 
-    def _get_images_list(self):
-        """
-        Retrieves path of each image
+    def get_images_data(self):
+        img_list = list()
+        class_dict = dict()
 
-        @return: integer 1D numpy array
-        """
         with open(path.join(self.base_path, 'images.txt')) as f:
-            images_list = [value.split()[1] for value in f.readlines()]
+            for value in f.readlines():
+                img_list.append(value.split()[1])
+                idx, name = img_list[-1].split('/')[0].split('.')
+                class_dict[name.strip()] = int(idx.strip())
 
-        return np.array(images_list)
-
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
-
-        @return: integer 1D numpy array
-        """
         with open(path.join(self.base_path, 'image_class_labels.txt')) as f:
-            labels = [int(value.split()[1]) for value in f.readlines()]
+            img_class = [int(value.split()[1]) for value in f.readlines()]
 
-        return np.array(labels)
-
-    def get_train_test_mask(self):
-        """
-        Goes through the full list of images and creates a boolean mask to split data set into training and test sets,
-        where True indicates training set and False test set. Then builds boolean arrays to mask data sets.
-
-        @return: tuple with boolean arrays for training and test masks
-        """
-
-        with open(path.join(self.base_path, 'train_test_split.txt')) as f:
-            mask = [int(value.split()[1]) for value in f.readlines()]
-
-        return np.array(mask) == 1, np.array(mask) == 0
+        return img_list, img_class, class_dict
 
 
 class PascalYahooData(DataParser):
     def __init__(self, base_path, extractor):
         super(PascalYahooData, self).__init__(base_path, extractor)
+        self.semantic_data = None
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'attribute_data')
 
-    def _get_images_list(self):
-        """
-        Retrieves path of each image
+    def get_images_data(self):
+        img_list = list()
+        img_class = list()
+        semantic_data = list()
 
-        @return: integer 1D numpy array
-        """
-        with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            images_list = [path.join('VOC2012', 'trainval', 'JPEGImages', line.split()[0]) for line in f.readlines()]
-
-        with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            images_list.extend([path.join('VOC2012', 'test', 'JPEGImages', line.split()[0]) for line in f.readlines()])
-
-        with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            images_list.extend([path.join('Yahoo', line.split()[0]) for line in f.readlines()])
-
-        return np.array([img for img in images_list if os.path.isfile(path.join(self.images_path, img))])
-
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
-
-        @return: integer 1D numpy array
-        """
-        labels = []
         with open(path.join(self.semantic_attributes_path, 'class_names.txt')) as f:
-            labels_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines())}
+            class_dict = {label.strip(): i + 1 for i, label in enumerate(f.readlines())}
+
+        def _build_lists(lines, base_path):
+            for line in lines:
+                values = line.split()
+                if path.isfile(path.join(base_path, values[0].strip())):
+                    img_list.append(path.join(base_path, values[0].strip()))
+                    img_class.append(int(class_dict[values[1].strip()]))
+                    semantic_data.append(values[6:])
 
         with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-            for line in f.readlines():
-                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0])):
-                    labels.append(int(labels_dict[line.split()[1].strip()]))
+            _build_lists(f.readlines(), path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages'))
 
         with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-            for line in f.readlines():
-                if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0])):
-                    labels.append(int(labels_dict[line.split()[1].strip()]))
+            _build_lists(f.readlines(), path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages'))
 
         with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-            for line in f.readlines():
-                if os.path.isfile(path.join(self.images_path, 'Yahoo', line.split()[0])):
-                    labels.append(int(labels_dict[line.split()[1].strip()]))
+            _build_lists(f.readlines(), path.join(self.images_path, 'Yahoo'))
 
-        return np.array(labels)
+        self.semantic_data = np.array(semantic_data)
+        return img_list, img_class, class_dict
 
-    def get_semantic_attributes(self):
-        """
-        Reads the file of attributes and retrieves the semantic array for each class
-
-        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
-        """
-        try:
-            attributes = []
-            with open(path.join(self.semantic_attributes_path, 'apascal_train.txt')) as f:
-                for line in f.readlines():
-                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'trainval', 'JPEGImages', line.split()[0])):
-                        attributes.append(list(map(float, line.split()[6:])))
-
-            with open(path.join(self.semantic_attributes_path, 'apascal_test.txt')) as f:
-                for line in f.readlines():
-                    if os.path.isfile(path.join(self.images_path, 'VOC2012', 'test', 'JPEGImages', line.split()[0])):
-                        attributes.append(list(map(float, line.split()[6:])))
-
-            with open(path.join(self.semantic_attributes_path, 'ayahoo_test.txt')) as f:
-                for line in f.readlines():
-                    if os.path.isfile(path.join(self.images_path, 'Yahoo', line.split()[0])):
-                        attributes.append(list(map(float, line.split()[6:])))
-
-            return np.array(attributes)
-        except (IOError, FileNotFoundError):
-            return None
-
-    def build_data(self):
-        """
-        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
-
-        @return: tuple with visual features, semantic features and classes
-        """
-        images = self.get_images_list()
-        classes = self.get_images_class()
-
-        sem_fts = self.get_semantic_attributes()
-        vis_fts = self.get_visual_attributes(images)
-
-        return vis_fts, sem_fts, classes
+    def get_semantic_attributes(self, img_class):
+        return self.semantic_data
 
 
 class SUNData(DataParser):
@@ -272,110 +157,16 @@ class SUNData(DataParser):
         self.images_path = path.join(base_path, 'images')
         self.semantic_attributes_path = path.join(base_path, 'SUNAttributeDB')
 
-    def _get_images_list(self):
-        """
-        Retrieves path of each image
-
-        @return: integer 1D numpy array
-        """
+    def get_images_data(self):
         data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
-        return np.array([image[0][0] for image in data['images']])
+        img_list = np.array([image[0][0] for image in data['images']])
+        img_class_names = ['_'.join(image.split('/')[:-1]) for image in img_list]
 
-    def get_images_class(self):
-        """
-        Retrieves the class of each image
+        class_dict = {name: i + 1 for i, name in enumerate(set(img_class_names))}
+        img_class = [class_dict[img] for img in img_class_names]
 
-        @return: integer 1D numpy array
-        """
-        data = loadmat(path.join(self.semantic_attributes_path, 'images.mat'))
-        labels = ['_'.join(image[0][0].split('/')[:-1]) for image in data['images']]
-        labels_dict = {label.strip(): i + 1 for i, label in enumerate(set(labels))}
+        return img_list, img_class, class_dict
 
-        return np.array([labels_dict[lb] for lb in labels])
-
-    def get_semantic_attributes(self):
-        """
-        Reads the file of attributes and retrieves the semantic array for each class
-
-        @return: float numpy array of shape (X, Y) being X the number of classes and Y the number of attributes
-        """
+    def get_semantic_attributes(self, img_class):
         data = loadmat(path.join(self.semantic_attributes_path, 'attributeLabels_continuous.mat'))
         return data['labels_cv']
-
-    def build_data(self):
-        """
-        Builds a data set with visual features extracted from ResNet50 and semantic features extracted from labels file
-
-        @return: tuple with visual features, semantic features and classes
-        """
-        images = self.get_images_list()
-        classes = self.get_images_class()
-
-        sem_fts = self.get_semantic_attributes()
-        vis_fts = self.get_visual_attributes(images)
-
-        return vis_fts, sem_fts, classes
-
-
-class DataIO:
-    @staticmethod
-    def get_features(data_file):
-        """
-        Builds a 2D numpy array with data found in file
-
-        @param data_file: string with full path to data file
-        @return: float numpy array of shape (X, Y) where X is the number of images and Y the number of attributes
-        """
-        with open(data_file) as f:
-            data = [list(map(float, line.split())) for line in f.readlines()]
-        return np.array(data)
-
-    @staticmethod
-    def get_labels(labels_file):
-        """
-        Builds a 1D numpy array with data found in file
-
-        @param labels_file: string with full path to labels file
-        @return: integer numpy array of shape (X, ) where X is the number of images
-        """
-        with open(labels_file) as f:
-            labels = list(map(int, f.readlines()))
-        return np.array(labels)
-
-    @staticmethod
-    def save_files(base_path, prefix, **kwargs):
-        """
-        Saves sets data into files
-
-        @param base_path: string with base path to save files
-        @param prefix: string with prefix to identify data set
-        @param kwargs: data sets
-        @return: None
-        """
-        if 'x_train_vis' in kwargs.keys():
-            with open(path.join(base_path, '%s_x_train_vis.txt' % prefix), 'w+') as f:
-                for instance in kwargs['x_train_vis']:
-                    f.write(' '.join(list(map(str, instance))) + '\n')
-
-        if 'x_train_sem' in kwargs.keys():
-            with open(path.join(base_path, '%s_x_train_sem.txt' % prefix), 'w+') as f:
-                for instance in kwargs['x_train_sem']:
-                    f.write(' '.join(list(map(str, instance))) + '\n')
-
-        if 'x_test_vis' in kwargs.keys():
-            with open(path.join(base_path, '%s_x_test_vis.txt' % prefix), 'w+') as f:
-                for instance in kwargs['x_test_vis']:
-                    f.write(' '.join(list(map(str, instance))) + '\n')
-
-        if 'x_test_sem' in kwargs.keys():
-            with open(path.join(base_path, '%s_x_test_sem.txt' % prefix), 'w+') as f:
-                for instance in kwargs['x_test_sem']:
-                    f.write(' '.join(list(map(str, instance))) + '\n')
-
-        if 'y_train' in kwargs.keys():
-            with open(path.join(base_path, '%s_y_train.txt' % prefix), 'w+') as f:
-                f.write('\n'.join(list(map(str, kwargs['y_train']))))
-
-        if 'y_test' in kwargs.keys():
-            with open(path.join(base_path, '%s_y_test.txt' % prefix), 'w+') as f:
-                f.write('\n'.join(list(map(str, kwargs['y_test']))))
