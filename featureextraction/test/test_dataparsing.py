@@ -12,8 +12,8 @@ Tests for module dataparsing
 import unittest
 from os import path, remove
 from scipy.io import loadmat
-from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData
 from featureextraction.src.fetureextraction import ExtractionType
+from featureextraction.src.dataparsing import CUB200Data, AWA2Data, PascalYahooData, SUNData
 
 
 class AWA2DataTests(unittest.TestCase):
@@ -79,7 +79,6 @@ class CUB200DataTests(unittest.TestCase):
 
     def test_get_images_data(self):
         img_list, img_class, class_dict = self.data.get_images_data()
-        img_list.sort()
 
         self.assertEqual(30, len(img_class))
         self.assertEqual(30, len(img_list))
@@ -105,7 +104,6 @@ class PascalYahooDataTests(unittest.TestCase):
 
     def test_get_images_data(self):
         img_list, img_class, class_dict = self.data.get_images_data()
-        img_list.sort()
 
         self.assertEqual(30, len(img_class))
         self.assertEqual(30, len(img_list))
@@ -113,5 +111,35 @@ class PascalYahooDataTests(unittest.TestCase):
 
         self.assertEqual([1, 3, 12], img_class[2:5])
         self.assertEqual(9, class_dict['chair'])
-        self.assertEqual('VOC2012/test/JPEGImages/2008_001078.jpg', img_list[0])
-        self.assertEqual('VOC2012/train/JPEGImages/2008_001238.jpg', img_list[14])
+        self.assertEqual('VOC2012/train/JPEGImages/2008_000028.jpg', img_list[0])
+        self.assertEqual('VOC2012/test/JPEGImages/2008_001406.jpg', img_list[14])
+
+
+class SUNDataTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base_path = path.join('mockfiles', 'SUNAttributes')
+        cls.data = SUNData(cls.base_path, ExtractionType.RESNET)
+
+    def test_get_semantic_attributes(self):
+        _, img_class, _ = self.data.get_images_data()
+        sem_fts, prototypes = self.data.get_semantic_attributes(img_class)
+        self.assertEqual((14340, 102), sem_fts.shape)
+        self.assertEqual((14340, 102), prototypes.shape)
+
+    def test_get_images_data(self):
+        img_list, img_class, class_dict = self.data.get_images_data()
+
+        self.assertEqual(14340, len(img_class))
+        self.assertEqual(14340, len(img_list))
+        self.assertEqual(717, len(class_dict.keys()))
+
+        self.assertEqual([1, 5, 27], [img_class[2], img_class[90], img_class[523]])
+        self.assertEqual(77, class_dict['b_beach'])
+        self.assertEqual('a/abbey/sun_aakbdcgfpksytcwj.jpg', img_list[0])
+        self.assertEqual('b/batters_box/sun_aaeheulsicxtxnbu.jpg', img_list[1400])
+
+    def test_get_visual_attributes(self):
+        img_list, _, _ = self.data.get_images_data()
+        img_list = [img_list[i] for i in [k * 100 for k in range(30)]]
+        self.assertEqual((30, 2048), self.data.get_visual_attributes(img_list).shape)

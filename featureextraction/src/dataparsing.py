@@ -162,11 +162,11 @@ class SUNData(DataParser):
         img_list = np.array([image[0][0] for image in data['images']])
         img_class_names = ['_'.join(image.split('/')[:-1]) for image in img_list]
 
-        class_dict = {name: i + 1 for i, name in enumerate(set(img_class_names))}
+        class_dict = {name: i + 1 for i, name in enumerate(sorted(list(set(img_class_names))))}
         img_class = [class_dict[img] for img in img_class_names]
 
         return img_list, img_class, class_dict
 
     def get_semantic_attributes(self, img_class):
         data = loadmat(path.join(self.semantic_attributes_path, 'attributeLabels_continuous.mat'))
-        return data['labels_cv']
+        return data['labels_cv'], data['labels_cv']
