@@ -56,24 +56,21 @@ class SVMClassifier:
 
     def get_data(self, data_path):
         data = loadmat(data_path)
-        if self.data_type == DataType.SUN:
-            vis_data = data['X_tr']
-            sem_data = data['S_tr']
-        elif self.data_type == DataType.APY:
-            vis_data = np.vstack((data['X_tr'], data['X_te']))
-            sem_data = np.vstack((data['S_tr'], data['S_te']))
-        else:
-            vis_data = np.vstack((data['X_tr'], data['X_te']))
-            sem_data = np.vstack((data['S_tr'], self.get_te_sem_data(data)))
+
+        if self.data_type in (DataType.SUN, DataType.APY):
+            sem_data = data['sem_fts'].astype(np.float64)
+            vis_data = data['vis_fts'].astype(np.float64)
+            lbs_data = np.transpose(data['img_class'])
+
+            return vis_data, lbs_data, sem_data
+
+        vis_data = np.vstack((data['X_tr'], data['X_te']))
+        sem_data = np.vstack((data['S_tr'], self.get_te_sem_data(data)))
 
         if self.data_type == DataType.AWA:
             lbs_data = np.vstack((data['param']['train_labels'][0][0], data['param']['test_labels'][0][0]))
         elif self.data_type == DataType.CUB:
             lbs_data = np.vstack((data['train_labels_cub'], data['test_labels_cub']))
-        elif self.data_type == DataType.SUN:
-            lbs_data = data['train_labels']
-        elif self.data_type == DataType.APY:
-            lbs_data = np.vstack((data['train_labels'], data['test_labels']))
         else:
             raise ValueError("Invalid data type.")
 
@@ -163,7 +160,8 @@ class SVMClassifier:
         for train_index, test_index in skf.split(vis_data, labels):
             logging.info('Running PCA classification for fold %d' % fold)
 
-            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_vis = normalize(vis_data[train_index], norm='l2', axis=1, copy=True)
+            te_vis = normalize(vis_data[test_index], norm='l2', axis=1, copy=True)
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
             te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
@@ -174,8 +172,10 @@ class SVMClassifier:
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(pca.fit_transform(tr_data), tr_labels)
-            prediction = clf.predict(pca.fit_transform(te_data))
+
+            pca.fit(tr_data)
+            clf.fit(pca.transform(tr_data), tr_labels)
+            prediction = clf.predict(pca.transform(te_data))
 
             fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
@@ -185,13 +185,14 @@ class SVMClassifier:
     def classify_concat_isomap_data(self, vis_data, sem_data, labels):
         fold = 0
         accuracies = []
-        imap = Isomap(n_components=sem_data.shape[1])
+        iso = Isomap(n_components=sem_data.shape[1], n_neighbors=20, eigen_solver='auto')
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
-            logging.info('Running ISOMAP classification for fold %d' % fold)
+            logging.info('Running ISO classification for fold %d' % fold)
 
-            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_vis = normalize(vis_data[train_index], norm='l2', axis=1, copy=True)
+            te_vis = normalize(vis_data[test_index], norm='l2', axis=1, copy=True)
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
             te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
@@ -202,8 +203,10 @@ class SVMClassifier:
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(imap.fit_transform(tr_data), tr_labels)
-            prediction = clf.predict(imap.fit_transform(te_data))
+
+            iso.fit(tr_data)
+            clf.fit(iso.transform(tr_data), tr_labels)
+            prediction = clf.predict(iso.transform(te_data))
 
             fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
@@ -213,13 +216,14 @@ class SVMClassifier:
     def classify_concat_lle_data(self, vis_data, sem_data, labels):
         fold = 0
         accuracies = []
-        lle = LocallyLinearEmbedding(n_components=sem_data.shape[1])
+        lle = LocallyLinearEmbedding(n_components=sem_data.shape[1], n_neighbors=20)
         skf = StratifiedKFold(n_splits=self.n_folds, random_state=None, shuffle=True)
 
         for train_index, test_index in skf.split(vis_data, labels):
             logging.info('Running LLE classification for fold %d' % fold)
 
-            tr_vis, te_vis = vis_data[train_index], vis_data[test_index]
+            tr_vis = normalize(vis_data[train_index], norm='l2', axis=1, copy=True)
+            te_vis = normalize(vis_data[test_index], norm='l2', axis=1, copy=True)
             tr_sem = normalize(sem_data[train_index], norm='l2', axis=1, copy=True)
 
             te_sem = normalize(sem_data[test_index], norm='l2', axis=1, copy=True)
@@ -230,8 +234,10 @@ class SVMClassifier:
             tr_labels, te_labels = labels[train_index][:, 0], labels[test_index][:, 0]
 
             clf = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
-            clf.fit(lle.fit_transform(tr_data), tr_labels)
-            prediction = clf.predict(lle.fit_transform(te_data))
+
+            lle.fit(tr_data)
+            clf.fit(lle.transform(tr_data), tr_labels)
+            prediction = clf.predict(lle.transform(te_data))
 
             fold += 1
             accuracies.append(balanced_accuracy_score(te_labels, prediction))
