@@ -2,7 +2,7 @@ import os
 import json
 import time
 import logging
-from numba import cuda
+# from numba import cuda
 import tensorflow as tf
 
 from encoders.tools.src.svm_classification import SVMClassifier, DataType
@@ -37,7 +37,7 @@ class Classification:
         hours, rem = divmod(elapsed, 3600)
         minutes, seconds = divmod(rem, 60)
         time_elapsed = '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours), int(minutes), seconds)
-        print('Elapsed time %s is %s' % (tag, time_elapsed))
+        logging.info('Elapsed time %s is %s' % (tag, time_elapsed))
 
     def run_classification(self, data_path, label, data_type):
         logging.info('Running classification for degradation rate of %.2f' % self.rate)
@@ -102,5 +102,5 @@ if __name__ == '__main__':
         # klass.run_classification('../Datasets/sun_data_resnet50.mat', 'r_sun', DataType.SUN)
 
         tf.keras.backend.clear_session()
-        device = cuda.get_current_device()
-        device.reset()
+        # device = cuda.get_current_device()
+        # device.reset()
