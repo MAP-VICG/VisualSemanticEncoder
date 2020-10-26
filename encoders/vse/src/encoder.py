@@ -37,7 +37,7 @@ class ModelFactory:
         self.output_length = output_length
         self.encoding_length = encoding_length
 
-    def __call__(self, ae_type):
+    def __call__(self, ae_type, run_svm=True):
         """
         Builds an autoencoder model based on the given type
 
@@ -45,7 +45,7 @@ class ModelFactory:
         @return: object with auto encoder model
         """
         if ae_type == ModelType.STRAIGHT_AE:
-            return StraightAutoencoder(self.input_length, self.encoding_length, self.output_length)
+            return StraightAutoencoder(self.input_length, self.encoding_length, self.output_length, run_svm)
         if ae_type == ModelType.BALANCED_AE:
             return BalancedAutoencoder(self.input_length, self.encoding_length, self.output_length)
         if ae_type == ModelType.ZSL_AE:
@@ -53,7 +53,7 @@ class ModelFactory:
 
 
 class Encoder:
-    def __init__(self, input_length, encoding_length, output_length, ae_type, epochs, results_path='.'):
+    def __init__(self, input_length, encoding_length, output_length, ae_type, epochs, results_path='.', run_svm=True):
         """
         Instantiates model object and initializes auxiliary variables
 
@@ -64,6 +64,7 @@ class Encoder:
         :param epochs: number of epochs to run training
         :param results_path: string with path to save results to
         """
+        self.run_svm = run_svm
         self.encoder = None
         self.epochs = epochs
         self.ae_type = ae_type
@@ -85,7 +86,7 @@ class Encoder:
         :param y_test: test labels to get svm classification test results (NOT USED TO TRAIN THE MODEL)
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
-        model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
+        model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type, self.run_svm)
 
         if self.ae_type in (ModelType.STRAIGHT_AE, ModelType.BALANCED_AE):
             x_train = np.hstack((tr_vis_data, tr_sem_data))
@@ -108,7 +109,7 @@ class Encoder:
         :param save_weights: if True, saves training weights
         :return: tuple with 2D numpy arrays with the computed semantic data for training and test sets
         """
-        model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type)
+        model = ModelFactory(self.input_length, self.encoding_length, self.output_length)(self.ae_type, self.run_svm)
         model.fit(tr_vis_data, tr_sem_data, self.epochs, self.results_path, save_weights)
         tr_est, te_est = model.predict(tr_vis_data, te_vis_data)
 

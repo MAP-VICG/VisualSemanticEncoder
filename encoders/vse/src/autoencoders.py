@@ -16,6 +16,7 @@ import numpy as np
 from tensorflow.keras import backend
 from tensorflow.keras.losses import mse
 from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import LambdaCallback
 from tensorflow.keras.layers import Input, Dense, Concatenate
 
@@ -26,7 +27,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 
 class StraightAutoencoder:
-    def __init__(self, input_length, encoding_length, output_length):
+    def __init__(self, input_length, encoding_length, output_length, run_svm=True):
         """
         Initializes main variables
 
@@ -35,6 +36,7 @@ class StraightAutoencoder:
         @param output_length: length of output or auto encoder
         """
         self.ae = None
+        self.run_svm = run_svm
         self.history = dict()
         self.best_weights = None
         self.input_length = input_length
@@ -85,6 +87,11 @@ class StraightAutoencoder:
         if results_path and not os.path.isdir(results_path):
             os.makedirs(results_path)
 
+        early_stop = EarlyStopping(
+             monitor='loss', min_delta=1e-5, patience=0, verbose=0, mode='auto',
+             baseline=None, restore_best_weights=False
+        )
+
         def ae_callback(epoch, logs):
             if logs['loss'] < self.history['best_loss'][0]:
                 self.best_weights = self.ae.get_weights()
@@ -93,12 +100,13 @@ class StraightAutoencoder:
                 if save_weights:
                     self.ae.save_weights(os.path.join(results_path, 'ae_model.h5'))
 
-            encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
-            svm = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
+            if self.run_svm:
+                encoder = Model(self.ae.input, outputs=[self.ae.get_layer('code').output])
+                svm = make_pipeline(StandardScaler(), SVC(gamma='auto', C=1.0, kernel='linear'))
 
-            svm.fit(encoder.predict(tr_data), tr_labels)
-            self.history['svm_train'].append(balanced_accuracy_score(tr_labels, svm.predict(encoder.predict(tr_data))))
-            self.history['svm_test'].append(balanced_accuracy_score(te_labels, svm.predict(encoder.predict(te_data))))
+                svm.fit(encoder.predict(tr_data), tr_labels)
+                self.history['svm_train'].append(balanced_accuracy_score(tr_labels, svm.predict(encoder.predict(tr_data))))
+                self.history['svm_test'].append(balanced_accuracy_score(te_labels, svm.predict(encoder.predict(te_data))))
 
         if self.ae is None:
             self.define_ae()
@@ -107,8 +115,9 @@ class StraightAutoencoder:
         self.history['svm_test'] = []
         self.history['best_loss'] = (float('inf'), 0)
 
-        result = self.ae.fit(tr_data, tr_data, epochs=epochs, batch_size=256, shuffle=True, verbose=1,
-                             validation_data=(te_data, te_data), callbacks=[LambdaCallback(on_epoch_end=ae_callback)])
+        result = self.ae.fit(tr_data, tr_data, epochs=epochs, batch_size=256,
+                             shuffle=True, verbose=1, validation_data=(te_data, te_data),
+                             callbacks=[LambdaCallback(on_epoch_end=ae_callback), early_stop])
 
         self.history['loss'] = list(result.history['loss'])
         self.history['val_loss'] = list(result.history['val_loss'])

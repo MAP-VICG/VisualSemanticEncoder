@@ -26,7 +26,7 @@ class DataType(Enum):
 
 
 class SVMClassifier:
-    def __init__(self, data_type, folds, epochs, save=False, results_path='.', degradation_rate=0.0):
+    def __init__(self, data_type, folds, epochs, save=False, results_path='.', degradation_rate=0.0, run_svm=True):
         if type(data_type) != DataType:
             raise ValueError("Invalid data type.")
 
@@ -38,6 +38,7 @@ class SVMClassifier:
         else:
             self.lambda_ = 0
 
+        self.run_svm = run_svm
         self.n_folds = folds
         self.epochs = epochs
         self.save_results = save
@@ -291,7 +292,7 @@ class SVMClassifier:
         te_sem = normalize(te_sem, norm='l2', axis=1, copy=True)
 
         input_length = output_length = tr_vis.shape[1] + tr_sem.shape[1]
-        ae = Encoder(input_length, tr_sem.shape[1], output_length, ModelType.STRAIGHT_AE, self.epochs, res_path)
+        ae = Encoder(input_length, tr_sem.shape[1], output_length, ModelType.STRAIGHT_AE, self.epochs, res_path, self.run_svm)
 
         tr_sem, te_sem = ae.estimate_semantic_data(tr_vis, te_vis, tr_sem, te_sem, y_train, y_test, self.save_results)
 
