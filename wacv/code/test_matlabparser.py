@@ -12,7 +12,7 @@ Tests for module matlabparser
 import unittest
 from scipy.io import loadmat
 
-from featureextraction.src.matlaparser import Parser
+from wacv.code.matlaparser import Parser
 
 
 class MatlabParserTests(unittest.TestCase):
