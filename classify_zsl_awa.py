@@ -29,17 +29,17 @@ def estimate_sem_data(data):
 
     input_length = output_length = train_data.shape[1]
     model = ModelFactory(input_length, tr_sem_data.shape[1], output_length)(ModelType.STRAIGHT_AE, run_svm=False)
-    model.fit(train_data, data['train_labels'], test_data, data['test_labels'], 50, '.', save_weights=False)
+    model.fit(train_data, data['train_labels'], test_data, data['test_labels'], 5, '.', save_weights=False)
 
     return model.predict(tr_vis_data, tr_sem_data, te_vis_data, te_sem_data)
 
 
-_data = loadmat('../Datasets/cub_data_googlenet.mat')
-_data['S_te'] = get_te_sem_data(_data, 'cub')
-_data['train_labels'] = [lb[0] for lb in _data['train_labels_cub']]
-_data['test_labels'] = [lb[0] for lb in _data['test_labels_cub']]
-template_labels = np.array([int(x) for x in _data['te_cl_id']])
-test_labels = np.array([int(x) for x in _data['test_labels_cub']])
+_data = loadmat('../Datasets/awa_data_googlenet.mat')
+_data['S_te'] = get_te_sem_data(_data, 'awa')
+_data['train_labels'] = [lb[0] for lb in _data['param']['train_labels'][0][0]]
+_data['test_labels'] = [lb[0] for lb in _data['param']['test_labels'][0][0]]
+template_labels = np.array([int(x) for x in _data['param']['testclasses_id'][0][0]])
+test_labels = np.array([int(x) for x in _data['param']['test_labels'][0][0]])
 
 tr_labels = {label: [] for label in set([lb for lb in _data['train_labels']])}
 te_labels = {label: [] for label in set([lb for lb in _data['test_labels']])}
