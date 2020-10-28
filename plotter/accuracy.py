@@ -22,7 +22,7 @@ for file in sorted(listdir('../results/accuracy/')):
 
 ax = None
 x = np.linspace(0, 10, 11) * 10
-fig = plt.figure(figsize=(14, 6.5))
+fig = plt.figure(figsize=(14, 5.5))
 
 for i, ds in enumerate(datasets):
     if ds.startswith('i'):
