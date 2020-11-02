@@ -16,7 +16,7 @@ from scipy.stats import zscore
 from numpy.linalg import matrix_power
 from scipy.linalg import solve_sylvester
 from scipy.spatial.distance import cdist
-
+from scipy import stats
 
 class ZSL:
     @staticmethod
@@ -130,7 +130,7 @@ class ZSL:
         for i in range(dist.shape[0]):
             prx = np.argsort(dist[i, :])
             prx = [prx[x] for x in range(len(prx) - 1, 0, -1)]
-            y_hit_k[i, :] = temp_labels[prx[0:hit_k]]
+            y_hit_k[i, :] = stats.mode(temp_labels[prx[0:hit_k]]).mode[0]
 
         n = 0
         for i in range(dist.shape[0]):
