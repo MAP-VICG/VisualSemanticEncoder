@@ -116,13 +116,13 @@ for k in range(5):
                 pt_labels[lb].append(i)
                 mask[i] = True
 
-    # _, te_est_sec = estimate_sem_data_sec(_data)
-    # _, te_est_vse = estimate_sem_data_vse(_data)
+    _, te_est_sec = estimate_sem_data_sec(_data)
+    _, te_est_vse = estimate_sem_data_vse(_data)
     _, te_est_pca = estimate_sem_data_pca(_data)
     _, te_est_cat = estimate_sem_data_cat(_data)
 
-    # acc['sec'].append(cal_acc(te_est_sec))
-    # acc['vse'].append(cal_acc(te_est_vse))
+    acc['sec'].append(cal_acc(te_est_sec))
+    acc['vse'].append(cal_acc(te_est_vse))
     acc['cat'].append(cal_acc(te_est_cat))
     acc['pca'].append(cal_acc(te_est_pca))
 
