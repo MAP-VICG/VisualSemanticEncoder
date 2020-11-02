@@ -75,6 +75,11 @@ def estimate_sem_data_sec(data):
     return tr_sem, te_sem
 
 
+def cal_acc_sec(te_est):
+    acc_value, _ = ZSL.zsl_el(te_est, _data['S_te_pro'], test_labels, template_labels, 1, False)
+    return acc_value
+
+
 def cal_acc(te_est_or):
     te_labels = {label: [] for label in set([lb for lb in _data['test_labels']])}
 
@@ -121,7 +126,7 @@ for k in range(5):
     _, te_est_pca = estimate_sem_data_pca(_data)
     _, te_est_cat = estimate_sem_data_cat(_data)
 
-    acc['sec'].append(cal_acc(te_est_sec))
+    acc['sec'].append(cal_acc_sec(te_est_sec))
     acc['vse'].append(cal_acc(te_est_vse))
     acc['cat'].append(cal_acc(te_est_cat))
     acc['pca'].append(cal_acc(te_est_pca))

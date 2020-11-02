@@ -57,7 +57,7 @@ def estimate_sem_data_vse(data):
 
     input_length = output_length = train_data.shape[1]
     model = ModelFactory(input_length, tr_sem_data.shape[1], output_length)(ModelType.STRAIGHT_AE, run_svm=False)
-    model.fit(train_data, data['train_labels'], test_data, data['test_labels'], 5, '.', save_weights=False)
+    model.fit(train_data, data['train_labels'], test_data, data['test_labels'], 50, '.', save_weights=False)
 
     return model.predict(tr_vis_data, tr_sem_data, te_vis_data, te_sem_data)
 
@@ -96,6 +96,11 @@ def cal_acc(te_est_or):
     return acc_value
 
 
+def cal_acc_sec(te_est):
+    acc_value, _ = ZSL.zsl_el(te_est, _data['S_te_pro'], test_labels, template_labels, 1, False)
+    return acc_value
+
+
 _data = loadmat('../Datasets/awa_data_googlenet.mat')
 _data['S_te'] = get_te_sem_data(_data, 'awa')
 _data['train_labels'] = [lb[0] for lb in _data['param']['train_labels'][0][0]]
@@ -121,7 +126,7 @@ for k in range(5):
     _, te_est_pca = estimate_sem_data_pca(_data)
     _, te_est_cat = estimate_sem_data_cat(_data)
 
-    acc['sec'].append(cal_acc(te_est_sec))
+    acc['sec'].append(cal_acc_sec(te_est_sec))
     acc['vse'].append(cal_acc(te_est_vse))
     acc['cat'].append(cal_acc(te_est_cat))
     acc['pca'].append(cal_acc(te_est_pca))
