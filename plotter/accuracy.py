@@ -14,7 +14,7 @@ for file in sorted(listdir('../results/accuracy/')):
     for key in data.keys():
         for sub_key in algorithms:
             if data[key].get(sub_key) is None:
-                curves[key][sub_key]['mean'].append(-1)
+                curves[key][sub_key]['mean'].append(0)
                 curves[key][sub_key]['std'].append(0)
             else:
                 curves[key][sub_key]['mean'].append(np.mean(np.array(data[key][sub_key])))
