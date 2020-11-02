@@ -104,7 +104,7 @@ class CUB200:
 
 
 if __name__ == '__main__':
-    cub = CUB200('../../../../Datasets/SAE/cub_demo_data.mat')
+    cub = CUB200('../../../../Datasets/cub_data_googlenet.mat')
     cub.set_semantic_data()
     print('\n[1] CUB ZSL accuracy [V >>> S]: %.1f%%\n' % (cub.v2s_projection() * 100))
     print('[2] CUB ZSL accuracy [S >>> V]: %.1f%%\n' % (cub.s2v_projection() * 100))

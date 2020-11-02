@@ -76,7 +76,7 @@ def estimate_sem_data_sec(data):
 
 
 def cal_acc_sec(te_est):
-    acc_value, _ = ZSL.zsl_el(te_est, _data['S_te_pro'], test_labels, template_labels, 1, False)
+    acc_value, _ = ZSL.zsl_el(te_est, _data['S_te_pro'], test_labels, template_labels, 1, True)
     return acc_value
 
 
@@ -97,7 +97,7 @@ def cal_acc(te_est_or):
 
     prototypes = np.array(prototypes)
 
-    acc_value, _ = ZSL.zsl_el(te_est_st, prototypes, test_labels_st, template_labels, 1, False)
+    acc_value, _ = ZSL.zsl_el(te_est_st, prototypes, test_labels_st, template_labels, 1, True)
     return acc_value
 
 

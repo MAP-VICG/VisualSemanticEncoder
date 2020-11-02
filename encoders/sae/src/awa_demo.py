@@ -1,5 +1,5 @@
 """
-Contains demo for running SAE (Semantic Auto-encoder) for CUB200 dataset. This approach was proposed by
+Contains demo for running SAE (Semantic Auto-encoder) for AwA dataset. This approach was proposed by
 Elyor Kodirov, Tao Xiang, and Shaogang Gong in the paper "Semantic Autoencoder for Zero-shot Learning"
 published in CVPR 2017. Code originally written in Matlab and is here transformed to Python.
 
@@ -116,7 +116,7 @@ class AWA:
 
 
 if __name__ == '__main__':
-    awa = AWA('../../../../Datasets/SAE/awa_demo_data.mat')
+    awa = AWA('../../../../Datasets/awa_data_googlenet.mat')
     awa.set_semantic_data()
     print('\n[1] AwA ZSL accuracy [V >>> S]: %.1f%%\n' % (awa.v2s_projection() * 100))
     print('[2] AwA ZSL accuracy [S >>> V]: %.1f%%\n' % (awa.s2v_projection() * 100))
