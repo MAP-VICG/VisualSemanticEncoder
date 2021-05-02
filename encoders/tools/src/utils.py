@@ -12,11 +12,12 @@ published in CVPR 2017. Code originally written in Matlab and is here transforme
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
 import numpy as np
+from scipy import stats
 from scipy.stats import zscore
 from numpy.linalg import matrix_power
 from scipy.linalg import solve_sylvester
 from scipy.spatial.distance import cdist
-from scipy import stats
+
 
 class ZSL:
     @staticmethod
