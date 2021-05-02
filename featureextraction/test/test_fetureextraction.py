@@ -12,7 +12,7 @@ Tests for module featureextraction
 import unittest
 from os import path, sep
 
-from featureextraction.src.dataparsing import CUB200Data
+from featureextraction.src.extractorparser import CUB200Data
 from featureextraction.src.fetureextraction import ResNet50FeatureExtractor, InceptionV3FeatureExtractor
 from featureextraction.src.fetureextraction import ExtractionType, ExtractorFactory
 
@@ -67,5 +67,8 @@ class ResNet50FeatureExtractorTest(unittest.TestCase):
         self.assertEqual((30, 2048), features_set.shape)
 
     def test_extractor_factory(self):
+        """
+        Tests if the factory works, meaning that based on a given type o extractor, the expected object is returned
+        """
         self.assertTrue(isinstance(ExtractorFactory()(ExtractionType.RESNET), ResNet50FeatureExtractor))
         self.assertTrue(isinstance(ExtractorFactory()(ExtractionType.INCEPTION), InceptionV3FeatureExtractor))

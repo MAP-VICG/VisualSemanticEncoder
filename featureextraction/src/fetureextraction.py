@@ -22,10 +22,16 @@ class ExtractionType(Enum):
     INCEPTION = "inception"
 
     def __str__(self):
+        """
+        Parses this object to a string value
+        """
         return self.value
 
     @staticmethod
     def from_string(s):
+        """
+        Retrieves an attribute based on the given string if this attribute exists with that value
+        """
         try:
             return ExtractionType[s]
         except KeyError:
@@ -34,9 +40,19 @@ class ExtractionType(Enum):
 
 class ExtractorFactory:
     def __init__(self, base_path='.'):
+        """
+        Initializes the base_path variable which indicates in which path the images are
+
+        :param base_path: string with full path to the images folder
+        """
         self.base_path = base_path
 
     def __call__(self, extractor):
+        """
+        Instantiates object for extracting image features either from a ResNet50 CNN or a Inception V3 CNN
+
+        :param extractor: the extraction type of class ExtractionType that indicates which model to be used
+        """
         if extractor == ExtractionType.RESNET:
             return ResNet50FeatureExtractor(self.base_path)
         if extractor == ExtractionType.INCEPTION:
@@ -48,7 +64,7 @@ class FeatureExtractor:
         """
         Initializes main variables
 
-        @param base_path: string pointing to the path where the images are located. If no string is indicated, the
+        :param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
         self.base_path = base_path
@@ -57,8 +73,8 @@ class FeatureExtractor:
         """
         Loads the indicated image and extracts its visual features with ResNet50 model
 
-        @param img_path: string with path to image
-        @return: numpy array with image's extracted features
+        :param img_path: string with path to image
+        :return: numpy array with image's extracted features
         """
         pass
 
@@ -66,8 +82,8 @@ class FeatureExtractor:
         """
         Extracts the visual features of all images indicated in images_list and saves the array in features_set
 
-        @param images_list: list of string with names of images to extract features from
-        @return: 2D numpy array with extracted features
+        :param images_list: list of string with names of images to extract features from
+        :return: 2D numpy array with extracted features
         """
         features_set = self.extract_image_features(path.join(self.base_path, images_list[0]))
         for img_path in images_list[1:]:
@@ -82,7 +98,7 @@ class ResNet50FeatureExtractor(FeatureExtractor):
         """
         Initializes main variables
 
-        @param base_path: string pointing to the path where the images are located. If no string is indicated, the
+        :param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
         super(ResNet50FeatureExtractor, self).__init__(base_path)
@@ -92,8 +108,8 @@ class ResNet50FeatureExtractor(FeatureExtractor):
         """
         Loads the indicated image and extracts its visual features with ResNet50 model
 
-        @param img_path: string with path to image
-        @return: numpy array with image's extracted features
+        :param img_path: string with path to image
+        :return: numpy array with image's extracted features
         """
         img = image.load_img(img_path, target_size=(224, 224))
         img_data = image.img_to_array(img)
@@ -107,7 +123,7 @@ class InceptionV3FeatureExtractor(FeatureExtractor):
         """
         Initializes main variables
 
-        @param base_path: string pointing to the path where the images are located. If no string is indicated, the
+        :param base_path: string pointing to the path where the images are located. If no string is indicated, the
             current directory will be considered
         """
         super(InceptionV3FeatureExtractor, self).__init__(base_path)
@@ -117,8 +133,8 @@ class InceptionV3FeatureExtractor(FeatureExtractor):
         """
         Loads the indicated image and extracts its visual features with ResNet50 model
 
-        @param img_path: string with path to image
-        @return: numpy array with image's extracted features
+        :param img_path: string with path to image
+        :return: numpy array with image's extracted features
         """
         img = image.load_img(img_path, target_size=(224, 224))
         img_data = image.img_to_array(img)
