@@ -9,6 +9,7 @@ Tests for module cub_demo
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import unittest
 import numpy as np
 
@@ -21,7 +22,10 @@ class CUB200Tests(unittest.TestCase):
         """
         Initializes variables to be used in the tests
         """
-        cls.cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+        cls.data_tr = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'cub_data_inceptionV1_tr.pbz2'])
+        cls.data_te = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'cub_data_inceptionV1_te.pbz2'])
+
+        cls.cub = CUB200(cls.data_tr, cls.data_te)
         cls.cub.set_semantic_data()
 
     def test_set_semantic_data(self):
@@ -29,7 +33,7 @@ class CUB200Tests(unittest.TestCase):
         Tests if semantic data for training can be replaced
         """
         dummy_data = np.zeros((8855, 312))
-        dummy_cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+        dummy_cub = CUB200(self.data_tr, self.data_te)
 
         dummy_cub.set_semantic_data(dummy_data)
         self.assertEqual(0.02046, np.around(dummy_cub.v2s_projection(), decimals=5))
@@ -38,7 +42,7 @@ class CUB200Tests(unittest.TestCase):
         """
         Tests if weights can be properly reset so projection accuracy would change appropriately
         """
-        dummy_cub = CUB200('../../Datasets/SAE/cub_demo_data.mat')
+        dummy_cub = CUB200(self.data_tr, self.data_te)
         dummy_cub.set_semantic_data()
 
         self.assertIsNone(dummy_cub.w)

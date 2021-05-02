@@ -11,19 +11,22 @@ published in CVPR 2017. Code originally written in Matlab and is here transforme
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
+import bz2
+import pickle
 import numpy as np
-from scipy.io import loadmat
 from sklearn.preprocessing import normalize
 
 from encoders.tools.src.utils import ZSL
 
 
 class AWA:
-    def __init__(self, data_path):
+    def __init__(self, data_path_tr, data_path_te):
         """
         Defines parameters, loads data and computes weights using SAE
 
-        :param data_path: string with path with .mat file with data set
+        :param data_path_tr: string with path pointing to pickle file with training data
+        :param data_path_te: string with path pointing to pickle file with test data
         """
         self.hit_k = 1
         self.lambda_ = 500000
@@ -31,10 +34,7 @@ class AWA:
         self.s_tr = None
         self.w = None
 
-        self.data = loadmat(data_path)
-        self.temp_labels = np.array([int(x) for x in self.data['param']['testclasses_id'][0][0]])
-        self.test_labels = np.array([int(x) for x in self.data['param']['test_labels'][0][0]])
-
+        self.data = {**pickle.load(bz2.BZ2File(data_path_tr, 'rb')), **pickle.load(bz2.BZ2File(data_path_te, 'rb'))}
         self.x_tr = self._normalize(self.data['X_tr'].transpose()).transpose()
         self.x_te = np.array(self.data['X_te'])
 
@@ -93,8 +93,8 @@ class AWA:
             self.w = self._compute_weights().transpose()
 
         s_est = self.x_te.dot(self._normalize(self.w).transpose())
-        s_te_gt = self._normalize(self.data['S_te_gt'].transpose()).transpose()
-        acc, _ = ZSL.zsl_el(s_est, s_te_gt, self.test_labels, self.temp_labels, self.hit_k, self.z_score)
+        s_te_gt = self._normalize(self.data['S_te_pro'].transpose()).transpose()
+        acc, _ = ZSL.zsl_el(s_est, s_te_gt, self.data['Y_te'], self.data['S_te_pro_lb'], self.hit_k, self.z_score)
         return acc
 
     def s2v_projection(self):
@@ -111,12 +111,16 @@ class AWA:
 
         x_te_pro = self._normalize(self.data['S_te_pro'].transpose()).transpose().dot(self._normalize(self.w))
         x_te_pro = self._normalize(x_te_pro.transpose()).transpose()
-        acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.test_labels, self.temp_labels, self.hit_k, self.z_score)
+        acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.data['Y_te'], self.data['S_te_pro_lb'], self.hit_k, self.z_score)
         return acc
 
 
 if __name__ == '__main__':
-    awa = AWA('../../../../Datasets/awa_data_googlenet.mat')
+    data_tr = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'awa_data_inceptionV1_tr.pbz2'])
+    data_te = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'awa_data_inceptionV1_te.pbz2'])
+
+    awa = AWA(data_tr, data_te)
     awa.set_semantic_data()
+
     print('\n[1] AwA ZSL accuracy [V >>> S]: %.1f%%\n' % (awa.v2s_projection() * 100))
     print('[2] AwA ZSL accuracy [S >>> V]: %.1f%%\n' % (awa.s2v_projection() * 100))

@@ -9,6 +9,7 @@ Tests for module awa_demo
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
+import os
 import unittest
 import numpy as np
 
@@ -21,7 +22,10 @@ class AWATests(unittest.TestCase):
         """
         Initializes variables to be used in the tests
         """
-        cls.awa = AWA('../../Datasets/SAE/awa_demo_data.mat')
+        cls.data_tr = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'awa_data_inceptionV1_tr.pbz2'])
+        cls.data_te = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'awa_data_inceptionV1_te.pbz2'])
+
+        cls.awa = AWA(cls.data_tr, cls.data_te)
         cls.awa.set_semantic_data()
 
     def test_set_semantic_data(self):
@@ -29,7 +33,7 @@ class AWATests(unittest.TestCase):
         Tests if semantic data for training can be replaced
         """
         dummy_data = np.zeros((24295, 85))
-        dummy_awa = AWA('../../Datasets/SAE/awa_demo_data.mat')
+        dummy_awa = AWA(self.data_tr, self.data_te)
 
         dummy_awa.set_semantic_data(dummy_data)
         self.assertEqual(0.08236, np.around(dummy_awa.v2s_projection(), decimals=5))
@@ -38,7 +42,7 @@ class AWATests(unittest.TestCase):
         """
         Tests if weights can be properly reset so projection accuracy would change appropriately
         """
-        dummy_awa = AWA('../../Datasets/SAE/awa_demo_data.mat')
+        dummy_awa = AWA(self.data_tr, self.data_te)
         dummy_awa.set_semantic_data()
 
         self.assertIsNone(dummy_awa.w)

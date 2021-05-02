@@ -11,19 +11,21 @@ published in CVPR 2017. Code originally written in Matlab and is here transforme
     Institute of Mathematics and Computer Science (ICMC)
     Laboratory of Visualization, Imaging and Computer Graphics (VICG)
 """
-import numpy as np
-from scipy.io import loadmat
+import os
+import bz2
+import pickle
 from sklearn.preprocessing import normalize
 
 from encoders.tools.src.utils import ZSL
 
 
 class CUB200:
-    def __init__(self, data_path):
+    def __init__(self, data_path_tr, data_path_te):
         """
         Defines parameters, loads data and computes weights using SAE
 
-        :param data_path: string with path with .mat file with data set
+        :param data_path_tr: string with path pointing to pickle file with training data
+        :param data_path_te: string with path pointing to pickle file with test data
         """
         self.hit_k = 1
         self.lambda_ = .2
@@ -31,12 +33,8 @@ class CUB200:
         self.s_tr = None
         self.w = None
 
-        self.data = loadmat(data_path)
-        self.temp_labels = np.array([int(x) for x in self.data['te_cl_id']])
-        self.test_labels = np.array([int(x) for x in self.data['test_labels_cub']])
-
-        labels = list(map(int, self.data['train_labels_cub']))
-        self.x_tr, self.x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], labels)
+        self.data = {**pickle.load(bz2.BZ2File(data_path_tr, 'rb')), **pickle.load(bz2.BZ2File(data_path_te, 'rb'))}
+        self.x_tr, self.x_te = ZSL.dimension_reduction(self.data['X_tr'], self.data['X_te'], self.data['Y_tr'])
 
     def reset_weights(self):
         """
@@ -83,7 +81,7 @@ class CUB200:
             self.w = self._compute_weights()
 
         s_est = self.x_te.dot(self.w)
-        acc, _ = ZSL.zsl_el(s_est, self.data['S_te_pro'], self.test_labels, self.temp_labels, self.hit_k, self.z_score)
+        acc, _ = ZSL.zsl_el(s_est, self.data['S_te_pro'], self.data['Y_te'], self.data['S_te_pro_lb'], self.hit_k, self.z_score)
         return acc
 
     def s2v_projection(self):
@@ -99,12 +97,15 @@ class CUB200:
             self.w = self._compute_weights()
 
         x_te_pro = self.data['S_te_pro'].dot(self.w.transpose())
-        acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.test_labels, self.temp_labels, self.hit_k, self.z_score)
+        acc, _ = ZSL.zsl_el(self.x_te, x_te_pro, self.data['Y_te'], self.data['S_te_pro_lb'], self.hit_k, self.z_score)
         return acc
 
 
 if __name__ == '__main__':
-    cub = CUB200('../../../../Datasets/cub_data_googlenet.mat')
+    data_tr = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'cub_data_inceptionV1_tr.pbz2'])
+    data_te = os.sep.join([os.getcwd().split('/encoders')[0], 'data', 'cub_data_inceptionV1_te.pbz2'])
+
+    cub = CUB200(data_tr, data_te)
     cub.set_semantic_data()
     print('\n[1] CUB ZSL accuracy [V >>> S]: %.1f%%\n' % (cub.v2s_projection() * 100))
     print('[2] CUB ZSL accuracy [S >>> V]: %.1f%%\n' % (cub.s2v_projection() * 100))
