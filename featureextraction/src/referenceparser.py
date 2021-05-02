@@ -1,7 +1,7 @@
 """
 Parsers the data made available by Elyor Kodirov, Tao Xiang, and Shaogang Gong in the
 paper "Semantic Autoencoder for Zero-shot Learning" published in CVPR 2017, to a new data
-structure used in this projec. The reference code was originally written in Matlab and
+structure used in this project. The reference code was originally written in Matlab and
 is here being transformed to Python.
 
 @author: Damares Resende
